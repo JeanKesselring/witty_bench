@@ -1,0 +1,590 @@
+/* ---- shared section chrome ------------------------------------------ */
+.section {
+  padding: clamp(4rem, 12vw, 9rem) var(--gutter);
+  /* Anchor targets must clear the fixed topbar, or #cards lands with its
+     eyebrow tucked under the header. */
+  scroll-margin-top: 4.5rem;
+}
+
+.section__head {
+  max-width: var(--measure);
+  margin: 0 auto clamp(2.5rem, 6vw, 4rem);
+  text-align: center;
+}
+
+.section__title {
+  font-size: clamp(1.9rem, 1.1rem + 3.2vw, 3.2rem);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  font-weight: 660;
+}
+
+.section__lede {
+  margin-top: 1rem;
+  color: var(--ink-dim);
+  font-size: clamp(1rem, 0.95rem + 0.3vw, 1.12rem);
+}
+
+/* ---- demo 1 · hero --------------------------------------------------- */
+.hero {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  align-items: end;
+  /* svh, not vh: on mobile Safari `100vh` hides the bottom of the hero behind
+     the URL bar, and the CTAs are exactly what ends up cut off. */
+  min-height: 100svh;
+  padding: calc(clamp(4rem, 14vw, 8rem) + 3rem) var(--gutter) clamp(3rem, 9vw, 6rem);
+  overflow: hidden;
+}
+
+/* Keep the stats row clear of the floating Controls button, which is pinned to
+   the same corner and would otherwise sit on top of it. */
+@media (max-width: 899px) {
+  .hero {
+    padding-bottom: calc(clamp(3rem, 9vw, 6rem) + 3.5rem);
+  }
+}
+
+.hero__canvas {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+}
+
+/* Shader output is unpredictable — never leave text contrast to chance.
+   Three stacked layers: a bottom lift for the stats row, a left-edge wash that
+   protects the copy column whatever the shader is doing behind it, and a flat
+   floor so a bright frame can never wash the type out entirely. */
+.hero__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(
+      to top,
+      rgb(var(--bg-rgb) / 0.92) 0%,
+      rgb(var(--bg-rgb) / 0.4) 45%,
+      transparent 80%
+    ),
+    linear-gradient(
+      to right,
+      rgb(var(--bg-rgb) / 0.78) 0%,
+      rgb(var(--bg-rgb) / 0.35) 45%,
+      transparent 72%
+    ),
+    rgb(var(--bg-rgb) / 0.15);
+}
+
+.hero .eyebrow {
+  color: var(--shader-ink-dim);
+}
+
+.hero__inner {
+  width: min(100%, var(--shell));
+  margin-inline: auto;
+}
+
+.hero__title {
+  max-width: 18ch;
+  font-size: clamp(2.6rem, 1.1rem + 6.4vw, 5.6rem);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+  font-weight: 680;
+  text-wrap: balance;
+}
+
+.hero__title em {
+  font-style: italic;
+  font-weight: 400;
+}
+
+.hero__lede {
+  max-width: 52ch;
+  margin-top: 1.4rem;
+  color: var(--shader-ink-dim);
+  font-size: clamp(1.02rem, 0.95rem + 0.5vw, 1.25rem);
+  text-wrap: pretty;
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 2.2rem;
+}
+
+.hero__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(1.5rem, 5vw, 3.5rem);
+  margin-top: clamp(2.5rem, 7vw, 4.5rem);
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--line);
+}
+
+.hero__stat-value {
+  font-size: clamp(1.35rem, 1.1rem + 1vw, 1.9rem);
+  font-weight: 640;
+  letter-spacing: -0.02em;
+}
+
+.hero__stat-label {
+  margin-top: 0.15rem;
+  color: var(--ink-dim);
+  font-size: 0.85rem;
+}
+
+/* ---- demo 2 · cards -------------------------------------------------- */
+.cards__grid {
+  display: grid;
+  gap: clamp(1rem, 2.5vw, 1.75rem);
+  width: min(100%, var(--shell));
+  margin-inline: auto;
+  /* auto-fit + minmax reflows 3 → 2 → 1 columns with no media queries; min()
+     keeps the track from overflowing when the viewport is under 320px. */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+}
+
+.card {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--bg-raised);
+  transition:
+    transform 0.35s var(--ease),
+    border-color 0.35s var(--ease);
+}
+
+.card:hover,
+.card:focus-within {
+  transform: translateY(-4px);
+  border-color: var(--line-strong);
+}
+
+.card[data-featured='true'] {
+  border-color: var(--line-strong);
+  box-shadow: 0 24px 60px -30px rgb(0 0 0 / 0.9);
+}
+
+.card__media {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+
+.card__canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.card__badge {
+  position: absolute;
+  inset: auto auto 0.75rem 0.75rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  background: rgb(var(--bg-rgb) / 0.72);
+  backdrop-filter: blur(8px);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.card__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: clamp(1.25rem, 3vw, 1.75rem);
+}
+
+.card__name {
+  font-size: 1.15rem;
+  font-weight: 640;
+}
+
+.card__price {
+  font-size: clamp(1.7rem, 1.4rem + 1vw, 2.1rem);
+  font-weight: 660;
+  letter-spacing: -0.03em;
+}
+
+.card__cadence {
+  color: var(--ink-faint);
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.card__blurb {
+  color: var(--ink-dim);
+  font-size: 0.94rem;
+}
+
+.card__features {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.25rem;
+  color: var(--ink-dim);
+  font-size: 0.9rem;
+}
+
+.card__features li::before {
+  content: '→';
+  margin-right: 0.6rem;
+  color: var(--ink-faint);
+}
+
+.card__body .btn {
+  margin-top: auto;
+}
+
+/* A container query, not a media query: the card restyles based on its own
+   width, so it stays correct if it is ever dropped into a narrower column. */
+@container (min-width: 340px) {
+  .card__price {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+}
+
+/* ---- demo 4 · masked window layers ----------------------------------- */
+.windows__stage {
+  /* One source of truth for the window geometry. The mask and the outlines
+     are both derived from these, so they cannot fall out of alignment. */
+  --win: clamp(104px, 19vw, 232px);
+  --ax: 0.24;
+  --ay: 0.38;
+  --bx: 0.76;
+  --by: 0.62;
+
+  position: relative;
+  isolation: isolate;
+  width: min(100%, var(--shell));
+  margin-inline: auto;
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+/* Portrait: side-by-side windows would be cropped, so stack them instead. */
+@media (max-width: 899px) {
+  .windows__stage {
+    --ax: 0.5;
+    --ay: 0.26;
+    --bx: 0.5;
+    --by: 0.74;
+    aspect-ratio: 4 / 5;
+  }
+}
+
+.windows__layer {
+  position: absolute;
+  inset: 0;
+}
+
+/* Both layers are fully opaque — no opacity, no blend mode. The front one is
+   only visible where the mask lets it through. */
+.windows__layer--front {
+  -webkit-mask-image: linear-gradient(#000, #000), linear-gradient(#000, #000);
+  mask-image: linear-gradient(#000, #000), linear-gradient(#000, #000);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: var(--win) var(--win), var(--win) var(--win);
+  mask-size: var(--win) var(--win), var(--win) var(--win);
+  /* A percentage mask-position is ALREADY relative to (area - mask size), so a
+     plain percentage is what we want here. Writing out
+     `calc((100% - var(--win)) * f)` applies that offset a second time — the
+     outlines below need the long form because `left` is relative to the full
+     width, and the two forms must not be swapped. */
+  -webkit-mask-position:
+    calc(var(--ax) * 100%) calc(var(--ay) * 100%),
+    calc(var(--bx) * 100%) calc(var(--by) * 100%);
+  mask-position:
+    calc(var(--ax) * 100%) calc(var(--ay) * 100%),
+    calc(var(--bx) * 100%) calc(var(--by) * 100%);
+  transition: -webkit-mask-size 0.5s var(--ease), mask-size 0.5s var(--ease);
+}
+
+/* Reveal the front layer entirely, to show it really is a full opaque render. */
+.windows__stage[data-peek='true'] .windows__layer--front {
+  -webkit-mask-size: 200% 200%, 200% 200%;
+  mask-size: 200% 200%, 200% 200%;
+}
+
+.windows__frame {
+  position: absolute;
+  width: var(--win);
+  height: var(--win);
+  border: 1px solid var(--frame-line);
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.2),
+    0 18px 50px -20px rgb(0 0 0 / 0.55);
+  transition: opacity 0.4s var(--ease);
+}
+
+.windows__frame--a {
+  left: calc((100% - var(--win)) * var(--ax));
+  top: calc((100% - var(--win)) * var(--ay));
+}
+
+.windows__frame--b {
+  left: calc((100% - var(--win)) * var(--bx));
+  top: calc((100% - var(--win)) * var(--by));
+}
+
+.windows__stage[data-peek='true'] .windows__frame {
+  opacity: 0;
+}
+
+.windows__toggle {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 2;
+}
+
+/* ---- demo 3 · editorial --------------------------------------------- */
+.editorial {
+  border-top: 1px solid var(--line);
+}
+
+.editorial__grid {
+  display: grid;
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  width: min(100%, var(--shell));
+  margin-inline: auto;
+}
+
+@media (min-width: 900px) {
+  .editorial__grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+    align-items: start;
+  }
+}
+
+.editorial__sticky {
+  position: sticky;
+  /* Clears the fixed topbar. */
+  top: clamp(4.5rem, 10vh, 6.5rem);
+  display: grid;
+  gap: 0.75rem;
+}
+
+.editorial__canvas {
+  aspect-ratio: 4 / 5;
+  /* Portrait phones cannot afford a 4:5 block above the fold — go landscape. */
+  max-height: 62svh;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+@media (max-width: 899px) {
+  .editorial__canvas {
+    aspect-ratio: 16 / 10;
+    max-height: 42svh;
+  }
+}
+
+.editorial__meter {
+  height: 3px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.editorial__meter-fill {
+  height: 100%;
+  background: var(--ink);
+  transform-origin: left;
+  will-change: transform;
+}
+
+.editorial__readout {
+  color: var(--ink-faint);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.76rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.editorial__copy {
+  max-width: var(--measure);
+}
+
+.chapters {
+  display: grid;
+  gap: clamp(1.5rem, 4vw, 2.5rem);
+  margin-top: clamp(2rem, 5vw, 3rem);
+}
+
+.chapter {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1rem;
+  padding-left: 1rem;
+  border-left: 2px solid var(--line);
+  opacity: 0.45;
+  transition:
+    opacity 0.4s var(--ease),
+    border-color 0.4s var(--ease);
+}
+
+.chapter[data-active='true'] {
+  opacity: 1;
+  border-left-color: var(--ink);
+}
+
+.chapter__n {
+  color: var(--ink-faint);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  padding-top: 0.35rem;
+}
+
+.chapter__title {
+  font-size: clamp(1.1rem, 1rem + 0.5vw, 1.3rem);
+  font-weight: 640;
+  letter-spacing: -0.015em;
+}
+
+.chapter__body {
+  margin-top: 0.4rem;
+  color: var(--ink-dim);
+  font-size: 0.95rem;
+  text-wrap: pretty;
+}
+
+/* ---- demo 5 · frosted grid ------------------------------------------- */
+.frost {
+  /* Full-bleed so 5vw/5vh cells tile the stage exactly 20 x 20. */
+  padding-inline: 0;
+}
+
+.frost .section__head {
+  padding-inline: var(--gutter);
+}
+
+.frost__stage {
+  position: relative;
+  isolation: isolate;
+  width: 100vw;
+  height: 100svh;
+  overflow: hidden;
+}
+
+.frost__canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.frost__texture {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* Greyscale fractal noise, tiled. soft-light keeps average luminance and hue
+     essentially unchanged — it adds texture, not brightness. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  mix-blend-mode: soft-light;
+  opacity: 0.85;
+}
+
+.frost__glass {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* No tint and no brightness lift — the tiles must not read as lighter than
+     the surface. Real frost scatters light and *desaturates*, so the whole
+     effect is carried by blur + saturate(<1). A white veil would have been the
+     easy way to make the tiles visible, and it is exactly what we do not want.
+     The radius is free here: measured identical from blur(0) to blur(64px),
+     because the cost is the backdrop capture, not the kernel. */
+  backdrop-filter: blur(64px);
+  -webkit-backdrop-filter: blur(64px);
+}
+
+/*
+ * The lit edge of each tile.
+ *
+ * A painted bevel (fixed highlight colour, same on every tile) does not read as
+ * glass: it cannot respond to what is behind it, so it stays put while the
+ * gradient moves underneath. This instead carries its own `backdrop-filter`, so
+ * the rim colour is *sampled from the backdrop* — a rim over the magenta crest
+ * comes out hot magenta, a rim over deep purple stays dim, and every rim shifts
+ * as the wave travels. No colour is specified anywhere; only a gain.
+ *
+ * The rim is drawn only where a tile meets empty space, so touching tiles read
+ * as one pane. See `buildEdgeMask`.
+ */
+.frost__edge {
+  position: absolute;
+  inset: 0;
+  backdrop-filter: brightness(var(--glass-gain)) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: brightness(var(--glass-gain)) saturate(var(--glass-sat));
+  /* The outline geometry is generated per pattern in the component; here we
+     only need it to cover the stage exactly once. */
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  /* One mask, one blur pass. The SVG carries the active-cell rects; sizing it
+     to 100% lets the grid-unit viewBox stretch to the stage. */
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+.frost__hits {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(20, 5vw);
+  grid-template-rows: repeat(20, 5vh);
+}
+
+.frost__hit {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  /* Hover/focus is the only affordance — it must not tint the frost itself,
+     so it lives on this separate transparent layer. */
+  box-shadow: inset 0 0 0 0 var(--frame-line);
+  transition: box-shadow 0.15s var(--ease);
+}
+
+.frost__hit:hover,
+.frost__hit:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--frame-line);
+  outline: none;
+}
+
+.frost__actions {
+  position: absolute;
+  left: var(--gutter);
+  bottom: 1.25rem;
+  z-index: 2;
+  display: flex;
+  gap: 0.5rem;
+}
+
+
+/* ---- demo 6 · frost trail -------------------------------------------- */
+.frost--trail .frost__stage {
+  /* The stage itself is the pointer surface; every layer above the canvas is
+     pointer-events: none, so the move handler always sees the whole grid. */
+  cursor: crosshair;
+}
+
+.frost--trail .frost__edge,
+.frost--trail .frost__glass {
+  pointer-events: none;
+}

@@ -1,0 +1,124 @@
+/* ---- top bar --------------------------------------------------------- */
+.topbar {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem var(--gutter);
+  padding-top: max(0.85rem, env(safe-area-inset-top));
+  /* Sits over a live shader, so it needs its own contrast floor rather than
+     relying on whatever colour happens to be behind it. */
+  background: linear-gradient(
+    to bottom,
+    rgb(var(--bg-rgb) / 0.92) 15%,
+    rgb(var(--bg-rgb) / 0.55) 60%,
+    transparent
+  );
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  mask-image: linear-gradient(to bottom, #000 62%, transparent);
+}
+
+.topbar__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.topbar__brand-dim {
+  color: var(--ink-faint);
+  font-weight: 500;
+}
+
+.topbar__mark {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: conic-gradient(from 210deg, #5606ff, #fe8989, #00c9a7, #5606ff);
+}
+
+.topbar__nav {
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
+  font-size: 0.9rem;
+  color: var(--ink-dim);
+}
+
+.topbar__nav a:hover {
+  color: var(--ink);
+}
+
+/* Below the tablet breakpoint the brand suffix and section links are noise —
+   the page is one scroll and the controls button is the only real action. */
+@media (max-width: 899px) {
+  .topbar__brand-dim,
+  .topbar__nav a:not(.topbar__ext) {
+    display: none;
+  }
+}
+
+/* ---- theme toggle ---------------------------------------------------- */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 34px;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--glass);
+  color: var(--ink-dim);
+  font-size: 0.85rem;
+  font-weight: 550;
+  cursor: pointer;
+  transition:
+    background 0.2s var(--ease),
+    color 0.2s var(--ease);
+}
+
+.theme-toggle:hover {
+  background: var(--glass-hover);
+  color: var(--ink);
+}
+
+.theme-toggle__icon {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+@media (max-width: 899px) {
+  .theme-toggle__label {
+    display: none;
+  }
+}
+
+/* ---- footer ---------------------------------------------------------- */
+.footer {
+  padding: clamp(3rem, 8vw, 6rem) var(--gutter);
+  border-top: 1px solid var(--line);
+  color: var(--ink-faint);
+  font-size: 0.9rem;
+}
+
+.footer p {
+  max-width: var(--measure);
+  margin-inline: auto;
+  text-align: center;
+}
+
+.footer a {
+  color: var(--ink-dim);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.footer a:hover {
+  color: var(--ink);
+}
