@@ -1,0 +1,1025 @@
+/* Kite components — design_system.md §2.3, §5, §6, §10.
+ * Glass over the shader substrate, per the prototype language.
+ *
+ * NEVER hand-write `-webkit-backdrop-filter`. Write the standard property
+ * alone and let Lightning CSS (Turbopack) add prefixes from the browserslist
+ * in package.json, which is pinned to §13.4's floor.
+ *
+ * Writing the pair by hand silently kills the effect app-wide: Lightning CSS
+ * collapses `backdrop-filter` followed by `-webkit-backdrop-filter` into the
+ * prefixed declaration ONLY, and Chrome dropped that alias — `CSS.supports
+ * ('-webkit-backdrop-filter', 'blur(20px)')` is false from Chrome ~150. The
+ * result is no blur anywhere: no frost, no topbar glass, no note glass, with
+ * nothing in the source that looks wrong. Standard property only. */
+
+/* ── §3.5 + §5 The frosted stage ──────────────────────────────────────
+   Copied 1:1 from the prototype's demo 5. The layer order is the whole
+   trick: canvas, texture, glass, edge and hits are siblings inside ONE
+   isolated stacking context, so the glass's backdrop-filter samples the
+   canvas and the texture directly. Split them across z-indexed layers and
+   the blur captures nothing. */
+
+/* §3.4: the lattice is in DOCUMENT FLOW, not pinned to the viewport — it
+   runs the full scroll length of the page, so a note stays beside the
+   content it was written against. `inset: 0` against a relatively
+   positioned body gives it the document's height for free. Only the
+   gradient inside it is fixed. */
+.frost__stage {
+  position: absolute;
+  inset: 0;
+  isolation: isolate;
+  overflow: hidden;
+  z-index: var(--layer-lattice);
+  /* Content sits above; the gaps between content regions fall through to
+     the hit layer, which is what makes the tiles clickable. */
+  pointer-events: none;
+}
+
+/* Viewport-pinned, so content and the lattice scroll over a still wave —
+   the one scroll effect the system keeps (§3.4). */
+.frost__canvas {
+  position: fixed;
+  inset: 0;
+}
+
+/* Texture is what makes the frost legible. A pure blur over a smooth
+   gradient is nearly invisible — there are no high frequencies to remove —
+   and the usual fixes (a white veil, or desaturating) change the tiles'
+   brightness or colour, which is the one thing frosted glass must not do.
+   Fine noise gives the blur something to remove, so tiles read as *smooth*
+   patches against a textured surround: same hue, same luminance, just
+   resolved differently. Painted below the glass so it is part of the
+   backdrop the blur samples. */
+.frost__texture {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  mix-blend-mode: soft-light;
+  opacity: 0.85;
+}
+
+/* No tint and no brightness lift — the tiles must not read as lighter than
+   the surface. Real frost scatters light and desaturates, so the whole
+   effect is carried by the blur. A white veil would have been the easy way
+   to make the tiles visible, and it is exactly what we do not want.
+   The radius is free here: measured identical from blur(0) to blur(64px),
+   because the cost is the backdrop capture, not the kernel. */
+.frost__glass {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  backdrop-filter: blur(64px);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+/* The lit edge of each tile.
+
+   A painted bevel (fixed highlight colour, same on every tile) does not read
+   as glass: it cannot respond to what is behind it, so it stays put while the
+   gradient moves underneath. This instead carries its own backdrop-filter, so
+   the rim colour is *sampled from the backdrop* — a rim over a crest comes out
+   hot, a rim over deep colour stays dim, and every rim shifts as the wave
+   travels. No colour is specified anywhere; only a gain.
+
+   The rim is drawn only where a tile meets empty space, so touching tiles read
+   as one pane. See buildEdgeMask. */
+.frost__edge {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  backdrop-filter: brightness(var(--glass-gain)) saturate(var(--glass-sat));
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+/* The cell is SQUARE and is `--cell` on both axes. It was once
+   `repeat(20, 5vw) / repeat(20, 5vh)`, which is square only on a square
+   viewport — at 1512×860 that drew 75.6 × 43px tiles. The template is
+   written by FrostStage from the measured cell; only the layout mode and
+   the pointer rules live here. */
+.frost__hits {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  overflow: hidden;
+  pointer-events: auto;
+  /* Vertical scrolling must still work when a drag starts on a tile. */
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.frost__hit {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: crosshair;
+  /* Hover/focus is the only affordance — it must not tint the frost itself,
+     so it lives on this separate transparent layer. */
+  box-shadow: inset 0 0 0 0 var(--frame-line);
+  transition: box-shadow 0.15s var(--ease);
+}
+
+.frost__hit:hover,
+.frost__hit:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--frame-line);
+  outline: none;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .frost__glass,
+  .frost__edge {
+    backdrop-filter: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .frost__stage {
+    display: none;
+  }
+}
+
+/* ── §5 Frost ─────────────────────────────────────────────────────────
+   Real frost scatters light and desaturates. The effect is carried by
+   blur plus saturate, never by a white veil — a tint would make panels
+   read as lighter than the surface, which is exactly wrong. */
+
+.k-frost {
+  background: var(--glass);
+  backdrop-filter: blur(30px) saturate(1.4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+/* The lit edge. A painted bevel cannot respond to what is behind it, so it
+   sits still while the wave moves underneath. This carries its own
+   backdrop-filter, so the rim colour is sampled from the backdrop — hot
+   over a crest, dim over deep colour. No colour is specified; only a gain. */
+.k-frost--lit {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14);
+}
+
+/* ── §11.15 The notes workspace ───────────────────────────────────────
+   Sits over the frosted lattice, in document flow rather than pinned, so a
+   note stays beside the content it was written against. Arrangement is
+   session-only; the text and its topic anchor are what persist. */
+
+/* The notes workspace shares the lattice's geometry exactly — same origin,
+   same cell, same column count — because it is rendered inside the stage
+   with the grid template FrostStage measured. Notes are placed by
+   grid-column/grid-row in CELLS, never by pixel offsets, which is what
+   makes "on a tile" true rather than approximately true. */
+.k-notes {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  /* The layer is inert; individual notes take the pointer back, so a drag
+     across empty lattice still reaches the tiles underneath. */
+  pointer-events: none;
+}
+
+.k-note {
+  position: relative;
+  min-inline-size: 0;
+  min-block-size: 0;
+  overflow: hidden;
+  display: flex;
+  pointer-events: auto;
+  background: var(--glass);
+  backdrop-filter: blur(36px) saturate(1.7) brightness(var(--panel-gain));
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  box-shadow:
+    inset 1px 1px 0 rgb(255 255 255 / 0.12),
+    inset -1px -1px 0 rgb(0 0 0 / 0.22);
+}
+
+/* §3.4: dashed is reserved for provisional state — here, the drag preview.
+   It jumps hard cell to cell so the commitment stays unambiguous. */
+.k-note--draft {
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  border-style: dashed;
+  border-color: var(--frame-line);
+  background: none;
+  backdrop-filter: none;
+  box-shadow: none;
+  color: var(--shader-ink-dim);
+  font-size: var(--size-meta);
+}
+
+/* §3.3: blocked is shown, in the error colour, on the note that cannot go
+   where it is being dragged — not signalled by silently refusing to move. */
+.k-note[data-move-blocked='true'] {
+  outline: 2px solid var(--err);
+  outline-offset: -3px;
+}
+
+.k-note__text {
+  flex: 1;
+  font-family: inherit;
+  font-size: var(--size-body-sm);
+  line-height: 1.45;
+  background: none;
+  border: none;
+  color: var(--ink);
+  /* Top padding clears the move and remove controls in the corners. */
+  padding: 28px 0.7rem 0.9rem;
+  resize: none;
+}
+.k-note__text:focus {
+  outline: none;
+}
+.k-note__text::placeholder {
+  color: var(--ink-faint);
+}
+
+.k-note__move,
+.k-note__close {
+  position: absolute;
+  inset-block-start: 0;
+  display: grid;
+  place-items: center;
+  block-size: 22px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-dim);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.k-note__move {
+  inset-inline-start: 0;
+  inline-size: 32px;
+  padding-block-end: 5px;
+  border-inline-end: 1px solid var(--line-strong);
+  border-block-end: 1px solid var(--line-strong);
+  cursor: grab;
+  /* The handle owns the gesture outright; without this the browser pans. */
+  touch-action: none;
+  user-select: none;
+}
+.k-note__move:active {
+  cursor: grabbing;
+}
+
+.k-note__close {
+  inset-inline-end: 0;
+  inline-size: 22px;
+  border-inline-start: 1px solid var(--line-strong);
+  border-block-end: 1px solid var(--line-strong);
+  font-size: 1rem;
+}
+
+.k-note__size {
+  position: absolute;
+  inset-inline-end: 5px;
+  inset-block-end: 4px;
+  font-size: var(--size-meta);
+  color: var(--ink-faint);
+  pointer-events: none;
+}
+
+.k-note__caveat {
+  position: absolute;
+  inset-block-end: var(--space-2);
+  inset-inline-start: var(--space-2);
+  pointer-events: none;
+  font-size: var(--size-meta);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* ── §2.3 Page skeleton ───────────────────────────────────────────── */
+
+.k-shell {
+  position: relative;
+  z-index: var(--layer-content);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-block-size: 100dvh;
+  /* The shell spans the viewport, so if it captured pointer events the
+     frosted lattice beneath it could never be clicked. Its regions take
+     the pointer back; the gaps between them fall through to the lattice. */
+  pointer-events: none;
+}
+.k-topbar,
+.k-foot {
+  pointer-events: auto;
+}
+
+.k-topbar {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: var(--layer-chrome);
+  min-block-size: 64px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-inline: var(--gutter);
+  background: rgb(var(--bg-rgb) / var(--veil));
+  backdrop-filter: blur(20px) saturate(1.4);
+  border-block-end: 1px solid var(--line);
+}
+
+.k-topbar__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-inline-end: auto;
+}
+
+.k-topbar__tools {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.k-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.k-brand__monogram {
+  inline-size: 34px;
+  block-size: 34px;
+  display: grid;
+  place-items: center;
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.k-brand__wordmark {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: var(--track-tight);
+  white-space: nowrap;
+}
+
+.k-main {
+  inline-size: min(100%, var(--shell));
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+  padding-block: var(--space-8) var(--space-12);
+  display: grid;
+  gap: var(--space-6);
+  align-content: start;
+  /* The column spans the shell whether or not it is full, so capturing the
+     pointer across all of it would leave the lattice clickable only in the
+     side gutters — about 136px a side at 1512px, and nothing at all below
+     lg. Its children take the pointer back; the gaps between them, the
+     gutters and the space below the last card fall through to the tiles. */
+  pointer-events: none;
+}
+
+.k-main > * {
+  pointer-events: auto;
+}
+
+.k-main--railed {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 1024px) {
+  .k-main--railed {
+    grid-template-columns: minmax(0, 1fr) var(--rail);
+    column-gap: var(--space-4);
+    align-items: start;
+  }
+  .k-main--railed > .k-head,
+  .k-main--railed > .k-context {
+    grid-column: 1 / -1;
+  }
+}
+
+.k-head {
+  max-inline-size: var(--measure);
+  display: grid;
+  gap: var(--space-2);
+}
+.k-head p {
+  color: var(--ink-dim);
+}
+
+.k-context {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  align-items: center;
+}
+
+.k-foot {
+  padding: var(--space-4) var(--gutter);
+  border-block-start: 1px solid var(--line);
+  color: var(--ink-faint);
+  font-size: var(--size-body-sm);
+  background: rgb(var(--bg-rgb) / var(--veil));
+  backdrop-filter: blur(20px);
+}
+
+/* §8.2 Skip links: hidden by transform until focused, above every layer. */
+.k-skip a {
+  position: fixed;
+  inset-block-start: var(--space-1);
+  inset-inline-start: var(--space-1);
+  z-index: var(--layer-skip);
+  transform: translateY(-250%);
+  background: var(--bg-raised);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 1rem;
+  text-decoration: none;
+}
+.k-skip a:nth-of-type(2) {
+  inset-inline-start: 14rem;
+}
+.k-skip a:focus {
+  transform: translateY(0);
+}
+
+/* ── §6.2 Controls ────────────────────────────────────────────────── */
+
+.k-btn {
+  font-family: inherit;
+  font-size: var(--size-body-sm);
+  font-weight: 500;
+  line-height: 1;
+  min-block-size: var(--target);
+  padding-inline: 1.1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 1px solid transparent;
+  border-radius: 0;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-flat) linear,
+    border-color var(--dur-flat) linear,
+    color var(--dur-flat) linear;
+}
+
+.k-btn--primary {
+  background: var(--ink);
+  color: var(--on-accent);
+  border-color: transparent;
+}
+.k-btn--secondary {
+  background: var(--glass);
+  border-color: var(--line-strong);
+  backdrop-filter: blur(14px);
+}
+.k-btn--quiet {
+  color: var(--ink-dim);
+}
+.k-btn--destructive {
+  background: var(--glass);
+  border-color: var(--err);
+  color: var(--err);
+}
+.k-btn--study {
+  min-block-size: 56px;
+  font-size: var(--size-body);
+  border-radius: var(--radius);
+}
+
+.k-btn:hover:not(:disabled):not([aria-disabled='true']) {
+  background: var(--glass-hover);
+}
+.k-btn--primary:hover:not(:disabled) {
+  background: var(--ink);
+  filter: brightness(0.92);
+}
+.k-btn:disabled,
+.k-btn[aria-disabled='true'] {
+  color: var(--ink-faint);
+  border-color: var(--line);
+  cursor: not-allowed;
+}
+
+/* §10.3 The shared control response — every interactive control. */
+.k-press {
+  transition: transform 150ms var(--ease);
+}
+.k-press:active:not(:disabled):not([aria-disabled='true']) {
+  transform: scale(0.98);
+}
+@media (prefers-reduced-motion: reduce) {
+  .k-press:active {
+    transform: none;
+  }
+}
+
+.k-chip {
+  font-family: inherit;
+  font-size: var(--size-label);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  font-weight: 600;
+  min-block-size: var(--target);
+  padding-inline: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--optical);
+  background: var(--glass);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 0;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color var(--dur-flat) linear;
+}
+.k-chip[aria-pressed='true'],
+.k-chip[aria-current='true'] {
+  background: var(--glass-hover);
+  border-color: var(--line-strong);
+}
+
+/* ── §5 Surfaces ──────────────────────────────────────────────────── */
+
+/* Strong frost. The fill is almost nothing — 6% — so the effect is carried
+   by the blur, the saturation lift and the rim, not by a tint. A white veil
+   is the easy way to make a panel visible and exactly what we do not want:
+   the panel must not read as lighter than the surface behind it.
+   Two rims, opposed: a lit top-left and a shadowed bottom-right, so the
+   pane has a direction the way real glass does. */
+.k-card,
+.k-tile,
+.k-panel {
+  background: var(--glass);
+  backdrop-filter: blur(36px) saturate(1.7) brightness(var(--panel-gain));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+  box-shadow:
+    inset 1px 1px 0 rgb(255 255 255 / 0.12),
+    inset -1px -1px 0 rgb(0 0 0 / 0.22);
+}
+
+.k-card {
+  display: grid;
+  gap: var(--space-2);
+  align-content: start;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color var(--dur-flat) linear, background-color var(--dur-flat) linear;
+}
+.k-card:hover {
+  background: var(--glass-hover);
+  border-color: var(--line-strong);
+}
+.k-card--selected {
+  border-color: var(--frame-line);
+}
+
+.k-grid-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-2);
+}
+
+/* ── §6.6 Tables ──────────────────────────────────────────────────── */
+
+.k-table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--glass);
+  backdrop-filter: blur(30px) saturate(1.4);
+}
+.k-table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: var(--size-body-sm);
+}
+.k-table :is(th, td) {
+  text-align: start;
+  padding: 0.85rem 1rem;
+  border-block-end: 1px solid var(--line);
+  vertical-align: top;
+}
+.k-table th {
+  font-size: var(--size-label);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--ink-dim);
+  white-space: nowrap;
+}
+.k-table__sort {
+  font: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+}
+
+@media (max-width: 640px) {
+  .k-table thead {
+    display: none;
+  }
+  .k-table tr {
+    display: block;
+    border-block-end: 1px solid var(--line);
+    padding-block: var(--space-1);
+  }
+  .k-table td,
+  .k-table th {
+    display: grid;
+    grid-template-columns: 40% 1fr;
+    gap: var(--space-2);
+    border: none;
+    padding-block: var(--optical);
+  }
+  .k-table td::before,
+  .k-table tbody th::before {
+    content: attr(data-label);
+    font-size: var(--size-label);
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+}
+
+/* ── §6.8 Forms ───────────────────────────────────────────────────── */
+
+.k-field {
+  display: grid;
+  gap: var(--space-1);
+}
+.k-field__label {
+  font-size: var(--size-label);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--ink-dim);
+}
+.k-input,
+.k-textarea,
+select.k-input {
+  font-family: inherit;
+  font-size: var(--size-body);
+  min-block-size: var(--target);
+  padding: 0.6rem 0.9rem;
+  background: rgb(var(--bg-rgb) / 0.5);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  inline-size: 100%;
+}
+.k-textarea {
+  min-block-size: 6rem;
+  line-height: var(--leading-body);
+  resize: vertical;
+}
+.k-field__hint {
+  font-size: var(--size-body-sm);
+  color: var(--ink-faint);
+}
+.k-field__error {
+  font-size: var(--size-body-sm);
+  color: var(--err);
+}
+
+/* ── §6.11 Overlays ───────────────────────────────────────────────── */
+
+.k-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--layer-scrim);
+  background: rgb(var(--bg-rgb) / 0.6);
+  backdrop-filter: blur(8px);
+  display: grid;
+  place-items: center;
+  padding: var(--gutter);
+}
+.k-dialog {
+  z-index: var(--layer-dialog);
+  inline-size: min(100%, 32rem);
+  background: var(--bg-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  display: grid;
+  gap: var(--space-3);
+}
+.k-dialog__actions {
+  display: flex;
+  gap: var(--space-1);
+  justify-content: flex-end;
+}
+
+.k-toasts {
+  position: fixed;
+  inset-block-end: var(--space-3);
+  inset-inline-start: var(--space-3);
+  z-index: var(--layer-toast);
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--space-1);
+  max-inline-size: 24rem;
+}
+.k-toast {
+  background: var(--bg-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  padding: var(--space-2);
+  display: grid;
+  gap: var(--space-1);
+  font-size: var(--size-body-sm);
+}
+.k-toast--err {
+  border-color: var(--err);
+}
+
+/* ── §3.3 Judgement — colour is never the sole channel ────────────── */
+
+.k-judge {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  border-inline-start: 3px solid currentColor;
+  background: var(--glass);
+}
+.k-judge--ok {
+  color: var(--ok);
+}
+.k-judge--err {
+  color: var(--err);
+}
+.k-judge--warn {
+  color: var(--warn);
+  border-inline-start-style: dashed;
+}
+.k-judge strong {
+  color: var(--ink);
+}
+
+/* ── §6.10 Module frame ───────────────────────────────────────────── */
+
+.k-deck {
+  display: grid;
+  justify-items: center;
+}
+
+.k-frame {
+  inline-size: min(100%, 40rem);
+  block-size: min(70vh, 34rem);
+  background: var(--glass);
+  backdrop-filter: blur(40px) saturate(1.8) brightness(var(--panel-gain));
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    inset 1px 1px 0 rgb(255 255 255 / 0.14),
+    inset -1px -1px 0 rgb(0 0 0 / 0.24);
+  display: grid;
+  grid-template-rows: 56px 3fr 2fr 72px;
+  overflow: hidden;
+}
+
+.k-frame__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-inline: var(--space-3);
+  border-block-end: 1px solid var(--line);
+}
+.k-frame__type {
+  font-size: var(--size-label);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--accent, var(--ink-dim));
+}
+.k-frame__topic {
+  font-size: var(--size-body-sm);
+  color: var(--ink-dim);
+  margin-inline-start: auto;
+}
+
+.k-frame__prompt,
+.k-frame__response {
+  padding: var(--space-3);
+  overflow-y: auto;
+  display: grid;
+  align-content: center;
+  gap: var(--space-2);
+}
+.k-frame__prompt {
+  border-block-end: 1px solid var(--line);
+  font-size: 1.25rem;
+}
+
+.k-band {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-block-start: 1px solid var(--line);
+}
+.k-band > * {
+  border-inline-start: 1px solid var(--line);
+  border-radius: 0;
+}
+.k-band > *:first-child {
+  border-inline-start: none;
+}
+.k-band__slot {
+  min-block-size: 72px;
+}
+
+.k-scrollmodule {
+  inline-size: min(100%, 46rem);
+  background: var(--glass);
+  backdrop-filter: blur(30px) saturate(1.4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  display: grid;
+  gap: var(--space-3);
+  padding: 0 var(--space-3) var(--space-3);
+}
+.k-scrollmodule__foot {
+  display: flex;
+  justify-content: flex-end;
+  padding-block-start: var(--space-2);
+  border-block-start: 1px solid var(--line);
+}
+
+/* ── §6.12 Response controls ──────────────────────────────────────── */
+
+.k-options {
+  display: grid;
+  gap: var(--space-1);
+}
+.k-option {
+  font-family: inherit;
+  font-size: var(--size-body);
+  text-align: start;
+  min-block-size: var(--target);
+  padding: 0.7rem 1rem;
+  background: var(--glass);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  transition: background-color var(--dur-flat) linear, border-color var(--dur-flat) linear;
+}
+.k-option:hover:not(:disabled) {
+  background: var(--glass-hover);
+}
+.k-option[aria-checked='true'] {
+  border-color: var(--frame-line);
+  background: var(--glass-hover);
+}
+.k-option--ok {
+  border-color: var(--ok);
+}
+.k-option--err {
+  border-color: var(--err);
+}
+
+.k-order {
+  display: grid;
+  gap: var(--space-2);
+}
+.k-order__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  min-block-size: 60px;
+  align-content: start;
+  padding: var(--space-1);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-sm);
+}
+.k-order__row--answer {
+  border-style: solid;
+  border-color: var(--line-strong);
+  background: rgb(var(--bg-rgb) / 0.4);
+}
+.k-token {
+  font-family: inherit;
+  font-size: var(--size-body);
+  min-block-size: var(--target);
+  padding-inline: 0.9rem;
+  background: var(--glass);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  cursor: pointer;
+}
+.k-token:hover:not(:disabled) {
+  background: var(--glass-hover);
+}
+
+.k-cloze {
+  font-size: 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--optical);
+}
+.k-cloze__gap {
+  font-family: inherit;
+  font-size: inherit;
+  inline-size: 6rem;
+  min-block-size: var(--target);
+  text-align: center;
+  background: rgb(var(--bg-rgb) / 0.5);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+}
+.k-bank {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.k-compose {
+  display: grid;
+  gap: var(--optical);
+}
+.k-compose__buffer {
+  font-size: var(--size-body-sm);
+  color: var(--ink-faint);
+  min-block-size: 1.4em;
+}
+
+/* ── §11.7 Mastery — fill weight AND a text label ─────────────────── */
+
+.k-mastery {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--size-meta);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--ink-dim);
+}
+.k-mastery__mark {
+  inline-size: 10px;
+  block-size: 10px;
+  border: 1px solid var(--ink-dim);
+}
+.k-mastery--inprogress .k-mastery__mark {
+  background: linear-gradient(90deg, var(--ink-dim) 50%, transparent 50%);
+}
+.k-mastery--mastered .k-mastery__mark {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+/* ── §11.13 Cross-cutting states ──────────────────────────────────── */
+
+.k-state {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--glass);
+  backdrop-filter: blur(30px);
+  padding: var(--space-4);
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+  max-inline-size: var(--measure);
+}
+
+.k-stack {
+  position: relative;
+  display: grid;
+  justify-items: center;
+}
+.k-stack__behind {
+  position: absolute;
+  inset-block-start: 0;
+  inline-size: min(100%, 40rem);
+  block-size: min(70vh, 34rem);
+  background: var(--glass);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  pointer-events: none;
+}

@@ -1,0 +1,333 @@
+/* Kite base — design_system.md §2.3, §4, §6.2, §8.6, §9.5, §6.13. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-family: var(--font-sans);
+  font-size: 100%;
+  /* §2.3: the sticky topbar can never obscure focus (SC 2.4.11). */
+  scroll-padding-block-start: 80px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-block-size: 100dvh;
+  /* The containing block for the lattice. §3.4 puts the lattice in document
+     flow rather than pinning it to the viewport, so `inset: 0` on the stage
+     has to resolve against the full document height — which is what body
+     gives it, and what `position: fixed` could never give it. */
+  position: relative;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: var(--size-body);
+  line-height: var(--leading-body);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+:where(a, button, input, textarea, select, summary, [tabindex]) {
+  scroll-margin-block-start: 80px;
+}
+
+/* ── §4.2 Scale ───────────────────────────────────────────────────── */
+
+.k-display,
+.k-h1,
+.k-h2,
+.k-h3 {
+  font-weight: 600;
+  letter-spacing: var(--track-tight);
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+.k-display {
+  font-size: var(--size-display);
+  line-height: 1.02;
+}
+.k-h1 {
+  font-size: var(--size-h1);
+}
+.k-h2 {
+  font-size: var(--size-h2);
+}
+.k-h3 {
+  font-size: var(--size-h3);
+  line-height: 1.3;
+}
+
+.k-body-sm {
+  font-size: var(--size-body-sm);
+}
+
+/* §4.2: 12px is the floor for any label a user must act on. */
+.k-label {
+  font-size: var(--size-label);
+  line-height: 1.2;
+  letter-spacing: var(--track-label);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* §4.2: 11px, non-essential annotation only. */
+.k-meta {
+  font-size: var(--size-meta);
+  line-height: 1.2;
+  letter-spacing: var(--track-label);
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.k-num {
+  font-variant-numeric: tabular-nums;
+}
+
+.k-prose {
+  max-inline-size: var(--measure);
+}
+
+/* ── §4.3 Japanese and CJK ────────────────────────────────────────── */
+
+:lang(ja) {
+  letter-spacing: 0;
+  line-height: 1.75;
+  /* Never break-all — it violates kinsoku shori. */
+  line-break: strict;
+  word-break: normal;
+  overflow-wrap: normal;
+  /* Faux bold closes counters and destroys the distinction Discrimination
+     tests; faux italic is not a Japanese convention. */
+  font-synthesis: none;
+  font-style: normal;
+}
+
+:lang(ja) :is(h1, h2, h3, .k-display, .k-h1, .k-h2, .k-h3) {
+  letter-spacing: 0;
+}
+
+/* §4.3: CJK fills more of the em box; 0.92× in mixed runs. */
+.k-cjk-inline:lang(ja) {
+  font-size: 0.92em;
+}
+
+/* §4.3 size floors. */
+.k-glyph:lang(ja) {
+  letter-spacing: 0.02em;
+  font-size: 64px;
+  line-height: 1.1;
+}
+.k-glyph-pair:lang(ja) {
+  letter-spacing: 0.02em;
+  font-size: 96px;
+  line-height: 1.1;
+}
+.k-glyph-inline:lang(ja) {
+  font-size: 20px;
+}
+
+ruby > rt {
+  font-size: 0.5em;
+  ruby-position: over;
+  font-weight: 400;
+  color: var(--ink-dim);
+}
+
+/* ── §4.4 German ──────────────────────────────────────────────────── */
+
+:lang(de) {
+  hyphens: auto;
+}
+:lang(de) :is(.k-display, .k-h1) {
+  letter-spacing: -0.01em;
+}
+
+/* ── §8.6 Focus appearance ────────────────────────────────────────────
+   Two rings: an ink ring vanishes over a dark stop of the wave, a light
+   ring vanishes over a bright one. Together they survive every state the
+   shader can produce. */
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgb(var(--bg-rgb) / 0.9);
+}
+
+/* ── §6.13 Markdown block ─────────────────────────────────────────── */
+
+.k-md {
+  max-inline-size: var(--measure);
+}
+.k-md > * + * {
+  margin-block-start: var(--space-2);
+}
+.k-md :is(h2, h3, h4) {
+  margin-block-start: var(--space-4);
+  letter-spacing: var(--track-tight);
+  font-weight: 600;
+}
+.k-md h2 {
+  font-size: var(--size-h2);
+}
+.k-md h3 {
+  font-size: var(--size-h3);
+}
+/* Links carry an underline, so the channel is not colour alone and
+   forced colours change nothing. */
+.k-md a,
+.k-link {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+.k-md a:hover,
+.k-link:hover,
+.k-md a:focus-visible,
+.k-link:focus-visible {
+  text-decoration-thickness: 2px;
+}
+.k-md :is(ul, ol) {
+  padding-inline-start: var(--space-3);
+}
+.k-md li + li {
+  margin-block-start: var(--space-1);
+}
+.k-md li::marker {
+  color: var(--ink-faint);
+}
+.k-md code {
+  font-family: var(--font-mono);
+  font-size: 0.9375em;
+  background: var(--glass);
+  border-radius: 0;
+  padding: 0.1em 0.35em;
+}
+.k-md pre {
+  font-family: var(--font-mono);
+  background: var(--glass);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  overflow-x: auto;
+}
+.k-md pre code {
+  background: none;
+  padding: 0;
+}
+/* No italics — italic is never applied to CJK (§4.3). */
+.k-md blockquote {
+  border-inline-start: 3px solid var(--line-strong);
+  padding-inline-start: var(--space-2);
+  color: var(--ink-dim);
+  font-style: normal;
+}
+.k-md hr {
+  border: none;
+  border-block-start: 1px solid var(--line);
+}
+.k-md img {
+  max-inline-size: 100%;
+  block-size: auto;
+  border-radius: var(--radius-sm);
+}
+
+/* ── §3.1 Native surfaces that would otherwise escape the ramp ────── */
+
+::selection {
+  background: rgb(255 255 255 / 0.18);
+  color: var(--ink);
+}
+:root[data-theme='light'] ::selection {
+  background: rgb(10 10 20 / 0.12);
+}
+
+:root {
+  scrollbar-color: var(--ink-faint) transparent;
+  accent-color: var(--ink);
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--ink);
+  box-shadow: 0 0 0 100px var(--bg-raised) inset;
+}
+
+/* ── §9.5 Forced colours ──────────────────────────────────────────────
+   Glass, blur and the sampled rim all disappear here. Boundaries must be
+   real borders — they are — and focus must use outline, not box-shadow. */
+
+@media (forced-colors: active) {
+  .k-frost,
+  .k-card,
+  .k-tile,
+  .k-panel,
+  .k-frame,
+  .k-scrollmodule,
+  .k-topbar,
+  .k-foot,
+  .k-state,
+  .k-table-scroll {
+    backdrop-filter: none;
+    background: Canvas;
+    box-shadow: none;
+    border: 1px solid CanvasText;
+  }
+
+  :focus-visible {
+    outline: 3px solid Highlight;
+    box-shadow: none;
+  }
+}
+
+/* ── §10.5 Skeletons ──────────────────────────────────────────────── */
+
+.k-skeleton {
+  background: var(--glass);
+  border-radius: var(--radius-sm);
+}
+.k-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--glass) 0%,
+    var(--glass-hover) 50%,
+    var(--glass) 100%
+  );
+  background-size: 200% 100%;
+  animation: k-shimmer 1.6s linear infinite;
+}
+@keyframes k-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .k-shimmer {
+    animation: none;
+  }
+}
+
+.k-visually-hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

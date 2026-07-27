@@ -8,7 +8,11 @@ import {
   type ReactNode,
 } from 'react'
 
-import { FrostedWorldMap, type MapGuess } from '../components/FrostedWorldMap'
+import {
+  FrostedWorldMap,
+  type MapGridSizeKm,
+  type MapGuess,
+} from '../components/FrostedWorldMap'
 import { ThemeToggle } from '../components/ThemeToggle'
 import { buildFillMask, mulberry32 } from '../frost/grid'
 import { GradientSurface } from '../shader/GradientSurface'
@@ -693,11 +697,12 @@ function QuizModule() {
 }
 
 function MapModule() {
+  const gridSizeKm: MapGridSizeKm = 300
   const [guess, setGuess] = useState<MapGuess | null>(null)
 
   const coordinate =
     guess === null
-      ? 'World / 01'
+      ? `${gridSizeKm} km grid`
       : `${Math.abs(guess.latitude).toFixed(1)}°${guess.latitude >= 0 ? 'N' : 'S'} · ${Math.abs(guess.longitude).toFixed(1)}°${guess.longitude >= 0 ? 'E' : 'W'}`
 
   return (
@@ -707,7 +712,7 @@ function MapModule() {
         <strong>Find the Andes.</strong>
         <p>
           {guess === null
-            ? 'Explore the real map, then place your answer.'
+            ? `Choose one ${gridSizeKm} km square on the label-free map.`
             : guess.correct
               ? 'Found it. The range follows South America’s western edge.'
               : 'Not there. Look along the Pacific side of South America.'}
@@ -715,10 +720,10 @@ function MapModule() {
         <b>{guess?.correct ? '+30 pts' : coordinate}</b>
       </div>
       <div className="world-map-frame">
-        <FrostedWorldMap onGuess={setGuess} />
+        <FrostedWorldMap gridSizeKm={gridSizeKm} onGuess={setGuess} />
         <div className="world-map-key" aria-hidden="true">
           <i />
-          <span>Click to place answer</span>
+          <span>Choose a {gridSizeKm} km square</span>
         </div>
       </div>
     </div>
@@ -853,6 +858,8 @@ export function LearningDemo() {
         </div>
         <div className="field-topbar__tools">
           <span className="field-index">Friday · 5 modules</span>
+          <a className="field-page-link" href="#/modules">Modules <span>↗</span></a>
+          <a className="field-page-link" href="#/knowledge-graph">Knowledge graph <span>↗</span></a>
           <ThemeToggle />
           <button className="field-avatar" type="button" aria-label="Open Alex's profile">AM</button>
         </div>

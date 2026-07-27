@@ -5,9 +5,13 @@ export type MapGuess = {
   correct: boolean
   latitude: number
   longitude: number
+  gridSizeKm: MapGridSizeKm
 }
 
+export type MapGridSizeKm = 10 | 50 | 100 | 300
+
 type FrostedWorldMapProps = {
+  gridSizeKm: MapGridSizeKm
   onGuess: (guess: MapGuess) => void
 }
 
@@ -60,7 +64,24 @@ function isAndesGuess(latitude: number, longitude: number) {
   )
 }
 
-export function FrostedWorldMap({ onGuess }: FrostedWorldMapProps) {
+function gridCellAt(latlng: L.LatLng, gridSizeKm: MapGridSizeKm) {
+  const cellMeters = gridSizeKm * 1000
+  const projected = L.CRS.EPSG3857.project(latlng)
+  const west = Math.floor(projected.x / cellMeters) * cellMeters
+  const south = Math.floor(projected.y / cellMeters) * cellMeters
+  const southWest = L.CRS.EPSG3857.unproject(L.point(west, south))
+  const northEast = L.CRS.EPSG3857.unproject(
+    L.point(west + cellMeters, south + cellMeters),
+  )
+  const bounds = L.latLngBounds(southWest, northEast)
+
+  return {
+    bounds,
+    center: bounds.getCenter(),
+  }
+}
+
+export function FrostedWorldMap({ gridSizeKm, onGuess }: FrostedWorldMapProps) {
   const hostRef = useRef<HTMLDivElement>(null)
   const onGuessRef = useRef(onGuess)
 
@@ -74,29 +95,33 @@ export function FrostedWorldMap({ onGuess }: FrostedWorldMapProps) {
 
     const map = L.map(host, {
       attributionControl: true,
-      center: [8, 0],
+      center: [-17, -68],
       maxBounds: [
         [-85, -190],
         [85, 190],
       ],
       maxBoundsViscosity: 0.65,
-      minZoom: 1,
-      maxZoom: 7,
+      minZoom: 2,
+      maxZoom: 9,
       scrollWheelZoom: true,
       worldCopyJump: true,
-      zoom: 1,
+      zoom: 3,
       zoomControl: false,
       zoomSnap: 0.5,
     })
 
     map.attributionControl.setPrefix(false)
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    L.tileLayer(
+      'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png',
+      {
       attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
       crossOrigin: true,
       maxZoom: 19,
-    }).addTo(map)
+      subdomains: 'abcd',
+      },
+    ).addTo(map)
 
     L.control.zoom({ position: 'bottomright' }).addTo(map)
 
@@ -108,115 +133,87 @@ export function FrostedWorldMap({ onGuess }: FrostedWorldMapProps) {
       weight: 4,
     }).addTo(map)
 
-    let guessMarker: L.CircleMarker | null = null
+    let guessCell: L.Rectangle | null = null
+    let previewCell: L.Rectangle | null = null
+    let previewKey = ''
+
+    const previewGuess = ({ latlng }: L.LeafletMouseEvent) => {
+      const cell = gridCellAt(latlng, gridSizeKm)
+      const key = [
+        cell.bounds.getWest(),
+        cell.bounds.getSouth(),
+        cell.bounds.getEast(),
+        cell.bounds.getNorth(),
+      ].join(':')
+      if (key === previewKey) return
+
+      previewKey = key
+      if (previewCell) {
+        previewCell.setBounds(cell.bounds)
+        return
+      }
+
+      previewCell = L.rectangle(cell.bounds, {
+        className: 'map-cell-preview',
+        color: 'currentColor',
+        fillColor: 'currentColor',
+        fillOpacity: 0.2,
+        interactive: false,
+        weight: 2,
+      }).addTo(map)
+    }
+
+    const clearPreview = () => {
+      previewCell?.remove()
+      previewCell = null
+      previewKey = ''
+    }
 
     const makeGuess = ({ latlng }: L.LeafletMouseEvent) => {
-      const correct = isAndesGuess(latlng.lat, latlng.lng)
-      guessMarker?.remove()
+      const cell = gridCellAt(latlng, gridSizeKm)
+      const correct = isAndesGuess(cell.center.lat, cell.center.lng)
+      guessCell?.remove()
       answerLine.setStyle({ opacity: correct ? 0.92 : 0 })
 
-      guessMarker = L.circleMarker(latlng, {
-        className: `map-guess-pin map-guess-pin--${correct ? 'right' : 'wrong'}`,
+      guessCell = L.rectangle(cell.bounds, {
+        className: `map-guess-cell map-guess-cell--${correct ? 'right' : 'wrong'}`,
         color: 'currentColor',
-        fillColor: correct ? '#b3e18b' : '#f19a7e',
-        fillOpacity: 1,
-        radius: 8,
-        weight: 1,
-      })
-        .addTo(map)
-        .bindTooltip(correct ? 'Andes · found' : 'Try west', {
-          className: 'map-guess-label',
-          direction: 'top',
-          offset: [0, -9],
-          permanent: true,
-        })
-        .openTooltip()
+        fillColor: 'currentColor',
+        fillOpacity: 0.86,
+        interactive: false,
+        weight: 3,
+      }).addTo(map)
 
       if (correct) map.flyToBounds(answerLine.getBounds().pad(0.24), { duration: 0.85 })
 
       onGuessRef.current({
         correct,
-        latitude: latlng.lat,
-        longitude: latlng.lng,
+        gridSizeKm,
+        latitude: cell.center.lat,
+        longitude: cell.center.lng,
       })
     }
 
     map.on('click', makeGuess)
+    map.on('mousemove', previewGuess)
+    host.addEventListener('mouseleave', clearPreview)
     const frame = requestAnimationFrame(() => map.invalidateSize())
 
     return () => {
       cancelAnimationFrame(frame)
       map.off('click', makeGuess)
+      map.off('mousemove', previewGuess)
+      host.removeEventListener('mouseleave', clearPreview)
       map.remove()
     }
-  }, [])
+  }, [gridSizeKm])
 
   return (
-    <>
-      <svg className="map-filter-definitions" aria-hidden="true">
-        <defs>
-          <filter
-            id="map-water-transparent"
-            colorInterpolationFilters="sRGB"
-            x="0"
-            y="0"
-            width="100%"
-            height="100%"
-          >
-            <feColorMatrix
-              in="SourceGraphic"
-              result="redValue"
-              values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 1 0"
-            />
-            <feComponentTransfer in="redValue" result="redDifference">
-              <feFuncR type="table" tableValues="1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 1 1 1 1 1 1" />
-            </feComponentTransfer>
-            <feColorMatrix
-              in="redDifference"
-              result="redMask"
-              values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1 0 0 0 0"
-            />
-
-            <feColorMatrix
-              in="SourceGraphic"
-              result="greenValue"
-              values="0 1 0 0 0  0 1 0 0 0  0 1 0 0 0  0 0 0 1 0"
-            />
-            <feComponentTransfer in="greenValue" result="greenDifference">
-              <feFuncR type="table" tableValues="1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 1 1 1" />
-            </feComponentTransfer>
-            <feColorMatrix
-              in="greenDifference"
-              result="greenMask"
-              values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1 0 0 0 0"
-            />
-
-            <feColorMatrix
-              in="SourceGraphic"
-              result="blueValue"
-              values="0 0 1 0 0  0 0 1 0 0  0 0 1 0 0  0 0 0 1 0"
-            />
-            <feComponentTransfer in="blueValue" result="blueDifference">
-              <feFuncR type="table" tableValues="1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 1 1" />
-            </feComponentTransfer>
-            <feColorMatrix
-              in="blueDifference"
-              result="blueMask"
-              values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1 0 0 0 0"
-            />
-
-            <feBlend in="redMask" in2="greenMask" mode="screen" result="redGreenMask" />
-            <feBlend in="redGreenMask" in2="blueMask" mode="screen" result="landMask" />
-            <feComposite in="SourceGraphic" in2="landMask" operator="in" />
-          </filter>
-        </defs>
-      </svg>
-      <div
-        ref={hostRef}
-        className="frosted-world-map"
-        role="application"
-        aria-label="Interactive world map. Zoom or move the map, then click a location to find the Andes."
-      />
-    </>
+    <div
+      ref={hostRef}
+      className="frosted-world-map"
+      role="application"
+      aria-label={`Interactive label-free world map with ${gridSizeKm} kilometer cells. Zoom or move the map, then choose a square to find the Andes.`}
+    />
   )
 }

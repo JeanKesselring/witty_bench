@@ -1,0 +1,214 @@
+/* Kite tokens — design_system.md §2, §3, §4, §10.
+ *
+ * Visual language carried over from the prototypes in src/: dark-first,
+ * glass over a shader substrate, zero radius, one fluid gutter rather
+ * than stepped breakpoints. Anything that used to be a hardcoded
+ * rgb(8 8 12 / a) is rgb(var(--bg-rgb) / a), because scrims, veils and
+ * glass all have to flip with the theme — not just text and backgrounds. */
+
+:root {
+  color-scheme: dark;
+
+  /* ── §3.1 Ink and ground ───────────────────────────────────────── */
+  --ink: #f4f4f6;
+  --ink-dim: #a4a6b3;
+  --ink-faint: #6c6e7d;
+  --bg: #08080c;
+  --bg-rgb: 8 8 12;
+  --bg-raised: #101017;
+
+  --line: rgb(255 255 255 / 0.1);
+  --line-strong: rgb(255 255 255 / 0.2);
+  --glass: rgb(255 255 255 / 0.06);
+  --glass-hover: rgb(255 255 255 / 0.12);
+
+  /* Text sitting directly on the shader, plus the veil that protects it. */
+  --shader-ink: #ffffff;
+  --shader-ink-dim: rgb(255 255 255 / 0.78);
+  --frame-line: rgb(255 255 255 / 0.55);
+  --on-accent: #0b0b10;
+
+  /* §5: a tile's lit edge is a gain applied to the backdrop, not a fixed
+     highlight colour — so the rim samples whatever the wave is doing
+     underneath it and shifts as the wave travels. */
+  --glass-gain: 2;
+  --glass-sat: 2.4;
+  /* Whole-panel gain. Much gentler than the 1px rim's --glass-gain: a
+     panel lifted as hard as a rim would read as a lightbox, not glass. */
+  --panel-gain: 1.08;
+
+  /* §3.5 Veil law: text over the canvas sits on at least this much cover. */
+  --veil: 0.72;
+
+  /* ── §3.2 Content-type accents — monochromatic, not monochrome.
+     One hue, six steps of value and saturation, so the six types stay
+     distinguishable without the scheme becoming polychrome. Value is a
+     weaker channel than hue, which is acceptable here and only here: the
+     icon and the text label were already mandatory as the second channel
+     (§3.3), and §9.5 already made them the only channel under forced
+     colours. This brings the default case in line with the case the
+     system was built to survive. */
+  --accent-summary: #e4dcff;
+  --accent-text: #cfc2fb;
+  --accent-video: #b9a8f5;
+  --accent-audio: #a48eee;
+  --accent-flashcard: #d9cdff;
+  --accent-quiz: #8f78e6;
+
+  /* ── §3.3 Semantic ────────────────────────────────────────────── */
+  --ok: #5fd18d;
+  --warn: #e0b453;
+  --err: #ff8a80;
+
+  /* ── §2 Geometry ──────────────────────────────────────────────── */
+  /* §1: nothing has a radius. Square, hairline, zero-radius. */
+  --radius-sm: 0;
+  --radius: 0;
+  --radius-lg: 0;
+
+  /* §2.1 The lattice. The cell is the structural module of the product —
+     the frosted background grid, the notes workspace and quantised
+     component growth all measure in it, so it has to live here rather
+     than being re-derived per component. It is ALWAYS SQUARE: the grid
+     that reads for this is `repeat(n, var(--cell))` on both axes, never
+     a vw/vh pair, which stretches to the viewport's aspect ratio.
+     Contracts with viewport per §2.1's table; the steps are at the end
+     of this file. */
+  --u: 8px;
+  --cell: 48px;
+
+  /* Fluid: 20px on a phone, 64px on a wide desktop, no breakpoints. */
+  --gutter: clamp(1.25rem, 4vw, 4rem);
+  --shell: 1240px;
+  --measure: 62ch;
+  --measure-frame: 48ch;
+  --panel-w: 340px;
+  --rail: 340px;
+
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-6: 48px;
+  --space-8: 64px;
+  --space-12: 96px;
+  --optical: 4px;
+
+  --target: 46px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* ── §2.6 Layer order. No literal z-index anywhere. ───────────── */
+  --layer-substrate: 0;
+  --layer-lattice: 1;
+  --layer-content: 2;
+  --layer-chrome: 3;
+  --layer-popover: 4;
+  --layer-scrim: 5;
+  --layer-dialog: 6;
+  --layer-toast: 7;
+  --layer-skip: 8;
+
+  /* ── §4.1 Stacks. System faces only — no webfonts. ─────────────── */
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto,
+    Helvetica, Arial, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN',
+    'Yu Gothic Medium', 'Yu Gothic', 'Noto Sans JP', Meiryo, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* ── §4.2 Scale ───────────────────────────────────────────────── */
+  --size-display: clamp(2.75rem, 6vw, 5rem);
+  --size-h1: clamp(2rem, 4.5vw, 3.25rem);
+  --size-h2: 1.6rem;
+  --size-h3: 1.125rem;
+  --size-body: 1rem;
+  --size-body-sm: 0.9rem;
+  --size-label: 0.75rem;
+  --size-meta: 0.6875rem;
+
+  --leading-body: 1.6;
+  --track-tight: -0.02em;
+  --track-label: 0.14em;
+
+  /* ── §10.2 Colour is not sprung. ──────────────────────────────── */
+  --dur-flat: 90ms;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --ink: #14141a;
+  --ink-dim: #55566a;
+  --ink-faint: #83849a;
+  --bg: #f7f7fa;
+  --bg-rgb: 247 247 250;
+  --bg-raised: #ffffff;
+
+  --line: rgb(10 10 20 / 0.12);
+  --line-strong: rgb(10 10 20 / 0.22);
+  --glass: rgb(10 10 20 / 0.04);
+  --glass-hover: rgb(10 10 20 / 0.08);
+
+  /* The light gradients are pale and high-value, so text on top must be
+     dark and the protective veil white rather than black. */
+  --shader-ink: #14141a;
+  --shader-ink-dim: rgb(20 20 26 / 0.72);
+  --frame-line: rgb(20 20 30 / 0.45);
+  --on-accent: #ffffff;
+
+  /* A pale backdrop is already near clipping, so the rim darkens instead
+     of brightening — same idea, opposite direction. */
+  --glass-gain: 0.86;
+  --glass-sat: 1.6;
+  /* A pale backdrop is already near clipping, so panels darken slightly
+     instead of lifting — same idea, opposite direction. */
+  --panel-gain: 0.97;
+
+  --accent-summary: #2b1f52;
+  --accent-text: #3a2a69;
+  --accent-video: #4a3782;
+  --accent-audio: #5b459b;
+  --accent-flashcard: #33255e;
+  --accent-quiz: #6b53ad;
+
+  --ok: #1a6b3c;
+  --warn: #8a5a00;
+  --err: #b32020;
+}
+
+/* ── §9.5 Transparency contract. The veil never carried information, so
+   removing it costs nothing and gains legibility. ─────────────────── */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --veil: 1;
+    --glass: rgb(255 255 255 / 0.12);
+  }
+  :root[data-theme='light'] {
+    --glass: rgb(10 10 20 / 0.08);
+  }
+}
+
+/* ── §9.5 Contrast contract. ──────────────────────────────────────── */
+@media (prefers-contrast: more) {
+  :root {
+    --veil: 1;
+    --ink-faint: var(--ink-dim);
+    --line: var(--line-strong);
+  }
+}
+
+/* ── §2.1 The cell contracts with viewport ────────────────────────────
+   The one place in the system with stepped breakpoints rather than a
+   fluid clamp: the cell must stay a whole number of pixels, because the
+   lattice, the notes workspace and quantised growth all divide by it,
+   and a fractional cell puts every note a subpixel off its tile. */
+@media (min-width: 600px) {
+  :root {
+    --cell: 56px;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --cell: 64px;
+  }
+}

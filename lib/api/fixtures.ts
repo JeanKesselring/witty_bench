@@ -1,0 +1,240 @@
+/* Fixtures shaped to the FastAPI responses (§12.2). The only place sample
+ * data lives; swapping to the proxy means replacing client.ts, not this. */
+
+import type {
+  Course,
+  Lecture,
+  ModuleItem,
+  Note,
+  PillarProficiency,
+  Topic,
+  User,
+} from './types'
+
+export const ME: User = {
+  id: 'u-1',
+  name: 'Jean Kesselring',
+  email: 'jean.kesselring@gmx.ch',
+  role: 'educator',
+  locale: 'en',
+}
+
+export const USERS: User[] = [
+  ME,
+  { id: 'u-2', name: 'Amara Okafor', email: 'amara@example.org', role: 'student', locale: 'en' },
+  { id: 'u-3', name: 'Lukas Brandt', email: 'lukas@example.org', role: 'student', locale: 'de' },
+  { id: 'u-4', name: 'Sena Yamamoto', email: 'sena@example.org', role: 'student', locale: 'en' },
+  { id: 'u-5', name: 'Priya Raghunathan', email: 'priya@example.org', role: 'admin', locale: 'en' },
+]
+
+export const COURSES: Course[] = [
+  {
+    id: 'probability',
+    title: 'Probability theory',
+    educator: 'Dr M. Bauer',
+    topicCount: 18,
+    access: 'open',
+    state: 'published',
+    enrolled: true,
+    mastery: 'in_progress',
+    lastStudied: '2026-07-24',
+    generatedAt: '2026-06-02',
+  },
+  {
+    id: 'japanese-n5',
+    title: 'Japanese N5',
+    educator: 'Jean Kesselring',
+    topicCount: 24,
+    access: 'closed',
+    state: 'published',
+    enrolled: true,
+    mastery: 'in_progress',
+    lastStudied: '2026-07-26',
+    generatedAt: '2026-07-11',
+  },
+  {
+    id: 'geomorphology',
+    title: 'Geomorphology',
+    educator: 'Prof. A. Lindqvist',
+    topicCount: 12,
+    access: 'open',
+    state: 'published',
+    enrolled: false,
+    mastery: 'unstarted',
+    lastStudied: null,
+    generatedAt: '2025-09-30', // stale — educators only (§13.6)
+  },
+  {
+    id: 'thermodynamics',
+    title: 'Thermodynamics',
+    educator: 'Jean Kesselring',
+    topicCount: 9,
+    access: 'closed',
+    state: 'draft',
+    enrolled: false,
+    mastery: 'unstarted',
+    lastStudied: null,
+    generatedAt: '2026-07-20',
+  },
+]
+
+export const LECTURES: Lecture[] = [
+  { id: 'l-1', courseId: 'probability', title: 'Foundations', topicIds: ['t-1', 't-2'], state: 'published' },
+  { id: 'l-2', courseId: 'probability', title: 'Conditioning', topicIds: ['t-3', 't-4'], state: 'published' },
+  { id: 'l-3', courseId: 'japanese-n5', title: 'Kana', topicIds: ['t-10', 't-11'], state: 'published' },
+  { id: 'l-4', courseId: 'japanese-n5', title: 'Particles', topicIds: ['t-12'], state: 'draft' },
+]
+
+export const TOPICS: Topic[] = [
+  { id: 't-1', courseId: 'probability', parentId: null, title: 'Sample spaces', blurb: 'The set of every outcome an experiment can produce.', mastery: 'mastered', childIds: ['t-5'], moduleCount: 6, span: 2 },
+  { id: 't-2', courseId: 'probability', parentId: null, title: 'Axioms', blurb: 'The three rules every probability measure obeys.', mastery: 'in_progress', childIds: [], moduleCount: 4, span: 1 },
+  { id: 't-3', courseId: 'probability', parentId: null, title: 'Conditional probability', blurb: 'How knowing one outcome changes the odds of another.', mastery: 'in_progress', childIds: ['t-6'], moduleCount: 9, span: 3 },
+  { id: 't-4', courseId: 'probability', parentId: null, title: 'Independence', blurb: 'When one event tells you nothing about another.', mastery: 'unstarted', childIds: [], moduleCount: 5, span: 1 },
+  { id: 't-5', courseId: 'probability', parentId: 't-1', title: 'Events', blurb: 'Subsets of the sample space.', mastery: 'mastered', childIds: [], moduleCount: 3, span: 1 },
+  { id: 't-6', courseId: 'probability', parentId: 't-3', title: "Bayes' theorem", blurb: 'Inverting a conditional.', mastery: 'in_progress', childIds: [], moduleCount: 7, span: 2 },
+  { id: 't-10', courseId: 'japanese-n5', parentId: null, title: 'Hiragana', blurb: 'The 46 basic syllabary characters.', mastery: 'mastered', childIds: [], moduleCount: 12, span: 2 },
+  { id: 't-11', courseId: 'japanese-n5', parentId: null, title: 'Katakana', blurb: 'The syllabary used for loanwords.', mastery: 'in_progress', childIds: [], moduleCount: 10, span: 2 },
+  { id: 't-12', courseId: 'japanese-n5', parentId: null, title: 'The particle に', blurb: 'Direction, time, and indirect objects.', mastery: 'unstarted', childIds: [], moduleCount: 8, span: 1 },
+]
+
+/* A session queue mixing graded and ungraded types, so the deck exercises
+ * both shapes from §6.10 and every response control from §6.12. */
+export const QUEUE: ModuleItem[] = [
+  {
+    id: 'm-1',
+    topicId: 't-6',
+    topicTitle: "Bayes' theorem",
+    moduleType: 'flashcard',
+    contentType: 'flashcard',
+    prompt: 'State Bayes’ theorem.',
+    answer: 'P(A|B) = P(B|A)·P(A) / P(B)',
+  },
+  {
+    id: 'm-2',
+    topicId: 't-3',
+    topicTitle: 'Conditional probability',
+    moduleType: 'quiz',
+    contentType: 'quiz',
+    prompt: 'Two fair dice are rolled. Given that the sum is 8, what is the probability that one die shows 5?',
+    options: ['1/5', '2/5', '1/6', '1/3'],
+    answer: '2/5',
+  },
+  {
+    id: 'm-3',
+    topicId: 't-3',
+    topicTitle: 'Conditional probability',
+    moduleType: 'diagram_schematic',
+    contentType: 'text',
+    prompt: 'Partitioning a sample space',
+    body:
+      'A **partition** splits the sample space into disjoint events whose union is everything. ' +
+      'The law of total probability sums the conditional probabilities across a partition, ' +
+      'weighting each by how likely that part is.\n\n' +
+      '- The parts are mutually exclusive\n- Their union is the whole space\n- Every part has non-zero probability',
+    answer: '',
+  },
+  {
+    id: 'm-4',
+    topicId: 't-11',
+    topicTitle: 'Katakana',
+    moduleType: 'vocab_production',
+    contentType: 'quiz',
+    prompt: 'library',
+    lang: 'ja',
+    answer: 'としょかん',
+  },
+  {
+    id: 'm-5',
+    topicId: 't-12',
+    topicTitle: 'The particle に',
+    moduleType: 'particle_cloze',
+    contentType: 'quiz',
+    prompt: 'Complete the sentence.',
+    lang: 'ja',
+    clozeBefore: '学校',
+    clozeAfter: '行きます。',
+    bank: ['に', 'を', 'で', 'から'],
+    answer: 'に',
+  },
+  {
+    id: 'm-6',
+    topicId: 't-10',
+    topicTitle: 'Hiragana',
+    moduleType: 'sentence_scramble',
+    contentType: 'quiz',
+    prompt: 'Rebuild the sentence: “I go to school every day.”',
+    lang: 'ja',
+    tokens: ['私は', '毎日', '学校に', '行きます'],
+    answer: '私は|毎日|学校に|行きます',
+  },
+  {
+    id: 'm-7',
+    topicId: 't-10',
+    topicTitle: 'Hiragana',
+    moduleType: 'discrimination',
+    contentType: 'quiz',
+    prompt: 'Which character is “nu”?',
+    lang: 'ja',
+    options: ['ぬ', 'め'],
+    answer: 'ぬ',
+  },
+  {
+    id: 'm-8',
+    topicId: 't-4',
+    topicTitle: 'Independence',
+    moduleType: 'stat_boxes',
+    contentType: 'text',
+    prompt: 'Independence at a glance',
+    body:
+      'Two events are independent when P(A∩B) = P(A)·P(B).\n\n' +
+      'Independence is **not** the same as being mutually exclusive — in fact two events with ' +
+      'non-zero probability can never be both.',
+    answer: '',
+  },
+]
+
+export const NOTES: Note[] = [
+  {
+    id: 'n-1',
+    topicId: 't-6',
+    topicTitle: "Bayes' theorem",
+    courseId: 'probability',
+    courseTitle: 'Probability theory',
+    text: 'I keep inverting the conditional the wrong way round. Read the denominator first.',
+    lang: 'en',
+    kind: 'learner',
+    state: 'published',
+    createdAt: '2026-07-22',
+  },
+  {
+    id: 'n-2',
+    topicId: 't-12',
+    topicTitle: 'The particle に',
+    courseId: 'japanese-n5',
+    courseTitle: 'Japanese N5',
+    text: 'に marks arrival, で marks where an action happens. 学校に行く vs 学校で食べる.',
+    lang: 'ja',
+    kind: 'learner',
+    state: 'published',
+    createdAt: '2026-07-25',
+  },
+  {
+    id: 'n-3',
+    topicId: 't-3',
+    topicTitle: 'Conditional probability',
+    courseId: 'probability',
+    courseTitle: 'Probability theory',
+    text: 'Worth stressing that the sample space shrinks — that is the whole idea.',
+    lang: 'en',
+    kind: 'educator',
+    state: 'published',
+    createdAt: '2026-07-19',
+  },
+]
+
+export const PILLARS: PillarProficiency[] = [
+  { pillar: 'Facts', score: 0.82 },
+  { pillar: 'Processes', score: 0.41 },
+  { pillar: 'Concepts', score: 0.66 },
+  { pillar: 'Applications', score: null }, // not begun — never a deficit (§11.7)
+]
