@@ -11,8 +11,13 @@
   --map-cell-outline: #0b3434;
   --map-cell-selected: #155d59;
   --map-cell-selected-outline: #f4fffd;
-  --map-land: #d9efeb;
-  --map-ocean: #78b9de;
+  --map-land: #f1ece7;
+  /* Mirrors the light Common Sage background blue. */
+  --map-ocean: #8ccfff;
+  --answer-correct: #b1f9b0;
+  --answer-correct-border: #74e172;
+  --answer-wrong: #ff8787;
+  --answer-wrong-border: #ff5757;
 }
 
 :root[data-theme='dark'] {
@@ -26,8 +31,13 @@
   --map-cell-outline: #e7faf6;
   --map-cell-selected: #25877f;
   --map-cell-selected-outline: #e7faf6;
-  --map-land: #25877f;
-  --map-ocean: #123d5a;
+  --map-land: #d7d2cc;
+  /* Mirrors the dark Common Sage background blue. */
+  --map-ocean: #2f8fdb;
+  --answer-correct: #5a9e59;
+  --answer-correct-border: #74e172;
+  --answer-wrong: #c95a5a;
+  --answer-wrong-border: #e66b6b;
 }
 
 html,
@@ -730,12 +740,14 @@ textarea {
 }
 
 .answer-grid button[data-state='right'] {
-  background: rgb(176 218 143 / 0.74);
+  border-color: var(--answer-correct-border);
+  background: var(--answer-correct);
   color: #171719;
 }
 
 .answer-grid button[data-state='wrong'] {
-  background: rgb(238 151 124 / 0.72);
+  border-color: var(--answer-wrong-border);
+  background: var(--answer-wrong);
   color: #171719;
 }
 
@@ -799,22 +811,6 @@ textarea {
 .frosted-world-map.leaflet-container {
   background: color-mix(in srgb, var(--map-ocean) 88%, transparent);
   outline: none;
-}
-
-.frosted-world-map .leaflet-tile-pane {
-  opacity: 0.96;
-}
-
-.frosted-world-map .leaflet-tile {
-  filter: saturate(1.08) contrast(1.08);
-}
-
-:root[data-theme='dark'] .frosted-world-map .leaflet-tile-pane {
-  opacity: 0.9;
-}
-
-:root[data-theme='dark'] .frosted-world-map .leaflet-tile {
-  filter: brightness(0.48) saturate(1.18) contrast(1.3);
 }
 
 .frosted-world-map .leaflet-control-zoom {
@@ -885,10 +881,16 @@ textarea {
 }
 
 .frosted-world-map .map-guess-cell--right {
-  fill: var(--map-cell-correct);
+  fill: var(--answer-correct);
   fill-opacity: 0.94;
-  stroke: var(--map-cell-correct-outline);
+  stroke: var(--answer-correct-border);
   animation: map-pulse 1.7s ease-in-out infinite;
+}
+
+.frosted-world-map .map-guess-cell--wrong {
+  fill: var(--answer-wrong);
+  fill-opacity: 0.94;
+  stroke: var(--answer-wrong-border);
 }
 
 .world-map-key {

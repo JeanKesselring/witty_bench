@@ -120,9 +120,9 @@
 
 .frost__hit {
   border: 0;
+  border-radius: var(--radius-lattice);
   padding: 0;
   background: transparent;
-  cursor: crosshair;
   /* The affordance lives on this separate transparent layer so it never
      tints the frost itself. */
   transition: background-color 0.15s var(--ease);
@@ -574,6 +574,11 @@
   background: var(--ink);
   filter: brightness(0.92);
 }
+.k-btn[aria-pressed='true'] {
+  background: var(--selected-fill);
+  border-color: var(--selected-fill);
+  color: var(--selected-ink);
+}
 .k-btn:disabled,
 .k-btn[aria-disabled='true'] {
   color: var(--ink-faint);
@@ -638,23 +643,21 @@
 }
 .k-chip[aria-pressed='true'],
 .k-chip[aria-current='true'] {
-  background: var(--glass-hover);
-  border-color: var(--line-strong);
+  background: var(--selected-fill);
+  border-color: var(--selected-fill);
+  color: var(--selected-ink);
 }
 
 /* ── §5 Surfaces ──────────────────────────────────────────────────── */
 
-/* Strong frost. The fill is almost nothing — 6% — so the effect is carried
-   by the blur, the saturation lift and the rim, not by a tint. A white veil
-   is the easy way to make a panel visible and exactly what we do not want:
-   the panel must not read as lighter than the surface behind it.
-   Two rims, opposed: a lit top-left and a shadowed bottom-right, so the
-   pane has a direction the way real glass does. */
+/* Shared study glass. Its 72% surface keeps colour from the field visible;
+   the blur removes local detail so text remains stable over the moving wave.
+   Nested rows reuse this material rather than stacking another filter. */
 .k-card,
 .k-tile,
 .k-panel {
   background: var(--panel);
-  backdrop-filter: blur(36px) saturate(1.1) brightness(var(--panel-gain));
+  backdrop-filter: blur(var(--panel-blur)) saturate(1.1) brightness(var(--panel-gain));
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: var(--card-pad-block) var(--card-pad-inline);
@@ -918,7 +921,7 @@ textarea.k-input--prose {
   position: relative;
   inline-size: min(100%, calc(var(--cell) * 10));
   background: var(--panel);
-  backdrop-filter: blur(16px) saturate(1.1) brightness(var(--panel-gain));
+  backdrop-filter: blur(var(--panel-blur)) saturate(1.1) brightness(var(--panel-gain));
   border: 1px solid var(--line-strong);
   border-radius: var(--radius);
   display: grid;
@@ -1190,7 +1193,7 @@ textarea.k-input--prose {
      so the column does not jump between graded and ungraded modules. */
   inline-size: min(100%, calc(var(--cell) * 10));
   background: var(--panel);
-  backdrop-filter: blur(30px) saturate(1.1);
+  backdrop-filter: blur(var(--panel-blur)) saturate(1.1) brightness(var(--panel-gain));
   border: 1px solid var(--line);
   border-radius: var(--radius);
   display: grid;
@@ -1237,17 +1240,21 @@ textarea.k-input--prose {
 .k-option:hover:not(:disabled) {
   background: var(--glass-hover);
 }
-.k-option[aria-checked='true'] {
-  border-color: var(--frame-line);
-  background: var(--glass-hover);
+.k-option[aria-checked='true'],
+.k-option[aria-pressed='true'] {
+  border-color: var(--selected-fill);
+  background: var(--selected-fill);
+  color: var(--selected-ink);
 }
-.k-option--ok {
-  border-color: var(--ok);
-  background: color-mix(in srgb, var(--ok) 20%, var(--panel));
+.k-option.k-option--ok {
+  border-color: var(--ok-hover);
+  background: var(--ok);
+  color: var(--on-accent);
 }
-.k-option--err {
-  border-color: var(--err);
-  background: color-mix(in srgb, var(--err) 18%, var(--panel));
+.k-option.k-option--err {
+  border-color: var(--err-hover);
+  background: var(--err);
+  color: var(--on-accent);
 }
 .k-option__mark {
   inline-size: var(--space-3);
@@ -1259,10 +1266,10 @@ textarea.k-input--prose {
   text-align: center;
 }
 .k-option--ok .k-option__mark {
-  color: var(--ok);
+  color: var(--on-accent);
 }
 .k-option--err .k-option__mark {
-  color: var(--err);
+  color: var(--on-accent);
 }
 
 .k-order {
@@ -1423,8 +1430,8 @@ textarea.k-input--prose {
   text-transform: uppercase;
 }
 .k-harness__item[data-current='true'] {
-  background: var(--glass-hover);
-  color: var(--ink);
+  background: var(--selected-fill);
+  color: var(--selected-ink);
 }
 
 .k-harness__stage {
@@ -1819,14 +1826,14 @@ textarea.k-input--prose {
   r: 6;
 }
 .k-maprsp__target[data-state='ok'] .k-maprsp__halo {
-  stroke: var(--ok);
+  stroke: var(--ok-hover);
   stroke-width: 3;
 }
 .k-maprsp__target[data-state='err'] .k-maprsp__dot {
   fill: var(--err);
 }
 .k-maprsp__target[data-state='err'] .k-maprsp__halo {
-  stroke: var(--err);
+  stroke: var(--err-hover);
   stroke-width: 2;
   stroke-dasharray: 3 3;
 }
@@ -2081,6 +2088,24 @@ textarea.k-input--prose {
   font-family: var(--font-sans);
   background: var(--bg-raised);
 }
+/* The Ocean Base is a real Leaflet raster whose water is natively blue and
+   whose labels live in a separate reference service that is not loaded. The
+   token remains the loading/fallback colour; no tint or filter corrupts the
+   raster palette. */
+.leaflet-container.k-maprsp__map {
+  isolation: isolate;
+  background: var(--map-ocean);
+}
+.leaflet-container .k-maprsp__dot--ok,
+.leaflet-container .k-maprsp__target {
+  fill: var(--ok);
+  stroke: var(--ok-hover);
+}
+.leaflet-container .k-maprsp__dot--err,
+.leaflet-container .k-maprsp__miss {
+  fill: var(--err);
+  stroke: var(--err-hover);
+}
 .leaflet-bar a,
 .leaflet-control-attribution {
   background: var(--bg-raised);
@@ -2130,8 +2155,9 @@ textarea.k-input--prose {
   text-align: start;
 }
 .k-globe__list .k-btn[data-current='true'] {
-  background: var(--glass-hover);
-  border-color: var(--line-strong);
+  background: var(--selected-fill);
+  border-color: var(--selected-fill);
+  color: var(--selected-ink);
 }
 
 .k-frame[data-response='map'] {
@@ -2344,8 +2370,9 @@ textarea.k-input--prose {
   margin-inline-end: auto;
 }
 .k-scrollmodule__rate .k-btn[aria-pressed='true'] {
-  background: var(--glass-hover);
-  border-color: var(--line-strong);
+  background: var(--selected-fill);
+  border-color: var(--selected-fill);
+  color: var(--selected-ink);
 }
 
 /* ── Composite ────────────────────────────────────────────────────── */
@@ -2399,9 +2426,9 @@ textarea.k-input--prose {
   gap: var(--space-1);
 }
 .k-chipset .k-btn[aria-pressed='true'] {
-  background: var(--glass-hover);
-  border-color: var(--line-strong);
-  color: var(--ink);
+  background: var(--selected-fill);
+  border-color: var(--selected-fill);
+  color: var(--selected-ink);
 }
 .k-actions {
   display: flex;
@@ -2477,6 +2504,8 @@ textarea.k-input--prose {
    AND dimmed, because dimming alone is colour doing the work (§3.3). */
 .k-planlist li[data-suppressed] {
   color: var(--ink-faint);
+}
+.k-planlist li[data-suppressed] .k-planlist__word {
   text-decoration: line-through;
 }
 .k-planlist__acts {
@@ -2552,7 +2581,8 @@ textarea.k-input--prose {
 }
 .k-lab__library .k-btn[data-current='true'],
 .k-chat__list .k-btn[data-current='true'] {
-  background: var(--glass-hover);
+  background: var(--selected-fill);
+  color: var(--selected-ink);
 }
 
 /* ── Reader ───────────────────────────────────────────────────────── */
@@ -2600,12 +2630,13 @@ textarea.k-input--prose {
   line-height: 1.6;
 }
 .k-wordcard {
-  position: sticky;
-  inset-block-end: var(--space-2);
+  position: absolute;
+  inset-block-start: var(--wordcard-top, var(--cell));
+  inset-inline-end: 0;
+  z-index: var(--layer-popover);
   display: grid;
   gap: var(--space-1);
-  inline-size: min(100%, calc(var(--cell) * 4));
-  margin-inline-start: auto;
+  inline-size: min(100%, calc(var(--cell) * 8));
   padding: var(--space-3) var(--space-4);
   background: var(--bg-raised);
   border: 1px solid var(--line-strong);
@@ -2639,7 +2670,7 @@ textarea.k-input--prose {
   flex-wrap: wrap;
   padding: var(--space-1) var(--space-2);
   min-block-size: var(--target);
-  background: var(--panel);
+  background: transparent;
 }
 .k-listen__lines li[data-current='true'] {
   background: var(--glass-hover);
@@ -2681,6 +2712,12 @@ textarea.k-input--prose {
 }
 
 /* ── Placement ────────────────────────────────────────────────────── */
+.k-placement-run {
+  display: grid;
+}
+.k-placement-run > .k-frame {
+  justify-self: center;
+}
 .k-estimates {
   display: grid;
   gap: var(--space-1);
@@ -2743,51 +2780,8 @@ textarea.k-input--prose {
   border-inline-start: var(--space-1) solid transparent;
 }
 .k-conceptlist .k-btn[data-current='true'] {
-  background: var(--glass-hover);
-}
-/* The mastery overlay, as a left rule of three weights. Colour would have
-   been the obvious channel and is spoken for by ContentType (§3.2).
-   A real border, not an inset shadow: stylelint's `boundary-is-border` is
-   right that a shadow disappears under forced colours, and this rule is the
-   overlay's only visual carrier. The transparent base keeps the text from
-   shifting when the overlay is switched on, and it is one unit wide because
-   §2.2 has no 3px. */
-.k-conceptlist .k-btn[data-band='proficient'] {
-  border-inline-start-color: var(--ink);
-}
-.k-conceptlist .k-btn[data-band='learning'] {
-  border-inline-start-color: var(--ink-faint);
-}
-.k-conceptlist .k-btn[data-band='unseen'] {
-  border-inline-start-style: dashed;
-  border-inline-start-color: var(--line-strong);
-}
-.k-conceptgraph {
-  inline-size: 100%;
-  block-size: auto;
-  max-block-size: calc(var(--cell) * 7);
-}
-.k-conceptgraph__edge {
-  stroke: var(--line-strong);
-  stroke-width: 1;
-}
-.k-conceptgraph__node rect {
-  fill: var(--panel);
-  stroke: var(--line-strong);
-}
-.k-conceptgraph__node text {
-  fill: var(--ink);
-  font-size: var(--size-fig-node);
-}
-.k-conceptgraph__node[data-current='true'] rect {
-  fill: var(--glass-hover);
-  stroke-width: 2;
-}
-.k-conceptgraph__node[data-band='proficient'] rect {
-  stroke-width: 3;
-}
-.k-conceptgraph__node[data-band='unseen'] rect {
-  stroke-dasharray: 3 3;
+  background: var(--selected-fill);
+  color: var(--selected-ink);
 }
 .k-spark {
   inline-size: calc(var(--cell) * 2);
@@ -2806,33 +2800,236 @@ textarea.k-input--prose {
   border-inline-start: 1px solid var(--line);
 }
 
-.k-graphsearch {
+/* ── Course knowledge graph ─────────────────────────────────────────
+   Ported from the spatial demo, with two deliberate integration changes:
+   live Topic records drive every tile, and the material behind the graph is
+   a slot. The graph never imports or owns a shader. */
+.k-knowledgegraph {
+  position: relative;
+  isolation: isolate;
+  min-block-size: 100%;
+}
+.k-knowledgegraph__background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.k-knowledgegraph__background > * {
+  inline-size: 100%;
+  block-size: 100%;
+}
+.k-knowledgegraph > .k-main {
+  position: relative;
+  z-index: var(--layer-content);
+  inline-size: min(100%, calc(var(--cell) * 20));
+  max-inline-size: none;
+}
+.k-graph-crumbs {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+.k-graph-crumbs > span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.k-graph-crumbs > .k-meta {
+  margin-inline-start: auto;
+  white-space: nowrap;
+}
+.k-graph-crumbs .k-btn[aria-current='page'] {
+  color: var(--ink);
+  font-weight: 700;
+}
+.k-graph-scene {
+  position: relative;
+  min-inline-size: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  isolation: isolate;
+}
+.k-graph-field {
+  display: grid;
+  margin-inline: auto;
+}
+.k-graph-topic {
   position: relative;
   display: flex;
-  align-items: end;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-  margin-block-end: var(--space-3);
-}
-.k-graphsearch .k-field {
-  flex: 1 1 calc(var(--cell) * 4);
-}
-.k-graphsearch__results {
-  display: grid;
-  gap: 1px;
-  flex-basis: 100%;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  border: 1px solid var(--line);
-  background: var(--line);
-}
-.k-graphsearch__results .k-btn {
-  display: grid;
-  justify-items: start;
-  inline-size: 100%;
-  background: var(--panel);
+  flex-direction: column;
+  min-inline-size: 0;
+  min-block-size: 0;
+  padding: var(--space-2);
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: color-mix(in srgb, var(--primary) 34%, var(--panel));
+  color: var(--ink);
+  cursor: pointer;
   text-align: start;
+  /* stylelint-disable-next-line kite/boundary-is-border */
+  box-shadow: inset -1px -1px 0 var(--line-strong);
+  transition:
+    background-color var(--dur-flat) linear,
+    box-shadow var(--dur-flat) linear;
+}
+.k-graph-topic:hover,
+.k-graph-topic:focus-visible {
+  background: color-mix(in srgb, var(--primary-hover) 44%, var(--panel));
+}
+.k-graph-topic[data-selected='true'] {
+  z-index: var(--layer-content);
+  background: color-mix(in srgb, var(--primary-hover) 58%, var(--panel));
+}
+.k-graph-topic__meta,
+.k-graph-topic__depth {
+  position: relative;
+  z-index: var(--layer-content);
+  font-size: var(--size-meta);
+  font-weight: 700;
+  letter-spacing: var(--track-label);
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+.k-graph-topic__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+.k-graph-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: currentColor;
+  white-space: nowrap;
+}
+.k-graph-progress__dot {
+  flex: 0 0 auto;
+  inline-size: var(--space-1);
+  block-size: var(--space-1);
+  border-radius: 50%;
+  background: var(--progress-color);
+  /* A one-pixel ink edge preserves the flag against both blue tile states. */
+  /* stylelint-disable-next-line kite/boundary-is-border */
+  box-shadow: 0 0 0 1px color-mix(in srgb, currentColor 44%, transparent);
+}
+.k-graph-topic__depth {
+  position: absolute;
+  inset-block-start: var(--space-2);
+  inset-inline-end: var(--space-2);
+  color: currentColor;
+  opacity: 0.72;
+}
+.k-graph-topic > strong {
+  position: relative;
+  z-index: var(--layer-content);
+  margin-block-start: auto;
+  max-inline-size: 100%;
+  overflow: hidden;
+  font-size: var(--size-h2);
+  font-weight: 600;
+  line-height: 0.98;
+  letter-spacing: var(--track-tight);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.k-graph-topic__preview {
+  position: absolute;
+  inset: 0 0 var(--cell);
+  display: grid;
+  transform-origin: top;
+  will-change: clip-path, opacity, transform;
+  pointer-events: none;
+}
+.k-graph-topic__preview-child {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-inline-size: 0;
+  min-block-size: 0;
+  padding: var(--space-1);
+  overflow: hidden;
+  background: color-mix(in srgb, var(--primary) 42%, var(--panel));
+  color: var(--ink);
+  /* stylelint-disable-next-line kite/boundary-is-border */
+  box-shadow: inset -1px -1px 0 var(--line-strong);
+}
+.k-graph-topic__preview b {
+  overflow: hidden;
+  font-size: var(--size-body-sm);
+  line-height: 1.05;
+  text-overflow: ellipsis;
+}
+.k-graph-topic__preview small {
+  margin-block-start: var(--optical);
+  font-size: var(--size-meta);
+  font-weight: 700;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+.k-graph-empty {
+  display: flex;
+  flex-direction: column;
+  grid-column: 2 / -2;
+  grid-row: 2 / -2;
+  padding: var(--card-pad-block) var(--card-pad-inline);
+  background: color-mix(in srgb, var(--primary) 40%, var(--panel));
+  color: var(--ink);
+  /* stylelint-disable-next-line kite/boundary-is-border */
+  box-shadow:
+    inset 0 0 0 1px var(--line-strong),
+    0 0 var(--space-4) color-mix(in srgb, var(--primary) 28%, transparent);
+}
+.k-graph-empty > span {
+  font-size: var(--size-meta);
+  font-weight: 700;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+.k-graph-empty > strong {
+  margin-block-start: auto;
+  font-size: var(--size-h1);
+  line-height: 0.95;
+  letter-spacing: var(--track-tight);
+}
+.k-graph-empty > p {
+  margin-block: var(--space-2);
+}
+.k-graph-inspector {
+  display: grid;
+  gap: var(--space-2);
+  margin-block-start: var(--space-2);
+}
+.k-graph-inspector .k-btn {
+  inline-size: 100%;
+  justify-content: space-between;
+}
+
+@media (min-width: 1280px) {
+  .k-knowledgegraph > .k-main--railed {
+    grid-template-columns: calc(var(--cell) * 12) var(--rail);
+  }
+}
+
+@media (max-width: 599px) {
+  .k-graph-crumbs {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .k-graph-crumbs > .k-meta {
+    flex-basis: 100%;
+    margin-inline-start: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .k-graph-topic {
+    transition: none;
+  }
 }
 
 /* ── Tutor chat ───────────────────────────────────────────────────── */
@@ -2923,20 +3120,9 @@ textarea.k-input--prose {
   place-items: center;
 }
 
-/* ── The paper rule, applied to the Part 1 surfaces ──────────────────
-   §5's material map: content sits on opaque paper, and only chrome is
-   veiled. The deck's cards carry their own paper (.k-frame, .k-scrollmodule)
-   so this never came up; the full-page functions put their controls and
-   their text straight onto the shader, and a screenshot showed exactly what
-   that costs — on the light gradient, every label on Read, Listen, Karaoke,
-   Concepts and Tutor was pale ink on a pale wash and simply could not be
-   read. Legibility here is not a preference; a study surface that cannot be
-   read is not a study surface.
-
-   The panel goes on the WORK REGION rather than on each block, so the page
-   reads as one sheet with structure on it rather than as a scatter of
-   floating cards. */
-.k-lab,
+/* ── Shared study glass for the Part 1 work regions ──────────────────
+   The panel goes on the work region rather than every nested block, so the
+   page reads as one coherent pane and pays for one blur rather than many. */
 .k-explorer,
 .k-language-tutor,
 .k-listen,
@@ -2945,15 +3131,16 @@ textarea.k-input--prose {
 .k-estimates,
 .k-lesson-card {
   background: var(--panel);
+  backdrop-filter: blur(var(--panel-blur)) saturate(1.1) brightness(var(--panel-gain));
   border: 1px solid var(--line);
   padding: var(--card-pad-block) var(--card-pad-inline);
 }
-/* Nested regions inside a papered parent must not paper themselves again —
-   two stacked 85% veils read as a different, muddier surface. */
+/* Nested regions inside a glass parent do not add another pane. */
 .k-lab .k-reader,
 .k-lab .k-listen,
 .k-lab .k-karaoke {
   background: none;
+  backdrop-filter: none;
   border: 0;
   padding: 0;
 }
@@ -2965,6 +3152,7 @@ textarea.k-input--prose {
   gap: var(--space-6);
   max-inline-size: var(--measure);
   background: var(--panel);
+  backdrop-filter: blur(var(--panel-blur)) saturate(1.1) brightness(var(--panel-gain));
   border: 1px solid var(--line);
   padding: var(--card-pad-block) var(--card-pad-inline);
 }
@@ -2999,6 +3187,26 @@ textarea.k-input--prose {
   gap: var(--space-2);
   margin: var(--space-2) 0 0;
   padding-inline-start: var(--space-3);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .k-card,
+  .k-tile,
+  .k-panel,
+  .k-frame,
+  .k-scrollmodule,
+  .k-lab__library,
+  .k-lab__stage,
+  .k-explorer,
+  .k-language-tutor,
+  .k-listen,
+  .k-karaoke,
+  .k-reader,
+  .k-estimates,
+  .k-lesson-card,
+  .k-try {
+    backdrop-filter: none;
+  }
 }
 
 /* ── Part 1 composition refresh ───────────────────────────────────── */
@@ -3103,7 +3311,6 @@ textarea.k-input--prose {
 }
 .k-planlist--lesson li[data-suppressed] .k-plan-action {
   color: var(--ink);
-  text-decoration: none;
 }
 .k-lesson-card__foot {
   align-items: flex-end;
@@ -3123,6 +3330,12 @@ textarea.k-input--prose {
 .k-lab__stage {
   grid-area: stage;
   min-inline-size: 0;
+}
+.k-lab__library,
+.k-lab__stage {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: var(--card-pad-block) var(--card-pad-inline);
 }
 .k-lab__library ul {
   gap: var(--space-1);
@@ -3175,18 +3388,31 @@ textarea.k-input--prose {
 }
 .k-setting-row .k-btn[aria-pressed='true'],
 .k-option-row .k-btn[aria-pressed='true'],
-.k-view-switch .k-btn[aria-pressed='true'],
 .k-language-tutor__tools .k-btn[aria-pressed='true'] {
-  background: var(--glass-hover);
-  border-color: var(--line-strong);
+  background: var(--selected-fill);
+  border-color: var(--selected-fill);
+  color: var(--selected-ink);
+}
+.k-setting-row__options .k-btn[aria-pressed='true'] {
+  background: var(--selected-fill);
+  border-color: var(--selected-fill);
+  color: var(--selected-ink);
 }
 .k-upload-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-2);
   padding-block-start: var(--space-3);
   border-block-start: 1px solid var(--line);
+}
+.k-upload-row__sources {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-2);
+}
+.k-upload-row__sources .k-textarea {
+  max-inline-size: none;
 }
 
 /* Reading controls form one option row. Word detail stays compact and closes
@@ -3197,8 +3423,7 @@ textarea.k-input--prose {
   align-items: center;
   gap: var(--space-2);
 }
-.k-option-row__buttons,
-.k-view-switch {
+.k-option-row__buttons {
   display: flex;
 }
 .k-wordcard .k-icon-close {
@@ -3258,9 +3483,6 @@ textarea.k-input--prose {
   inline-size: auto;
   min-inline-size: calc(var(--cell) * 2);
 }
-.k-inline-select--search .k-input {
-  min-inline-size: calc(var(--cell) * 3);
-}
 .k-explorer__body {
   display: grid;
   gap: var(--cell);
@@ -3284,6 +3506,7 @@ textarea.k-input--prose {
 .k-language-tutor__tools {
   display: flex;
   gap: var(--space-1);
+  flex-wrap: wrap;
 }
 .k-tutor-settings {
   position: absolute;
@@ -3342,16 +3565,26 @@ textarea.k-input--prose {
   max-inline-size: min(78%, var(--measure));
   gap: var(--space-1);
   padding: var(--space-2) var(--space-3);
-  border: 0;
+  border: 1px solid var(--line-strong);
   text-align: start;
 }
 .k-language-tutor .k-bubble[data-role='sage'] {
   justify-self: start;
-  background: var(--glass);
+  background: var(--panel);
+  border-inline-start: var(--optical) solid var(--primary-hover);
 }
 .k-language-tutor .k-bubble[data-role='learner'] {
   justify-self: end;
-  background: var(--glass-hover);
+  background: var(--primary);
+  border-color: var(--primary-hover);
+  border-inline-end: var(--optical) solid var(--primary-hover);
+  color: var(--on-accent);
+}
+.k-language-tutor .k-bubble > p {
+  margin: 0;
+}
+.k-language-tutor .k-bubble[data-role='learner'] :is(.k-bubble__name, .k-bubble__translation) {
+  color: var(--on-accent);
 }
 .k-bubble__name {
   margin: 0;
@@ -3380,17 +3613,75 @@ textarea.k-input--prose {
   color: var(--ink-dim);
 }
 .k-tutor-compose {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: var(--space-2);
-  align-items: end;
+  display: flex;
+  align-items: stretch;
+  min-block-size: var(--cell);
+  padding: 0;
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+}
+.k-tutor-compose__field {
+  flex: 1 1 auto;
+  min-inline-size: 0;
 }
 .k-tutor-compose .k-textarea {
+  min-block-size: var(--cell);
   max-inline-size: none;
+  block-size: 100%;
+  padding: var(--space-2) var(--space-3);
+  resize: none;
+  overflow-y: auto;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
-.k-tutor-compose__actions {
+.k-tutor-compose .k-textarea:focus,
+.k-tutor-compose .k-textarea:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+.k-tutor-compose:focus-within {
+  border-color: var(--primary-hover);
+}
+.k-tutor-compose .k-textarea::placeholder {
+  color: var(--ink-faint);
+  opacity: 1;
+}
+.k-tutor-compose__control {
+  inline-size: calc(var(--cell) * 2);
+  flex: 0 0 calc(var(--cell) * 2);
   display: flex;
+  align-items: center;
+  justify-content: center;
   gap: var(--space-1);
+  padding: 0;
+  border: 0;
+  border-inline-start: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+.k-tutor-compose__voice svg {
+  inline-size: var(--space-3);
+  block-size: var(--space-3);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+.k-tutor-compose__voice[aria-pressed='true'] {
+  background: var(--glass-hover);
+  color: var(--err-hover);
+}
+.k-tutor-compose__send {
+  background: var(--primary);
+  color: var(--on-accent);
+  font: inherit;
+  font-size: var(--size-h2);
+}
+.k-tutor-review {
+  justify-self: end;
 }
 .k-tutor-analysis {
   display: grid;
@@ -3447,15 +3738,15 @@ textarea.k-input--prose {
   .k-setting-row__options {
     overflow-x: auto;
   }
-  .k-upload-row,
-  .k-tutor-compose {
+  .k-upload-row {
     grid-template-columns: 1fr;
+  }
+  .k-upload-row__sources {
+    grid-template-columns: 1fr;
+    align-items: stretch;
   }
   .k-upload-row .k-btn {
     inline-size: 100%;
-  }
-  .k-tutor-compose__actions {
-    flex-wrap: wrap;
   }
   .k-language-tutor .k-chat__log {
     padding: var(--space-3);

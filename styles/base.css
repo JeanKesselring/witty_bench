@@ -155,6 +155,10 @@ ruby > rt {
 .k-ruby ruby {
   ruby-align: center;
 }
+.k-ruby ruby[data-furigana='off'] > rt,
+.k-ruby ruby[data-furigana='off'] > rp {
+  visibility: hidden;
+}
 
 /* ── §4.4 German ──────────────────────────────────────────────────── */
 
@@ -304,6 +308,8 @@ input:-webkit-autofill:focus {
   .k-panel,
   .k-frame,
   .k-scrollmodule,
+  .k-lab__library,
+  .k-lab__stage,
   .k-topbar,
   .k-foot,
   .k-state,

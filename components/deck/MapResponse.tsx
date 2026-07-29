@@ -54,19 +54,24 @@ export function MapResponse({ item, value, onChange, judged }: ResponseProps) {
 
     const map = L.map(host, {
       center: [20, 10],
-      zoom: 1,
+      zoom: host.clientWidth >= 768 ? 2 : 1,
+      minZoom: 1,
       worldCopyJump: true,
       zoomControl: true,
       scrollWheelZoom: true,
       attributionControl: true,
     })
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
-      maxZoom: 12,
-      subdomains: 'abcd',
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    }).addTo(map)
+    L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}.jpg',
+      {
+        attribution:
+          'Tiles &copy; Esri — Sources: Esri, Garmin, GEBCO, NOAA NGDC, and other contributors',
+        crossOrigin: true,
+        maxNativeZoom: 10,
+        maxZoom: 12,
+      },
+    ).addTo(map)
 
     // Click-to-zoom-in is Leaflet's default double-click; the single click
     // is ours and places the answer.
@@ -97,11 +102,14 @@ export function MapResponse({ item, value, onChange, judged }: ResponseProps) {
     pickRef.current = L.circleMarker([pickedLat, pickedLng], {
       radius: 7,
       weight: 2,
-      color: '#f6f2ef',
+      color:
+        judged?.outcome === 'correct' ? 'var(--ok-hover)' : judged ? 'var(--err-hover)' : '#f6f2ef',
       fillOpacity: 0.2,
-      className: 'k-maprsp__dot',
+      className: `k-maprsp__dot${
+        judged?.outcome === 'correct' ? ' k-maprsp__dot--ok' : judged ? ' k-maprsp__dot--err' : ''
+      }`,
     }).addTo(map)
-  }, [pickedLat, pickedLng, ready])
+  }, [pickedLat, pickedLng, ready, judged])
 
   /* After judgement the correct location appears without a label, and the
    * map fits both points so the error is visible rather than changing the
@@ -112,7 +120,8 @@ export function MapResponse({ item, value, onChange, judged }: ResponseProps) {
     const target = L.circleMarker([answer.lat, answer.lng], {
       radius: 9,
       weight: 2,
-      color: '#5a9e59',
+      color: 'var(--ok-hover)',
+      fillColor: 'var(--ok)',
       fillOpacity: 0.15,
       className: 'k-maprsp__target',
     }).addTo(map)
@@ -124,7 +133,12 @@ export function MapResponse({ item, value, onChange, judged }: ResponseProps) {
           [pickedLat, pickedLng],
           [answer.lat, answer.lng],
         ],
-        { color: '#e66b6b', weight: 1, dashArray: '4 4' },
+        {
+          color: 'var(--err-hover)',
+          weight: 1,
+          dashArray: '4 4',
+          className: 'k-maprsp__miss',
+        },
       ).addTo(map)
       resultLayers.push(line)
       map.fitBounds(L.latLngBounds([pickedLat, pickedLng], [answer.lat, answer.lng]).pad(0.4))

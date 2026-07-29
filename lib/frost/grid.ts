@@ -20,6 +20,9 @@ export const EDGE = {
   dim: 0.07,
 } as const
 
+/** The frosted lattice is the one rounded primitive in the background field. */
+export const FROST_TILE_RADIUS_PX = 5
+
 const svgUrl = (body: string, cols: number, rows: number) =>
   `url("data:image/svg+xml,${encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${cols} ${rows}" ` +
@@ -34,8 +37,14 @@ const svgUrl = (body: string, cols: number, rows: number) =>
  * decides how much of the blurred layer shows through, so it doubles as a
  * frost amount without needing a separate blur per tile.
  */
-export function buildFillMask(alpha: ArrayLike<number>, cols: number, rows: number): string {
+export function buildFillMask(
+  alpha: ArrayLike<number>,
+  cols: number,
+  rows: number,
+  cornerRadius = 0,
+): string {
   let body = ''
+  const radius = cornerRadius > 0 ? ` rx="${cornerRadius}"` : ''
   for (let i = 0; i < cols * rows; i++) {
     // Grid dimensions and their backing array can update on adjacent React
     // renders after a resize. Treat a not-yet-created cell as clear instead of
@@ -48,8 +57,8 @@ export function buildFillMask(alpha: ArrayLike<number>, cols: number, rows: numb
     // in demo 6; two decimals is well below what is visible.
     body +=
       a >= 0.996
-        ? `<rect x="${x}" y="${y}" width="1" height="1" fill="#fff"/>`
-        : `<rect x="${x}" y="${y}" width="1" height="1" fill="#fff" fill-opacity="${a.toFixed(2)}"/>`
+        ? `<rect x="${x}" y="${y}" width="1" height="1"${radius} fill="#fff"/>`
+        : `<rect x="${x}" y="${y}" width="1" height="1"${radius} fill="#fff" fill-opacity="${a.toFixed(2)}"/>`
   }
   return svgUrl(body, cols, rows)
 }
@@ -66,9 +75,33 @@ export function buildFillMask(alpha: ArrayLike<number>, cols: number, rows: numb
  * width. Without it `preserveAspectRatio="none"` would scale the stroke by a
  * different factor in x and y whenever cells are not square.
  */
-export function buildEdgeMask(solid: ArrayLike<boolean>, cols: number, rows: number): string {
+export function buildEdgeMask(
+  solid: ArrayLike<boolean>,
+  cols: number,
+  rows: number,
+  cornerRadius = 0,
+): string {
   const on = (c: number, r: number) =>
     c >= 0 && c < cols && r >= 0 && r < rows && solid[r * cols + c]
+
+  if (cornerRadius > 0) {
+    let rects = ''
+    for (let i = 0; i < cols * rows; i++) {
+      if (!solid[i]) continue
+      const x = i % cols
+      const y = (i / cols) | 0
+      rects +=
+        `<rect x="${x}" y="${y}" width="1" height="1" rx="${cornerRadius}" ` +
+        `fill="none" stroke="url(#rim)" stroke-width="${EDGE.width}" ` +
+        `vector-effect="non-scaling-stroke"/>`
+    }
+    const gradient =
+      `<defs><linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">` +
+      `<stop stop-color="#fff" stop-opacity="${EDGE.lit}"/>` +
+      `<stop offset="1" stop-color="#fff" stop-opacity="${EDGE.dim}"/>` +
+      `</linearGradient></defs>`
+    return svgUrl(gradient + rects, cols, rows)
+  }
 
   let lit = ''
   let dim = ''

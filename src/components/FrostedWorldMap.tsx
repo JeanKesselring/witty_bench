@@ -111,15 +111,14 @@ export function FrostedWorldMap({ gridSizeKm, onGuess }: FrostedWorldMapProps) {
     })
 
     map.attributionControl.setPrefix(false)
-
     L.tileLayer(
-      'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png',
+      'https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}.jpg',
       {
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-      crossOrigin: true,
-      maxZoom: 19,
-      subdomains: 'abcd',
+        attribution:
+          'Tiles &copy; Esri — Sources: Esri, Garmin, GEBCO, NOAA NGDC, and other contributors',
+        crossOrigin: true,
+        maxNativeZoom: 10,
+        maxZoom: 12,
       },
     ).addTo(map)
 

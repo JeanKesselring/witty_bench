@@ -10,7 +10,12 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
 } from 'react'
-import { buildEdgeMask, buildFillMask, mulberry32 } from '@/lib/frost/grid'
+import {
+  buildEdgeMask,
+  buildFillMask,
+  FROST_TILE_RADIUS_PX,
+  mulberry32,
+} from '@/lib/frost/grid'
 import {
   clampRect,
   nearestNoteRect,
@@ -162,12 +167,24 @@ export function FrostStage() {
   }, [grid])
 
   const fillMask = useMemo(
-    () => buildFillMask(frost.map((cell) => (cell ? 1 : 0)), grid.cols, grid.rows),
-    [frost, grid.cols, grid.rows],
+    () =>
+      buildFillMask(
+        frost.map((cell) => (cell ? 1 : 0)),
+        grid.cols,
+        grid.rows,
+        FROST_TILE_RADIUS_PX / grid.cell,
+      ),
+    [frost, grid.cell, grid.cols, grid.rows],
   )
   const edgeMask = useMemo(
-    () => buildEdgeMask(frost, grid.cols, grid.rows),
-    [frost, grid.cols, grid.rows],
+    () =>
+      buildEdgeMask(
+        frost,
+        grid.cols,
+        grid.rows,
+        FROST_TILE_RADIUS_PX / grid.cell,
+      ),
+    [frost, grid.cell, grid.cols, grid.rows],
   )
 
   const toggleCell = useCallback((index: number) => {

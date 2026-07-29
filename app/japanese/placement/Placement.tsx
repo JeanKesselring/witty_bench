@@ -144,7 +144,7 @@ export function Placement() {
   }
 
   return (
-    <div>
+    <div className="k-placement-run">
       <div className="k-actions">
         <p className="k-meta">
           {answered} answered of about {PLACEMENT.total}

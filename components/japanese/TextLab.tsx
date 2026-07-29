@@ -41,8 +41,9 @@ export function TextLab({ children }: { children: (text: ReaderText) => ReactNod
   const [register, setRegister] = useState<Register>('neutral')
   const [topic, setTopic] = useState('')
   const [useFocus, setUseFocus] = useState(true)
-  const [generating, setGenerating] = useState(false)
+  const [busy, setBusy] = useState<'generate' | 'import' | null>(null)
   const [upload, setUpload] = useState<File | null>(null)
+  const [pastedText, setPastedText] = useState('')
   const [uploadStatus, setUploadStatus] = useState('')
 
   const text = library.find((item) => item.textId === selected)
@@ -66,22 +67,24 @@ export function TextLab({ children }: { children: (text: ReaderText) => ReactNod
   }
 
   const generate = (close: () => void) => {
-    setGenerating(true)
+    setBusy('generate')
     window.setTimeout(() => {
       addText()
-      setGenerating(false)
+      setBusy(null)
       close()
     }, 600)
   }
 
-  const processUpload = (close: () => void) => {
-    if (!upload) return
-    setGenerating(true)
+  const processOwnText = (close: () => void) => {
+    if (!upload && !pastedText.trim()) return
+    setBusy('import')
     setUploadStatus('Preparing the text for AI processing…')
     window.setTimeout(() => {
-      addText(upload.name.replace(/\.[^.]+$/, ''))
-      setGenerating(false)
+      const pastedTitle = pastedText.trim().split(/\n/)[0]?.slice(0, 48)
+      addText(upload?.name.replace(/\.[^.]+$/, '') || pastedTitle || 'Pasted text')
+      setBusy(null)
       setUpload(null)
+      setPastedText('')
       setUploadStatus('')
       close()
     }, 600)
@@ -168,7 +171,7 @@ export function TextLab({ children }: { children: (text: ReaderText) => ReactNod
                         options={CHALLENGES}
                       />
                       <SettingRow
-                        label="Register"
+                        label="Politeness"
                         value={register}
                         onChange={setRegister}
                         options={REGISTERS}
@@ -203,37 +206,55 @@ export function TextLab({ children }: { children: (text: ReaderText) => ReactNod
                       </Button>
                       <Button
                         className="k-btn k-btn--primary k-press"
-                        isDisabled={generating}
+                        isDisabled={busy !== null}
                         onPress={() => generate(close)}
                       >
-                        {generating && !upload ? 'Generating…' : 'Generate text'}
+                        {busy === 'generate' ? 'Generating…' : 'Generate text'}
                       </Button>
                     </div>
 
-                    <section className="k-upload-row" aria-label="Upload a text">
-                      <div>
-                        <h3 className="k-h3">Upload a text</h3>
-                        <p className="k-meta">TXT, DOCX, or PDF · processed by AI after upload</p>
+                    <section className="k-upload-row" aria-label="Add your own text">
+                      <div className="k-upload-row__head">
+                        <h3 className="k-h3">Add your own text</h3>
+                        <p className="k-meta">
+                          Upload a file or paste text · processed by AI after import
+                        </p>
                       </div>
-                      <label className="k-btn k-btn--secondary k-press">
-                        {upload ? upload.name : 'Choose file'}
-                        <input
-                          className="k-sr"
-                          type="file"
-                          accept=".txt,.doc,.docx,.pdf,text/plain,application/pdf"
-                          onChange={(event) => {
-                            setUpload(event.target.files?.[0] ?? null)
-                            setUploadStatus('')
-                          }}
-                        />
-                      </label>
+                      <div className="k-upload-row__sources">
+                        <label className="k-btn k-btn--secondary k-press">
+                          {upload ? upload.name : 'Choose TXT, DOCX, or PDF'}
+                          <input
+                            className="k-sr"
+                            type="file"
+                            accept=".txt,.doc,.docx,.pdf,text/plain,application/pdf"
+                            onChange={(event) => {
+                              setUpload(event.target.files?.[0] ?? null)
+                              setUploadStatus('')
+                            }}
+                          />
+                        </label>
+                        <span className="k-meta">or paste</span>
+                        <label className="k-field">
+                          <span className="k-field__label">Text</span>
+                          <textarea
+                            className="k-textarea"
+                            rows={5}
+                            value={pastedText}
+                            placeholder="Paste Japanese text here"
+                            onChange={(event) => {
+                              setPastedText(event.target.value)
+                              setUploadStatus('')
+                            }}
+                          />
+                        </label>
+                      </div>
                       <button
                         type="button"
                         className="k-btn k-btn--primary k-press"
-                        disabled={!upload || generating}
-                        onClick={() => processUpload(close)}
+                        disabled={(!upload && !pastedText.trim()) || busy !== null}
+                        onClick={() => processOwnText(close)}
                       >
-                        Process text
+                        {busy === 'import' ? 'Processing…' : 'Process text'}
                       </button>
                     </section>
                     {uploadStatus ? (

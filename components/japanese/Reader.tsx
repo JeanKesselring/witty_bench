@@ -14,7 +14,7 @@
  * keyboard.
  */
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import type { ReaderText, Token } from '@/lib/api/jkg'
 
 type Mode = 'auto' | 'all' | 'off'
@@ -27,7 +27,7 @@ const KNOWN = new Set(['right', 'left', 'road', 'two'])
 export function Reader({ text }: { text: ReaderText }) {
   const [mode, setMode] = useState<Mode>('auto')
   const [translations, setTranslations] = useState(false)
-  const [open, setOpen] = useState<{ token: Token; key: string } | null>(null)
+  const [open, setOpen] = useState<{ token: Token; key: string; top: number } | null>(null)
   const rootRef = useRef<HTMLDivElement | null>(null)
   const triggerRef = useRef<HTMLButtonElement | null>(null)
   const dialogRef = useRef<HTMLDivElement | null>(null)
@@ -105,7 +105,12 @@ export function Reader({ text }: { text: ReaderText }) {
                       aria-expanded={open?.key === key}
                       onClick={(event) => {
                         triggerRef.current = event.currentTarget
-                        setOpen((o) => (o?.key === key ? null : { token, key }))
+                        const rootBounds = rootRef.current?.getBoundingClientRect()
+                        const triggerBounds = event.currentTarget.getBoundingClientRect()
+                        const top = rootBounds
+                          ? triggerBounds.bottom - rootBounds.top + 8
+                          : triggerBounds.height + 8
+                        setOpen((o) => (o?.key === key ? null : { token, key, top }))
                       }}
                     >
                       {showReading ? (
@@ -137,6 +142,7 @@ export function Reader({ text }: { text: ReaderText }) {
           role="dialog"
           tabIndex={-1}
           aria-label={`About ${open.token.surface}`}
+          style={{ '--wordcard-top': `${open.top}px` } as CSSProperties}
         >
           <button
             type="button"

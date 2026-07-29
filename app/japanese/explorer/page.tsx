@@ -7,7 +7,7 @@ export default function ExplorerPage() {
   return (
     <Surface
       title="Concepts"
-      orientation="Everything the graph knows about, as a list or as connections. Filter it, then open anything to see what it means and what it sits next to."
+      orientation="Filter the concept list, then open anything to see what it means and what it connects to."
     >
       <Explorer />
     </Surface>

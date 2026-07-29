@@ -9,7 +9,12 @@ import {
   type Conversation,
   type Scenario,
 } from '@/lib/api/jkg'
-import { Ruby } from '@/components/deck/Japanese'
+import {
+  FuriganaProvider,
+  FuriganaToggle,
+  Ruby,
+  type FuriganaMode,
+} from '@/components/deck/Japanese'
 
 export function TutorChat() {
   const [conversations, setConversations] = useState<Conversation[]>(CONVERSATIONS)
@@ -18,6 +23,7 @@ export function TutorChat() {
   const [draft, setDraft] = useState('')
   const [voice, setVoice] = useState(false)
   const [translations, setTranslations] = useState(true)
+  const [furigana, setFurigana] = useState<FuriganaMode>('all')
   const [useTodayTopic, setUseTodayTopic] = useState(true)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [analysis, setAnalysis] = useState(false)
@@ -128,244 +134,258 @@ export function TutorChat() {
   }
 
   return (
-    <section className="k-language-tutor" aria-label="Language tutor">
-      <header className="k-language-tutor__head">
-        <div>
-          <p className="k-meta">Conversation practice</p>
-          <h2 className="k-h2">{conversation?.title ?? 'New conversation'}</h2>
-          <p className="k-meta">
-            {useTodayTopic ? `Inherited from Today’s lesson · ${PLAN.theme}` : 'Open conversation'}
-          </p>
-        </div>
-        <div className="k-language-tutor__tools">
-          <button
-            type="button"
-            className="k-btn k-btn--secondary k-press"
-            aria-pressed={translations}
-            onClick={() => setTranslations((currentValue) => !currentValue)}
-          >
-            {translations ? 'Translations on' : 'Translations off'}
-          </button>
-          <button
-            type="button"
-            className="k-btn k-btn--secondary k-press"
-            aria-expanded={settingsOpen}
-            onClick={() => setSettingsOpen((currentValue) => !currentValue)}
-          >
-            Settings
-          </button>
-        </div>
-
-        {settingsOpen ? (
-          <div className="k-tutor-settings" role="dialog" aria-label="Tutor settings">
-            <div className="k-dialog__head">
-              <h3 className="k-h3">Conversation settings</h3>
-              <button
-                type="button"
-                className="k-icon-close k-press"
-                onClick={() => setSettingsOpen(false)}
-              >
-                <span aria-hidden="true">×</span>
-                <span className="k-sr">Close settings</span>
-              </button>
-            </div>
-
-            <div className="k-setting-row">
-              <span className="k-field__label">Today’s topic</span>
-              <button
-                type="button"
-                className="k-btn k-btn--secondary k-press"
-                aria-pressed={useTodayTopic}
-                onClick={() => setUseTodayTopic((currentValue) => !currentValue)}
-              >
-                {useTodayTopic ? `On · ${PLAN.theme}` : 'Off'}
-              </button>
-            </div>
-
-            <div className="k-setting-row">
-              <span className="k-field__label">Scenario</span>
-              <select
-                className="k-input"
-                value={scenario}
-                onChange={(event) => setScenario(event.target.value as Scenario)}
-              >
-                {SCENARIOS.map((candidate) => (
-                  <option key={candidate.id} value={candidate.id}>
-                    {candidate.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="k-setting-row">
-              <span className="k-field__label">Tutor voice</span>
-              <button
-                type="button"
-                className="k-btn k-btn--secondary k-press"
-                aria-pressed={voice}
-                onClick={() => setVoice((currentValue) => !currentValue)}
-              >
-                {voice ? 'Replies spoken' : 'Replies silent'}
-              </button>
-            </div>
+    <FuriganaProvider mode={furigana}>
+      <section className="k-language-tutor" aria-label="Language tutor">
+        <header className="k-language-tutor__head">
+          <div>
+            <p className="k-meta">Conversation practice</p>
+            <h2 className="k-h2">{conversation?.title ?? 'New conversation'}</h2>
+            <p className="k-meta">
+              {useTodayTopic
+                ? `Inherited from Today’s lesson · ${PLAN.theme}`
+                : 'Open conversation'}
+            </p>
           </div>
-        ) : null}
-      </header>
+          <div className="k-language-tutor__tools">
+            <FuriganaToggle mode={furigana} onChange={setFurigana} />
+            <button
+              type="button"
+              className="k-btn k-btn--secondary k-press"
+              aria-pressed={translations}
+              onClick={() => setTranslations((currentValue) => !currentValue)}
+            >
+              {translations ? 'Translations on' : 'Translations off'}
+            </button>
+            <button
+              type="button"
+              className="k-btn k-btn--secondary k-press"
+              aria-expanded={settingsOpen}
+              onClick={() => setSettingsOpen((currentValue) => !currentValue)}
+            >
+              Settings
+            </button>
+          </div>
 
-      <div className="k-language-tutor__body">
-        <aside className="k-conversation-rail" aria-label="Conversations">
-          <button
-            type="button"
-            className="k-btn k-btn--primary k-press"
-            onClick={createConversation}
-          >
-            + New conversation
-          </button>
-          <ul className="k-chat__list">
-            {conversations.map((candidate) => (
-              <li key={candidate.conversationId}>
+          {settingsOpen ? (
+            <div className="k-tutor-settings" role="dialog" aria-label="Tutor settings">
+              <div className="k-dialog__head">
+                <h3 className="k-h3">Conversation settings</h3>
                 <button
                   type="button"
-                  className="k-btn k-btn--quiet k-press"
-                  aria-pressed={current === candidate.conversationId}
-                  data-current={current === candidate.conversationId ? 'true' : undefined}
-                  onClick={() => {
-                    setCurrent(candidate.conversationId)
-                    setAnalysis(false)
-                  }}
+                  className="k-icon-close k-press"
+                  onClick={() => setSettingsOpen(false)}
                 >
-                  {candidate.title}
-                  <small className="k-meta">{candidate.updatedAt}</small>
+                  <span aria-hidden="true">×</span>
+                  <span className="k-sr">Close settings</span>
                 </button>
-              </li>
-            ))}
-          </ul>
-        </aside>
-
-        <div className="k-language-tutor__conversation">
-          <div
-            className="k-chat__log"
-            ref={logRef}
-            tabIndex={0}
-            aria-live="polite"
-            aria-label="Conversation"
-          >
-            {conversation?.turns.length ? (
-              conversation.turns.map((turn, index) => (
-                <div
-                  key={index}
-                  className="k-bubble"
-                  data-role={turn.role === 'learner' ? 'learner' : 'sage'}
-                >
-                  <p className="k-bubble__name">{turn.role === 'learner' ? 'You' : 'Tutor'}</p>
-                  <p className="k-ja" lang="ja">
-                    {turn.ruby ? <Ruby segments={turn.ruby} /> : turn.text}
-                  </p>
-                  {translations && turn.translation ? (
-                    <p className="k-body-sm k-bubble__translation">{turn.translation}</p>
-                  ) : null}
-                  {turn.role === 'tutor' ? (
-                    <button
-                      type="button"
-                      className="k-bubble__audio k-press"
-                      onClick={() => speakJapanese(turn.text)}
-                    >
-                      <span aria-hidden="true">▶</span>
-                      <span className="k-sr">Play this sentence</span>
-                    </button>
-                  ) : null}
-                </div>
-              ))
-            ) : (
-              <div className="k-chat-empty">
-                <p className="k-ja" lang="ja">
-                  何について話しましょうか。
-                </p>
-                <p>What would you like to talk about?</p>
               </div>
-            )}
-          </div>
 
-          <form
-            className="k-compose k-tutor-compose"
-            onSubmit={(event) => {
-              event.preventDefault()
-              send()
-            }}
-          >
-            <label className="k-field">
-              <span className="k-sr">Your message</span>
-              <textarea
-                className="k-textarea k-ja"
-                rows={2}
-                lang="ja"
-                value={draft}
-                placeholder="日本語、English、or rōmaji"
-                onChange={(event) => setDraft(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' && !event.shiftKey) {
-                    event.preventDefault()
-                    send()
-                  }
-                }}
-              />
-            </label>
-            <div className="k-tutor-compose__actions">
-              <button
-                type="button"
-                className="k-btn k-btn--secondary k-press"
-                aria-pressed={recording}
-                onClick={recordSpeech}
-              >
-                {recording ? 'Stop' : 'Speak'}
-              </button>
-              <button
-                type="button"
-                className="k-btn k-btn--quiet k-press"
-                onClick={() => setAnalysis((currentValue) => !currentValue)}
-              >
-                Review conversation
-              </button>
-              <button
-                type="submit"
-                className="k-btn k-btn--primary k-press"
-                disabled={!draft.trim()}
-              >
-                Send
-              </button>
+              <div className="k-setting-row">
+                <span className="k-field__label">Today’s topic</span>
+                <button
+                  type="button"
+                  className="k-btn k-btn--secondary k-press"
+                  aria-pressed={useTodayTopic}
+                  onClick={() => setUseTodayTopic((currentValue) => !currentValue)}
+                >
+                  {useTodayTopic ? `On · ${PLAN.theme}` : 'Off'}
+                </button>
+              </div>
+
+              <div className="k-setting-row">
+                <span className="k-field__label">Scenario</span>
+                <select
+                  className="k-input"
+                  value={scenario}
+                  onChange={(event) => setScenario(event.target.value as Scenario)}
+                >
+                  {SCENARIOS.map((candidate) => (
+                    <option key={candidate.id} value={candidate.id}>
+                      {candidate.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="k-setting-row">
+                <span className="k-field__label">Tutor voice</span>
+                <button
+                  type="button"
+                  className="k-btn k-btn--secondary k-press"
+                  aria-pressed={voice}
+                  onClick={() => setVoice((currentValue) => !currentValue)}
+                >
+                  {voice ? 'Replies spoken' : 'Replies silent'}
+                </button>
+              </div>
             </div>
-          </form>
-
-          {speechStatus ? (
-            <p className="k-meta" aria-live="polite">
-              {speechStatus}
-            </p>
           ) : null}
-        </div>
-      </div>
+        </header>
 
-      {analysis ? (
-        <section className="k-tutor-analysis" aria-label="Conversation review">
-          <h3 className="k-h3">Conversation review</h3>
-          <p>{ANALYSIS.summary}</p>
-          <ul className="k-fig k-fig--mistakes">
-            {ANALYSIS.patterns.map((pattern) => (
-              <li key={pattern.pattern} className="k-mistake">
-                <p className="k-mistake__row">
-                  <span className="k-mistake__label">You wrote</span>
-                  <span lang="ja">{pattern.original}</span>
-                </p>
-                <p className="k-mistake__row">
-                  <span className="k-mistake__label">Better</span>
-                  <span lang="ja">{pattern.corrected}</span>
-                </p>
-                <p className="k-mistake__why">{pattern.note}</p>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-    </section>
+        <div className="k-language-tutor__body">
+          <aside className="k-conversation-rail" aria-label="Conversations">
+            <button
+              type="button"
+              className="k-btn k-btn--primary k-press"
+              onClick={createConversation}
+            >
+              + New conversation
+            </button>
+            <ul className="k-chat__list">
+              {conversations.map((candidate) => (
+                <li key={candidate.conversationId}>
+                  <button
+                    type="button"
+                    className="k-btn k-btn--quiet k-press"
+                    aria-pressed={current === candidate.conversationId}
+                    data-current={current === candidate.conversationId ? 'true' : undefined}
+                    onClick={() => {
+                      setCurrent(candidate.conversationId)
+                      setAnalysis(false)
+                    }}
+                  >
+                    {candidate.title}
+                    <small className="k-meta">{candidate.updatedAt}</small>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </aside>
+
+          <div className="k-language-tutor__conversation">
+            <div
+              className="k-chat__log"
+              ref={logRef}
+              tabIndex={0}
+              aria-live="polite"
+              aria-label="Conversation"
+            >
+              {conversation?.turns.length ? (
+                conversation.turns.map((turn, index) => (
+                  <div
+                    key={index}
+                    className="k-bubble"
+                    data-role={turn.role === 'learner' ? 'learner' : 'sage'}
+                  >
+                    <p className="k-bubble__name">{turn.role === 'learner' ? 'You' : 'Tutor'}</p>
+                    <p className="k-ja" lang="ja">
+                      {turn.ruby ? <Ruby segments={turn.ruby} /> : turn.text}
+                    </p>
+                    {translations && turn.translation ? (
+                      <p className="k-body-sm k-bubble__translation">{turn.translation}</p>
+                    ) : null}
+                    {turn.role === 'tutor' ? (
+                      <button
+                        type="button"
+                        className="k-bubble__audio k-press"
+                        onClick={() => speakJapanese(turn.text)}
+                      >
+                        <span aria-hidden="true">▶</span>
+                        <span className="k-sr">Play this sentence</span>
+                      </button>
+                    ) : null}
+                  </div>
+                ))
+              ) : (
+                <div className="k-chat-empty">
+                  <p className="k-ja" lang="ja">
+                    何について話しましょうか。
+                  </p>
+                  <p>What would you like to talk about?</p>
+                </div>
+              )}
+            </div>
+
+            <form
+              className="k-compose k-tutor-compose"
+              onSubmit={(event) => {
+                event.preventDefault()
+                send()
+              }}
+            >
+              <label className="k-tutor-compose__field">
+                <span className="k-sr">Your message</span>
+                <textarea
+                  className="k-textarea k-ja"
+                  rows={1}
+                  lang="ja"
+                  value={draft}
+                  placeholder="Write in Japanese, English, or rōmaji…"
+                  onChange={(event) => setDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' && !event.shiftKey) {
+                      event.preventDefault()
+                      send()
+                    }
+                  }}
+                />
+              </label>
+              {draft.trim() ? (
+                <button
+                  type="submit"
+                  className="k-tutor-compose__control k-tutor-compose__send k-press"
+                  aria-label="Send message"
+                >
+                  <span aria-hidden="true">→</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="k-tutor-compose__control k-tutor-compose__voice k-press"
+                  aria-label={recording ? 'Stop voice input' : 'Start voice input'}
+                  aria-pressed={recording}
+                  onClick={recordSpeech}
+                >
+                  <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="M9 5a3 3 0 0 1 6 0v6a3 3 0 0 1-6 0V5Zm-3 6a6 6 0 0 0 12 0M12 17v4M9 21h6" />
+                  </svg>
+                  <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4" />
+                  </svg>
+                </button>
+              )}
+            </form>
+
+            <button
+              type="button"
+              className="k-btn k-btn--quiet k-press k-tutor-review"
+              aria-pressed={analysis}
+              onClick={() => setAnalysis((currentValue) => !currentValue)}
+            >
+              {analysis ? 'Hide conversation review' : 'Review conversation'}
+            </button>
+
+            {speechStatus ? (
+              <p className="k-meta" aria-live="polite">
+                {speechStatus}
+              </p>
+            ) : null}
+          </div>
+        </div>
+
+        {analysis ? (
+          <section className="k-tutor-analysis" aria-label="Conversation review">
+            <h3 className="k-h3">Conversation review</h3>
+            <p>{ANALYSIS.summary}</p>
+            <ul className="k-fig k-fig--mistakes">
+              {ANALYSIS.patterns.map((pattern) => (
+                <li key={pattern.pattern} className="k-mistake">
+                  <p className="k-mistake__row">
+                    <span className="k-mistake__label">You wrote</span>
+                    <span lang="ja">{pattern.original}</span>
+                  </p>
+                  <p className="k-mistake__row">
+                    <span className="k-mistake__label">Better</span>
+                    <span lang="ja">{pattern.corrected}</span>
+                  </p>
+                  <p className="k-mistake__why">{pattern.note}</p>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+      </section>
+    </FuriganaProvider>
   )
 }
 

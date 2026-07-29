@@ -27,7 +27,7 @@ Kite is a study instrument, not a website. Four laws.
 
 **1. The lattice is the layout.** Everything sits on a square cell. Nothing floats, nothing is centred by eye, nothing has a radius. Position is meaning. When a decision is ambiguous, snap to the cell.
 
-**2. Ink on paper, over light.** The interface is opaque paper with hairline rules, held above a slow gradient. The gradient is atmosphere and never information. Anything a learner must read or click sits on paper, not on light.
+**2. Ink on study glass, over light.** Cards and work regions use a 72% theme surface, a shared backdrop blur, and hairline rules above the slow gradient. The gradient is atmosphere and never information. Inputs and dense text fields may remain opaque; learner content never sits directly on unfiltered light.
 
 **3. Rigid surface, physical behaviour.** The visual language is square, hairline, and zero-radius; the motion is sprung, weighted, and interruptible. The interface _looks_ like a precision instrument and _moves_ like an object. Every animation still answers "what just changed?" — if it would look fine not happening at all, delete it — but the answer is delivered with mass, not with a fade.
 
@@ -111,14 +111,14 @@ Every surface, every role, same four regions in the same DOM order:
 
 ### 2.4 Work-region grids
 
-| Surface                 | Work region          | Grid                                                                                                                                                   |
-| ----------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Course catalogue        | Course cards         | `repeat(auto-fill, minmax(5 cells, 1fr))`                                                                                                              |
-| Learner deck (`/start`) | One module at a time | A single fixed-geometry card, horizontally centred as the sole focal object; its **interior** composition is left-weighted like everything else (§2.5) |
-| Knowledge graph         | Topic field          | SVG; cell-snapped tile packing, 1×1 to 3×3                                                                                                             |
-| Lecture / topic detail  | Content list         | Single column, module frames full width                                                                                                                |
-| Authoring wizard        | Stepped form         | Single column, max `9 cells`, stepper in `.k-context`                                                                                                  |
-| Admin                   | Data table           | Full shell width, horizontal scroll in its own container                                                                                               |
+| Surface                 | Work region          | Grid                                                                                                                                                                  |
+| ----------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Course catalogue        | Course cards         | `repeat(auto-fill, minmax(5 cells, 1fr))`                                                                                                                             |
+| Learner deck (`/start`) | One module at a time | A single fixed-geometry card, horizontally centred as the sole focal object; its **interior** composition is left-weighted like everything else (§2.5)                |
+| Knowledge graph         | Topic field          | Semantic 12 × 8 button grid; balanced, contiguous cell partitions fill the field, with horizontal field scrolling only when the viewport cannot expose all 12 columns |
+| Lecture / topic detail  | Content list         | Single column, module frames full width                                                                                                                               |
+| Authoring wizard        | Stepped form         | Single column, max `9 cells`, stepper in `.k-context`                                                                                                                 |
+| Admin                   | Data table           | Full shell width, horizontal scroll in its own container                                                                                                              |
 
 The faint background lattice is drawn at the current `--cell` on every surface, so all surfaces read as one continuous plane.
 
@@ -175,18 +175,21 @@ Mass top-left, action bottom-right. One diagonal, no competing centres, and the 
 
 #### Material map
 
-**Content is opaque paper. Chrome is veiled glass.**
+**Cards are study glass. Dense controls and overlays are paper.**
 
-| Region                                           | Material                 |
-| ------------------------------------------------ | ------------------------ |
-| Deck card, module frame, table, form, card, tile | Opaque `--paper-*`       |
-| Dialog, popover, menu, toast (§6.11)             | Opaque `--paper-0`       |
-| Dialog scrim                                     | `--ink-0` at α 0.5, flat |
-| Topbar, footer, inspector rail                   | Veiled glass at `--veil` |
-| Background lattice, notes workspace              | Frost                    |
-| Behind everything                                | Shader gradient          |
+| Region                               | Material                  |
+| ------------------------------------ | ------------------------- |
+| Deck card, module frame, card, tile  | 72% `--panel` + 28px blur |
+| Table, form, dense text field        | Opaque `--paper-*`        |
+| Dialog, popover, menu, toast (§6.11) | Opaque `--paper-0`        |
+| Dialog scrim                         | `--ink-0` at α 0.5, flat  |
+| Topbar, footer, inspector rail       | Veiled glass at `--veil`  |
+| Background lattice, notes workspace  | Frost                     |
+| Behind everything                    | Shader gradient           |
 
-Everything a learner reads or acts on is opaque. This keeps the veil law (§3.5) applying to a small, auditable set of surfaces rather than to the whole product, and it means legibility never depends on what the gradient happens to be doing.
+Every top-level card filters its backdrop; nested rows reuse the parent pane
+instead of stacking transparency and blur. This preserves the moving field
+without allowing its local detail to become the reading surface.
 
 #### Proportion
 
@@ -211,6 +214,12 @@ Nine layers, ordinal, one custom property each. **No literal `z-index` anywhere*
 | 6     | `--layer-dialog`    | Dialogs (§6.11).                                                                                |
 | 7     | `--layer-toast`     | Toasts. Above dialogs, because a rollback error (§7.4) must be visible over whatever caused it. |
 | 8     | `--layer-skip`      | Skip links when focused (§8.2). Above everything, so focus is never obscured (SC 2.4.11).       |
+
+Leaflet maintains an isolated component-local numeric scale (`200` tiles,
+`400` vectors, `600` markers, `800+` controls). `--layer-leaflet-tint: 250`
+is the sole bridge into that third-party scale: above raster tiles and below
+every interactive map layer. It does not participate in the document-level
+order above.
 
 **`backdrop-filter` creates a stacking context and a containing block for fixed descendants.** The topbar and inspector rail are backdrop-filtered (§5), which means an overlay rendered as their DOM child is trapped inside them and cannot reach its layer. **Every overlay renders through a portal at the document root** — React Aria does this by default (§13.2), and hand-built overlays must match it.
 
@@ -345,7 +354,7 @@ Six hues, one per `ContentType`. **Identity, not decoration** — a learner shou
 
 All six clear AA body text (4.5:1) on all four surfaces in both themes. "Worst paper" is the
 lowest of `--bg`, `--bg-raised`, `--panel` and `--glass`, each composited through its alpha
-before measuring — `--panel` is `rgb(var(--bg-rgb) / 0.85)`, not an opaque colour, and comparing
+before measuring — `--panel` is a 72% theme surface, not an opaque colour, and comparing
 against the uncomposited value overstates every ratio in this table. The floor binds because
 `.k-frame__type` paints the accent as 12px text (`--size-label`), which is not large text.
 
@@ -367,11 +376,20 @@ The three pairs are deliberately hue-adjacent by family — reading (`summary`/`
 
 ### 3.3 Semantic colors
 
-| Role     | Light     | Dark      | Use                                   |
-| -------- | --------- | --------- | ------------------------------------- |
-| `--ok`   | `#1a6b3c` | `#5fd18d` | Correct, published, verified, healthy |
-| `--warn` | `#8a5a00` | `#e0b453` | Partial, draft, degraded, unverified  |
-| `--err`  | `#b32020` | `#ff8a80` | Incorrect, failed, destructive        |
+| Role          | Light              | Dark      | Use                                    |
+| ------------- | ------------------ | --------- | -------------------------------------- |
+| `--ok`        | `#b1f9b0`          | `#5a9e59` | Correct, published, verified, healthy  |
+| `--ok-hover`  | `#74e172`          | `#74e172` | Correct-state border / stronger step   |
+| `--warn`      | Ink-safe theme mix | `#c9a94d` | Partial, draft, degraded, unverified   |
+| `--err`       | `#ff8787`          | `#c95a5a` | Incorrect, failed, destructive         |
+| `--err-hover` | `#ff5757`          | `#e66b6b` | Incorrect-state border / stronger step |
+
+These are the canonical semantic values from
+`common_sage_frontend/styles/_variables.scss`, not locally approximated hues.
+When a module marks an answer, the entire existing answer option uses the base
+green or red as its fill, the stronger step as its border, and
+`--on-accent` for its glyph/text. Do not dilute answer feedback into a grey
+panel tint.
 
 **Colour is never the sole channel** (SC 1.4.1). Every state carries a second:
 
@@ -519,7 +537,7 @@ The language modules are the hardest typography in the product: a _Discriminatio
 <ruby>図書館<rp>(</rp><rt>としょかん</rt><rp>)</rp></ruby>
 ```
 
-`<rt>` at `0.5em`, `ruby-position: over`. Reserve line-box space so ruby never shifts the lines around it. Furigana is a **scaffold**: every module that contains optional reading data exposes a toggle, and the toggle state persists per learner. Kana recognition, discrimination, kana production, kanji reading, and transcription never expose it: there it is meaningless or reveals the answer. A toggle with no ruby data is also forbidden. The `<rp>` fallback parentheses matter — assistive technology and non-supporting renderers read them.
+`<rt>` at `0.5em`, `ruby-position: over`. Reserve both the annotation's inline width and its line-box space so furigana never shifts the text or anything around it. `<ruby>`, `<rt>`, and `<rp>` remain mounted in both states; hiding readings uses `visibility: hidden` on the annotation, never conditional plain-text markup or `display: none`. The toggle's visible label and target width are likewise constant. Card dimensions, line breaks, and neighbouring positions must be identical before and after a toggle. Furigana is a **scaffold**: every module that contains optional reading data exposes a toggle, and the toggle state persists per learner. Kana recognition, discrimination, kana production, kanji reading, and transcription never expose it: there it is meaningless or reveals the answer. A toggle with no ruby data is also forbidden. The `<rp>` fallback parentheses matter — assistive technology and non-supporting renderers read them.
 
 **Audio.** Speech is never the only channel. Every spoken prompt (Vocab guesser, Transcription) has a visible transcript toggle (SC 1.2.1) and a replay control, and the module is completable with audio muted.
 
@@ -569,16 +587,21 @@ RTL is not a v1 target, but the logical-properties rule means it does not become
 
 ## 5. Material
 
-| Material         | Composition                                          | Where                                             |
-| ---------------- | ---------------------------------------------------- | ------------------------------------------------- |
-| **Paper**        | Opaque `--paper-*` + `--rule-structural`             | All content: cards, frames, inputs, chips, tables |
-| **Veiled paper** | `--paper-1` at `--veil` + 28px backdrop blur + grain | Topbar, inspector, anything over the canvas       |
-| **Frost**        | Backdrop blur + fractional mask alpha + grain        | Decorative lattice only; never carries text       |
-| **Light**        | The shader gradient                                  | Fixed backdrop, `aria-hidden`, always behind      |
+| Material         | Composition                                              | Where                                        |
+| ---------------- | -------------------------------------------------------- | -------------------------------------------- |
+| **Study glass**  | 72% theme surface + 28px backdrop blur + structural rule | Cards, module frames, and page work regions  |
+| **Paper**        | Opaque `--paper-*` + `--rule-structural`                 | Inputs, chips, tables, and dense text fields |
+| **Veiled paper** | `--paper-1` at `--veil` + 28px backdrop blur + grain     | Topbar and inspector                         |
+| **Frost**        | Backdrop blur + fractional mask alpha + grain            | Decorative lattice only; never carries text  |
+| **Light**        | The shader gradient                                      | Fixed backdrop, always `aria-hidden`         |
 
 Grain (`feTurbulence`, `soft-light`, α 0.58, 180px tile) is applied once per surface at the material layer, never per component. It exists so frost has something to blur — a blur over a smooth gradient is invisible without texture.
 
-`backdrop-filter` costs per element, not per pixel of blur. One blurred layer revealed by a mask beats N blurred cells. Budget: **≤4 backdrop-filtered elements per surface**.
+`backdrop-filter` costs per element, not per pixel of blur. Only top-level cards
+and work regions blur; rows and controls inside them reuse that material and
+never create another filtered layer. Under
+`prefers-reduced-transparency: reduce`, `--panel` becomes the opaque raised
+surface and every material remains legible without blur.
 
 ---
 
@@ -597,7 +620,7 @@ Grain (`feTurbulence`, `soft-light`, α 0.58, 180px tile) is applied once per su
 ### 6.2 Universal anatomy
 
 ```
-[ 1px structural rule ] [ paper fill ] [ 32px block / 48px inline padding ] [ 0 radius ]
+[ 1px structural rule ] [ 72% study-glass fill + blur ] [ 32px block / 48px inline padding ] [ 0 radius ]
 ```
 
 Minimum hit area **48×48px** (`6u`). This is set by the grid, not by the guideline — it happens to clear SC 2.5.8's 44px recommendation and its 24×24 floor comfortably, which is the convenient case where total cell discipline and accessibility agree. The visible box may be smaller than the hit area — extend with padding or a pseudo-element, never by shrinking the target.
@@ -614,7 +637,7 @@ Fixed system-wide:
 | `hover`         | `paper-0`, rule → `ink-0` at 70%                                                                                                                  |
 | `focus-visible` | Focus ring ([§8.6](#86-focus-appearance)). Independent of hover.                                                                                  |
 | `active`        | `paper-2`, 1px inset translate                                                                                                                    |
-| `selected`      | 2px accent left rule + ≤12% accent fill + `aria-pressed`/`aria-selected`                                                                          |
+| `selected`      | Solid `--selected-fill` (the stronger frontend blue) + `--selected-ink` text + `aria-pressed`/`aria-selected`; never the translucent hover fill   |
 | `current`       | Accent underline at 4px offset + `aria-current`                                                                                                   |
 | `disabled`      | `paper-2`, `ink-2` text, decorative rule, `aria-disabled` — not the `disabled` attribute where the control must stay discoverable and explainable |
 | `loading`       | Shimmer skeleton at `paper-2`, `aria-busy="true"`                                                                                                 |
@@ -691,7 +714,7 @@ The authoring flow (course creation, source upload, review) is a stepper in `.k-
 
 - Every field has a **visible persistent label**. Placeholder is never the label.
 - **No titled field boxes.** A label never cuts through a border and a `fieldset` never renders as a rectangle with its `legend` embedded in the rule. Related compact options use a label beside a single-line control row; longer forms use ordinary stacked labels. Grouping remains semantic in the DOM without becoming a decorative box.
-- Selector sets that control one list or graph sit in one horizontal toolbar above that display. A selector label and value stay on one line; the toolbar scrolls horizontally before an option such as “Vocabulary” is allowed to wrap.
+- Selector sets that control one display sit in one horizontal toolbar above it. A selector label and value stay on one line; the toolbar scrolls horizontally before an option such as “Vocabulary” is allowed to wrap.
 - Required fields are marked in text (`Required`), not by asterisk alone.
 - Errors: inline, adjacent, `aria-describedby`-linked, in plain language that says how to fix it (SC 3.3.1, 3.3.3). An error summary at the top of the form links to each failing field.
 - Validation fires on blur and on submit, never on every keystroke.
@@ -868,7 +891,7 @@ Four kinds, one set of shared laws. §3.6 ends by saying that anything needing a
 - **No nested dialogs.** A dialog that needs a dialog is a wizard (§6.7).
 - Confirmations name their object — "Delete _Probability Theory_?" — and the destructive control is a `destructive` button (§6.4), never the primary.
 
-**Popover and menu.** Positioned against the trigger, flipping to stay in the viewport, never repositioning while open. Arrow keys move within a menu, `Escape` closes and restores focus to the trigger. A popover never contains a form that can't be completed in a dialog instead.
+**Popover and menu.** Positioned against the trigger, flipping to stay in the viewport, never repositioning while open. Arrow keys move within a menu, `Escape` closes and restores focus to the trigger. A popover never contains a form that can't be completed in a dialog instead. The Reading Lab's word explanation is an eight-cell-wide popover anchored immediately after the selected word; it overlays the following prose and never occupies layout space or changes the reading composition.
 
 **Tooltip.** Supplementary only. If the information is required to operate the control, it is not a tooltip — it is a visible label or a description linked by `aria-describedby`. **No tooltip on touch**: long-press to reveal is undiscoverable and unreachable by assistive technology, so the label is simply visible there.
 
@@ -1019,7 +1042,9 @@ Select and Open are deliberately distinct. In a knowledge graph, previewing must
 
 **Learner deck (`/courses/[id]/start`).** A card stack: the current module centred, the next two visible behind it so session depth is tangible ([§10.4D](#104-signature-motions)). Every **graded** module exposes the same four-slot control band in the same position (§6.10), with swipe as an optional accelerator on touch (§7.3); ungraded modules scroll to a single **Continue** in that same primary position. The prompt stays visible while answering. Judgement is immediate, optimistic (§7.4), and unambiguous. The correct answer is _always_ shown after an incorrect response — never just "wrong". Advancing is explicit; nothing auto-advances, because auto-advance steals the reflection moment and breaks screen-reader pacing. The content-type filter (currently stranded in the global navbar) lives here, as chips in `.k-context`. The inspector rail stays quiet while the learner is answering — §2.4 makes the card the sole focal object — and fills **after judgement** with the item's topic and the learner's notes on it (§2.7, §11.15). This is where a withheld topic name reappears (§6.10), so nothing is hidden, only deferred past the moment it would have cued the answer.
 
-**Knowledge graph.** Topics contain topics — **and the graph is also the progress map** (§11.7). Every tile carries its mastery state, so the surface answers "where am I weak?" alongside "what exists?" Hover or select previews in the inspector; only the explicit open control descends. Descent is a **spatial zoom** — the tile scales up until it becomes the field, its children resolving inside it ([§10.4B](#104-signature-motions)) — then the new field's first tile takes focus. The animation is the explanation: containment is asserted by the breadcrumb and demonstrated by the zoom. Breadcrumbs are the sole ascent path; every crumb is a button. Depth is announced. An atomic topic shows an empty-state tile rather than an empty grid. The graph is **SVG, not canvas** — it is fully accessible and is _not_ a carve-out.
+**Knowledge graph.** Topics contain topics — **and the graph is also the progress map** (§11.7). The canonical visual and interaction model is the spatial Knowledge Graph demo, populated from live course `Topic` records: a **12 × 8-cell field** is filled by balanced contiguous partitions. Its resting state always shows the unsplit topic field with no forced selection. On a hover-capable device, hovering a branch temporarily replaces that tile's summary with its child split; clicking, keyboard focus, and selection never leave a tile split. The reveal uses `spring.settle`: the child field starts slightly above its resting position, is clipped to its top edge, then slides down while its mask expands from top to bottom. The summary fades upward at the same time, and leaving reverses the transition. Parent titles use the full tile width and step through the approved `h2`, `h3`, and small-body tokens according to title density per tile column, keeping them on one line; overflow is ellipsised only when the minimum readable size still cannot fit. During the child reveal, the parent title scales smoothly to 78% from its lower-left anchor. Topic and child-preview surfaces stay entirely within the product's blue palette. Mastery does not colour a tile: it appears as a small circular red–yellow–green status flag beside an explicit completion percentage. The percentage is the primary progress signal; colour is only a redundant secondary channel. Selection uses only a stronger blue fill, never an additional blue border or glow. This makes the surface answer "where am I weak?" without turning the whole field into a traffic-light display. Select previews details in the inspector; double-click or the explicit open control descends. Descent is a **spatial zoom** — the field recedes before its children resolve into the new field ([§10.4B](#104-signature-motions)) — then the first tile takes focus without selecting it. Breadcrumbs are the sole ascent path; every crumb is a button. Depth is announced. An atomic topic shows a terminal field rather than an empty grid. The graph is a semantic HTML button grid with roving keyboard focus, never canvas, so it remains fully accessible. Its visual background is dependency-injected through one decorative `background` slot; when omitted, the global app field remains visible. Navigation, data, and background rendering never depend on each other.
+
+**Graph test data never impersonates backend data.** The four named sample course slugs resolve their topic fields directly from `lib/api/fixtures`; they are not sent through `/api/v1/courses/:id/topics`, where a backend expecting UUIDs would correctly return 404. The probability fixture contains nested branches down through conditional probability → Bayes' theorem → priors and likelihoods → likelihood ratios, so descent, child previews, breadcrumbs, and terminal fields can all be tested without a backend. Any non-fixture course uses the live adapter and renders the shared retryable resource state if loading fails.
 
 **Topic / lecture detail.** A topic is the same component here as in the graph and the deck. Content lists group by `ContentType` (§3.2), with counts. Educators see an edit affordance in place; students see the same layout without it — never a different layout.
 
@@ -1209,7 +1234,7 @@ WCAG 2.2 Level AA across all surfaces and all four roles. Common Sage today repo
 
 ### 9.3 Canvas carve-outs
 
-Exactly three components cannot be made fully conformant as canvas alone. The knowledge graph is **not** among them — it is SVG and fully accessible; keep it that way.
+Exactly three components cannot be made fully conformant as canvas alone. The knowledge graph is **not** among them — it is a semantic button grid and fully accessible; keep it that way.
 
 **A. The shader gradient.**
 _Exception:_ the WebGL canvas is not exposed to assistive technology.
@@ -1253,12 +1278,13 @@ Three OS-level preferences change how this system renders. Each is a **contract 
 
 **Transparency.** `prefers-reduced-transparency: reduce`:
 
-| Element              | Substitute                                                  |
-| -------------------- | ----------------------------------------------------------- |
-| Veiled paper (§5)    | `--veil` goes to `1.0`. Opaque `--paper-1`.                 |
-| Frost                | Flat `--paper-1` fill; no `backdrop-filter`.                |
-| Dialog scrim (§6.11) | Unchanged — it is already flat, and occlusion is the point. |
-| Shader gradient      | Unchanged. It is behind everything and carries nothing.     |
+| Element              | Substitute                                                     |
+| -------------------- | -------------------------------------------------------------- |
+| Study glass (§5)     | `--panel` becomes the opaque raised surface; blur is optional. |
+| Veiled paper (§5)    | `--veil` goes to `1.0`. Opaque `--paper-1`.                    |
+| Frost                | Flat `--paper-1` fill; no `backdrop-filter`.                   |
+| Dialog scrim (§6.11) | Unchanged — it is already flat, and occlusion is the point.    |
+| Shader gradient      | Unchanged. It is behind everything and carries nothing.        |
 
 Nothing is lost, because the veil never carried information — it was always atmosphere (§1, law 2). This preference makes the product _more_ legible, and it is the cheapest of the three to honour.
 
@@ -1778,7 +1804,8 @@ These parts of Common Sage are right and carry over:
 - **A normalised error adapter** — one `ApiError` shape, so §11.7 error states can be uniform.
 - **`data-theme` on `<html>`** for theme switching.
 - **The `ResourceState` idea** — one primitive for loading / error / empty, so those states can't drift per component. Extended per §11.7 to carry a recovery action.
-- **SVG for the knowledge graph.** Not canvas. This is why the graph needs no carve-out.
+- **Semantic HTML for the knowledge graph.** The spatial field is a roving
+  button grid, not canvas. This is why the graph needs no carve-out.
 - **`motion/react`** — already a dependency, currently used in exactly one component (`AnimatedVisibility`, duration-based, `easeInOut`). Kite promotes it to the animation runtime and moves it to springs (§10.2).
 
 ### 12.3 What we deliberately break
@@ -1920,7 +1947,8 @@ A component ships when all of these hold. This is the checklist the whole docume
 - [ ] Copy is sentence case, names objects exactly as the data model does, and reads as `du` in German (§13.5, §4.4)
 - [ ] Composes left-weighted; primary action bottom-right; horizontal rules full-bleed, verticals contained
 - [ ] Every field on it passes §2.7's action or trust test at that surface's encounter count; exceptions are marked and norms are not; nothing was promoted a tier by hover or "show more"
-- [ ] Content is opaque paper; only chrome is veiled
+- [ ] Cards use the shared 72% study-glass material and one blur; nested rows
+      do not stack filtered surfaces
 - [ ] Declares an explicit `font-size`; never inherits the UA default
 - [ ] Implements every state in §6.3 with the specified encoding
 - [ ] Reachable, operable, and escapable by keyboard alone, in DOM order
@@ -1998,17 +2026,19 @@ Eight functions, each a route: `/japanese/lesson`, `/japanese/read`, `/japanese/
 
 **They compose the deck's cards; they do not re-implement them.** The lesson runner, the placement runner and the chat's generated cards all serve ordinary modules through `ModuleFrame`. A drill inside a lesson is the same object as a drill in a session.
 
-**Paper, not glass.** These surfaces put controls and prose directly on the shader. Measured on the light gradient, every label on Read, Listen, Karaoke, Concepts and Tutor was pale ink on a pale wash and could not be read. The work region of a full-page function is `--panel` with a hairline; §5's material map has no exception for "it is a page rather than a card". The head's orientation line genuinely sits on the gradient and uses `--shader-ink`; it never gains a local grey fill or text-sized veil. The light Common Sage wave therefore uses a brighter, more saturated monochrome-blue range with enough tonal movement to remain visible. Its motion is slower than the previous field; vibrancy comes from colour, never speed.
+**Legible glass, not bare shader.** These surfaces put controls and prose over a moving field. The work region of every full-page function therefore uses the shared 72% `--panel`, a 28px backdrop blur, and a hairline. The panel stays visibly transparent without letting local background detail compete with text. Nested rows do not add another blur. The head's orientation line genuinely sits on the gradient and uses `--shader-ink`; it never gains a local grey fill or text-sized veil. The light Common Sage wave uses a brighter, saturated monochrome-blue range with enough tonal movement to remain visible. Its motion is slow; vibrancy comes from colour, never speed.
 
 **A denominator only where one exists.** The active lesson may show the position in its frozen card set. The feed and deck show nothing: both are open-ended experiences and any persistent count would become a number to optimise (§11.6).
 
-**Daily learning is mixed, not staged.** Review, new material, context, and recall remain pedagogical inputs to the daily selection, but they are not exposed as interface copy or a six-step sequence. The plan is a centred, fourteen-cell-wide card; quantity controls sit directly beside their numbers in one-cell squares, and selectable item rows use a one-cell minimum with only an optical vertical gap. The explanation locale is inherited elsewhere, never chosen here. Each row has two durable action slots: `Already know` becomes `Put back` in place, while `Reroll` remains available beside it. Knowledge evidence is emitted independently and is never retracted by Put back or Reroll.
+**Daily learning is mixed, not staged.** Review, new material, context, and recall remain pedagogical inputs to the daily selection, but they are not exposed as interface copy or a six-step sequence. The plan is a centred, fourteen-cell-wide card; quantity controls sit directly beside their numbers in one-cell squares, and selectable item rows use a one-cell minimum with only an optical vertical gap. The explanation locale is inherited elsewhere, never chosen here. Each row has two durable action slots: `Already know` becomes `Put back` in place, while `Reroll` remains available beside it. After `Already know`, only the learning-item content is struck through; the `Put back` and `Reroll` controls remain undecorated and fully legible. Knowledge evidence is emitted independently and is never retracted by Put back or Reroll.
 
-**Text generation is library disclosure.** Reading, Listening, and Read Aloud show the shared text library first. The last library action is `+ New Text`, which opens one dialog containing single-line generation settings and a text-upload path. Generation controls never occupy a permanent tab or compete with the selected text.
+**Concepts is a filtered list with detail, not a mode switcher.** Its only top selectors are concept group, JLPT level, and mastery state. The first available concept opens by default. There is no search field, graph/list switch, Examples toggle, mastery-overlay toggle, or instructional empty-state sentence. Example sentences remain ordinary detail content rather than an optional display mode. This rule applies to the Japanese Concepts study surface; the separate course hierarchy graph keeps its own route and interaction model.
 
-**Language Tutor is chat-first.** The Japanese conversation is the work region. Translations have a visible on/off control; scenario, tutor voice, and the option to inherit today’s lesson topic live in one Settings callout at the card’s top right. Course Q&A is a different function and does not share this surface.
+**Text generation is library disclosure.** Reading, Listening, and Read Aloud show the shared text library first. Library and active text use the standard translucent panel colour without a local `backdrop-filter`; applying panel blur, saturation, or brightness here produces a white backing behind the text. Nested reader, listener, and read-aloud regions explicitly reset `backdrop-filter` to `none`, so no blur sits directly behind prose. The active reading/listening/read-aloud stage never introduces a differently coloured surface. The last library action is `+ New Text`, which opens one dialog containing single-line generation settings and an import path accepting either a file or pasted text. The setting is named **Politeness**, not Register. Every selected control uses the solid stronger frontend blue with dark high-contrast text, never a translucent grey hover fill. Generation controls never occupy a permanent tab or compete with the selected text.
 
-Two counts differ from the JKG source deliberately: the feed discards a view shorter than **0.7 s** rather than recording it weakly, and placement reports a **working level with an explicit uncertainty** rather than a score, taking the lowest dimension rather than the mean — a learner whose grammar is N4 and whose kanji is N5 cannot read an N4 lesson.
+**Language Tutor is chat-first.** The Japanese conversation is the work region. Tutor and learner turns are bounded speech bubbles with distinct alignment and material. Translations and Furigana have visible on/off controls; scenario, tutor voice, and the option to inherit today’s lesson topic live in one Settings callout at the card’s top right. The composer is one bordered text area with a muted placeholder. Focusing its textarea never draws a second inset or outer ring; focus changes the colour of the composer's existing one-pixel boundary. While empty, its right-side voice affordance shows microphone and waveform icons; once text exists, the same stable slot becomes a send arrow. Secondary review actions sit outside the composer. Course Q&A is a different function and does not share this surface.
+
+Two counts differ from the JKG source deliberately: the feed discards a view shorter than **0.7 s** rather than recording it weakly, and placement reports a **working level with an explicit uncertainty** rather than a score, taking the lowest dimension rather than the mean — a learner whose grammar is N4 and whose kanji is N5 cannot read an N4 lesson. During an active placement run, the reused drill card is horizontally centred beneath the full-width progress and uncertainty summary; it does not inherit that summary's left alignment.
 
 ### 15.6 Still not built
 
@@ -2035,6 +2065,12 @@ Named so that absence stays legible (§9.3's form):
 - Map-click cards may widen to sixteen cells and use an eight-cell-tall map.
   Wheel zoom is active. No label layer, candidate buttons, external verdict
   row, or post-test difficulty rating is permitted.
+- A map's ocean uses the theme's background blue (`#8ccfff` in light mode,
+  `#2f8fdb` in dark mode) as its loading and gap surface. The visible geography
+  is a conventional Leaflet raster using Esri World Ocean Base without the
+  separate reference-label service. No SVG replacement, grayscale filter,
+  full-world tint, or blend layer is permitted; those treatments corrupt land
+  and water together.
 - Kana recognition is a compact canonical Quiz with no topic/furigana header.
   Discrimination also suppresses furigana. Kanji Meaning exposes the control
   only when the prompt carries working ruby data.

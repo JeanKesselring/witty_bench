@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react'
 import { CONCEPTS, type Concept, type ConceptKind, type JlptLevel } from '@/lib/api/jkg'
 import { Ruby } from '@/components/deck/Japanese'
 
-type View = 'list' | 'graph'
 type MasteryFilter = 'all' | 'proficient' | 'learning' | 'unseen'
 type KindGroup = 'all' | 'writing' | 'vocabulary' | 'grammar'
 
@@ -13,26 +12,14 @@ const VOCABULARY: ConceptKind[] = ['verb', 'noun', 'adjective', 'particle', 'adv
 const LEVELS: JlptLevel[] = ['N5', 'N4', 'N3', 'N2', 'N1']
 
 export function Explorer() {
-  const [view, setView] = useState<View>('list')
-  const [query, setQuery] = useState('')
   const [kindGroup, setKindGroup] = useState<KindGroup>('all')
   const [level, setLevel] = useState<'all' | JlptLevel>('all')
   const [mastery, setMastery] = useState<MasteryFilter>('all')
-  const [overlay, setOverlay] = useState(false)
-  const [examples, setExamples] = useState(true)
-  const [selected, setSelected] = useState<string | null>(null)
+  const [selected, setSelected] = useState<string | null>(CONCEPTS[0]?.id ?? null)
 
   const shown = useMemo(
     () =>
       CONCEPTS.filter((concept) => {
-        if (
-          query &&
-          !`${concept.name}${concept.reading ?? ''}${concept.definition}`
-            .toLowerCase()
-            .includes(query.toLowerCase())
-        ) {
-          return false
-        }
         if (kindGroup === 'writing' && !WRITING.includes(concept.kind)) return false
         if (kindGroup === 'vocabulary' && !VOCABULARY.includes(concept.kind)) return false
         if (kindGroup === 'grammar' && concept.kind !== 'grammar') return false
@@ -40,7 +27,7 @@ export function Explorer() {
         if (mastery !== 'all' && bandOf(concept) !== mastery) return false
         return true
       }),
-    [kindGroup, level, mastery, query],
+    [kindGroup, level, mastery],
   )
 
   const concept = CONCEPTS.find((candidate) => candidate.id === selected) ?? null
@@ -48,20 +35,6 @@ export function Explorer() {
   return (
     <div className="k-explorer">
       <div className="k-explorer__toolbar" aria-label="Concept selectors">
-        <label className="k-inline-select k-inline-select--search">
-          <span>Search</span>
-          <input
-            className="k-input"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' && shown[0]) setSelected(shown[0].id)
-              if (event.key === 'Escape') setQuery('')
-            }}
-            placeholder="Japanese or English"
-          />
-        </label>
-
         <label className="k-inline-select">
           <span>Concepts</span>
           <select
@@ -105,36 +78,6 @@ export function Explorer() {
             <option value="unseen">Not begun</option>
           </select>
         </label>
-
-        <button
-          type="button"
-          className="k-btn k-btn--secondary k-press"
-          aria-pressed={examples}
-          onClick={() => setExamples((current) => !current)}
-        >
-          Examples
-        </button>
-        <button
-          type="button"
-          className="k-btn k-btn--secondary k-press"
-          aria-pressed={overlay}
-          onClick={() => setOverlay((current) => !current)}
-        >
-          Mastery overlay
-        </button>
-        <div className="k-view-switch" role="group" aria-label="Display">
-          {(['list', 'graph'] as const).map((candidate) => (
-            <button
-              key={candidate}
-              type="button"
-              className="k-btn k-btn--secondary k-press"
-              aria-pressed={view === candidate}
-              onClick={() => setView(candidate)}
-            >
-              {candidate === 'list' ? 'List' : 'Graph'}
-            </button>
-          ))}
-        </div>
       </div>
 
       <div className="k-explorer__body">
@@ -143,38 +86,27 @@ export function Explorer() {
             {shown.length} of {CONCEPTS.length} concepts
           </p>
 
-          {view === 'list' ? (
-            <ul className="k-conceptlist">
-              {shown.map((candidate) => (
-                <li key={candidate.id}>
-                  <button
-                    type="button"
-                    className="k-btn k-btn--quiet k-press"
-                    aria-pressed={selected === candidate.id}
-                    data-current={selected === candidate.id ? 'true' : undefined}
-                    data-band={overlay ? bandOf(candidate) : undefined}
-                    onClick={() => setSelected(candidate.id)}
-                  >
-                    <span className="k-ja" lang="ja">
-                      {candidate.name}
-                    </span>
-                    <small className="k-meta">
-                      {candidate.reading ? `${candidate.reading} · ` : ''}
-                      {candidate.kind} · {candidate.level}
-                      {overlay ? ` · ${bandLabel(candidate)}` : ''}
-                    </small>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <ConceptGraph
-              concepts={shown}
-              overlay={overlay}
-              selected={selected}
-              onSelect={setSelected}
-            />
-          )}
+          <ul className="k-conceptlist">
+            {shown.map((candidate) => (
+              <li key={candidate.id}>
+                <button
+                  type="button"
+                  className="k-btn k-btn--quiet k-press"
+                  aria-pressed={selected === candidate.id}
+                  data-current={selected === candidate.id ? 'true' : undefined}
+                  onClick={() => setSelected(candidate.id)}
+                >
+                  <span className="k-ja" lang="ja">
+                    {candidate.name}
+                  </span>
+                  <small className="k-meta">
+                    {candidate.reading ? `${candidate.reading} · ` : ''}
+                    {candidate.kind} · {candidate.level}
+                  </small>
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
 
         <aside className="k-explorer__detail" aria-label="Concept detail">
@@ -201,7 +133,7 @@ export function Explorer() {
                 <p className="k-meta">Stroke order: {concept.strokeOrder.join(' ')}</p>
               ) : null}
 
-              {examples && concept.examples.length ? (
+              {concept.examples.length ? (
                 <ul className="k-examples">
                   {concept.examples.map((example, index) => (
                     <li key={index}>
@@ -244,83 +176,10 @@ export function Explorer() {
                 Practise this now
               </a>
             </>
-          ) : (
-            <p className="k-meta">Choose a concept to read about it.</p>
-          )}
+          ) : null}
         </aside>
       </div>
     </div>
-  )
-}
-
-function ConceptGraph({
-  concepts,
-  overlay,
-  selected,
-  onSelect,
-}: {
-  concepts: Concept[]
-  overlay: boolean
-  selected: string | null
-  onSelect: (id: string) => void
-}) {
-  const radius = 140
-  const centre = { x: 200, y: 180 }
-  const placed = concepts.map((concept, index) => {
-    const angle = -Math.PI / 2 + (index / Math.max(1, concepts.length)) * Math.PI * 2
-    return {
-      concept,
-      x: centre.x + Math.cos(angle) * radius,
-      y: centre.y + Math.sin(angle) * radius,
-    }
-  })
-  const at = new Map(placed.map((position) => [position.concept.id, position]))
-
-  return (
-    <svg className="k-conceptgraph" viewBox="0 0 400 360" role="group" aria-label="Concept graph">
-      {placed.flatMap((position) =>
-        position.concept.related
-          .filter((related) => at.has(related.id))
-          .map((related) => {
-            const other = at.get(related.id)!
-            return (
-              <line
-                key={`${position.concept.id}-${related.id}`}
-                x1={position.x}
-                y1={position.y}
-                x2={other.x}
-                y2={other.y}
-                className="k-conceptgraph__edge"
-              />
-            )
-          }),
-      )}
-      {placed.map((position) => (
-        <g
-          key={position.concept.id}
-          transform={`translate(${position.x} ${position.y})`}
-          tabIndex={0}
-          role="button"
-          aria-pressed={selected === position.concept.id}
-          aria-label={`${position.concept.name}. ${position.concept.definition}`}
-          data-band={overlay ? bandOf(position.concept) : undefined}
-          data-current={selected === position.concept.id ? 'true' : undefined}
-          className="k-conceptgraph__node"
-          onClick={() => onSelect(position.concept.id)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault()
-              onSelect(position.concept.id)
-            }
-          }}
-        >
-          <rect x={-34} y={-18} width={68} height={36} />
-          <text textAnchor="middle" dy="0.35em">
-            {position.concept.name}
-          </text>
-        </g>
-      ))}
-    </svg>
   )
 }
 

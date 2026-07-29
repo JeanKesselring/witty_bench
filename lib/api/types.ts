@@ -47,6 +47,8 @@ export interface Topic {
   title: string
   blurb: string
   mastery: Mastery
+  /** Learner progress through this topic, from 0 to 100. */
+  progressPercent?: number
   childIds: string[]
   moduleCount: number
   /** Cell-snapped tile packing, 1×1 to 3×3 (§2.4). */

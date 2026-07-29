@@ -134,7 +134,9 @@ Learning behavior:
 - `Already know` immediately records knowledge evidence and becomes `Put back`
   in the same action slot. `Put back` changes the visible plan but never
   retracts that evidence. `Reroll` remains in the second slot in both states
-  and replaces the item without changing the dimension count.
+  and replaces the item without changing the dimension count. Only the
+  learning-item text is struck through; neither action button receives the
+  line.
 - Validated card answers update mastery and spaced-repetition scheduling.
 - The lesson is persisted and resumable.
 - Profile changes affect future lessons without changing the active run.
@@ -206,20 +208,41 @@ Canonical scope:
 Course-graph interactions:
 
 - `Knowledge graph`
-- Click a child or deeper node to focus it.
-- Click a parent node or parent connection to zoom out.
-- Hover a node to view its title and summary.
-- `Search concepts…`
-- Click a search result.
-- Press Enter to focus the first result.
-- Press Escape to clear results.
-- `Collapse sidebar`
-- `Expand sidebar`
+- The demo's balanced spatial field is populated from live course `Topic`
+  records rather than its static sample graph.
+- Click a topic, or press Enter while it has keyboard focus, to select it and
+  preview its summary in the inspector.
+- Hover a branch topic to preview its children inside its tile. Selection and
+  keyboard focus do not keep the child split open; the resting field is fully
+  unsplit and begins without a forced selection.
+- The hover split uses the shared settle spring: it enters slightly from above
+  and reveals from its top edge downward, then reverses smoothly on leave.
+- Parent titles use the full tile width and approved type-scale steps based on
+  title density per tile column to stay on one line. They scale smoothly to
+  78% from the lower-left during the split.
+- Double-click a branch tile or use `Open topic` to descend into it.
+- Use the breadcrumb buttons to ascend to any previous level.
+- Use arrow keys, Home, and End to move through the field as one roving
+  keyboard stop.
+- Keep all topic and child-preview tiles within the product's blue palette.
+- Show progress as a small circular red–yellow–green flag with an explicit
+  completion percentage. The percentage carries the information; colour is a
+  secondary signal and never floods the tile.
+- Selected topics use only the stronger blue fill, with no additional blue
+  border or glow.
+- Fill a 12 × 8-cell field. Narrow viewports scroll the field horizontally.
+- Atomic topics show a deliberate terminal field rather than a blank region.
+- The graph accepts a decorative background component through its
+  `background` slot; without one it exposes the app's global background.
+- Known sample course slugs (`probability`, `japanese-n5`, `geomorphology`,
+  and `thermodynamics`) resolve directly from their local topic fixtures, so
+  the test graph never sends fixture identities to the live API proxy.
+- The probability sample is deliberately nested through four topic levels
+  (three successive descents) so branch previews, repeated descent,
+  breadcrumbs, and terminal topics can be exercised during testing.
 
 Japanese explorer view controls:
 
-- `List`
-- `Graph`
 - Mastery filters:
   - `Proficient`
   - `Learning`
@@ -241,9 +264,10 @@ Japanese explorer view controls:
   - `N3`
   - `N2`
   - `N1`
-- `Examples & facts`
-- `Mastery overlay`
 - Select a concept to open its detail panel.
+- The first available concept opens by default.
+- There is no search field, graph/list switch, examples toggle, mastery
+  overlay, or instructional empty-state sentence on this Japanese surface.
 
 Concept-detail content and interactions:
 
@@ -290,12 +314,16 @@ Generation controls:
   - `Easier`
   - `Current`
   - `Stretch`
-- Register:
+- Politeness:
   - `Casual`
   - `Neutral`
   - `Formal`
 - Toggle `Use today’s [number] focus items`.
 - `Generate`
+- Import an existing text by uploading TXT, DOCX, or PDF.
+- Import an existing text by pasting it directly into the dialog.
+- Selected controls use the stronger frontend blue as a solid fill and border,
+  with dark high-contrast text.
 
 Reading interactions:
 
@@ -305,6 +333,8 @@ Reading interactions:
 - `Translations`
 - Hover, tap, or keyboard-focus a word.
 - Press Enter or Space to open a word explanation.
+- Show the explanation as an eight-cell-wide overlay above the reading text;
+  it never reserves space or changes the text composition.
 - Press Escape or click outside to close it.
 - View:
   - Surface form
@@ -312,7 +342,6 @@ Reading interactions:
   - Rōmaji
   - English gloss
   - Grammar point and definition
-- `Open in graph →`
 
 Library interactions:
 
@@ -320,6 +349,10 @@ Library interactions:
 - Press Enter to open the selected library item.
 - `Delete text`
 - Reuse the same text in Listen and Karaoke.
+- Library and active-text panels use the standard card colour without a local
+  backdrop blur, saturation, or brightness filter. Nested reading, listening,
+  and read-aloud content explicitly resets that filter so no blur sits directly
+  behind the text.
 
 Learning behavior:
 
@@ -335,8 +368,9 @@ Source:
 
 Generation and library controls:
 
-- Uses the same genre, length, topic, challenge, register, focus-item, Generate,
-  select, and delete controls as the Reading Lab.
+- Uses the same genre, length, topic, challenge, politeness, focus-item, Generate,
+  select, import, and delete controls as the Reading Lab. The visible label is
+  `Politeness`, not `Register`.
 
 Listening interactions:
 
@@ -441,9 +475,16 @@ Conversation interactions:
 - Type Japanese, English, or rōmaji.
 - Press Enter to send.
 - Press Shift+Enter for a new line.
-- `Send message`
-- `Record speech`
-- `Stop listening`
+- Tutor and learner turns render as clearly bounded, oppositely aligned speech
+  bubbles.
+- `Furigana` toggles readings without changing message geometry.
+- The empty composer shows a muted placeholder and a combined
+  microphone/waveform voice affordance.
+- Focusing the textarea reuses the composer's existing boundary and never adds
+  another border or focus ring.
+- Once the composer contains text, that stable right-side slot becomes a send
+  arrow.
+- `Record speech` / `Stop listening`
 - `Voice` toggles automatic tutor-audio playback.
 - Play individual tutor sentences.
 - Receive a streaming tutor response.
@@ -486,6 +527,8 @@ Interactions and buttons:
 - `Resume placement`
 - Answer 24–40 adaptive questions.
 - Use the standard Japanese drill-card controls.
+- Keep each active drill card horizontally centered beneath the placement
+  progress and uncertainty summary.
 - `I don’t know—teach me`
 - View answered count and per-dimension progress.
 - `Pause and return later`
@@ -925,15 +968,20 @@ or inside the full-page session runner.
 
 Applicable Japanese cards share:
 
+- A 72% theme surface with shared backdrop blur; nested answer rows do not
+  stack additional blur layers.
 - `I don’t know—teach me`
 - `Check`
 - Press Enter to check when a valid response is ready.
 - Tab and Shift+Tab navigate controls.
-- `Show furigana` / `Hide furigana` only when optional ruby data exists and
-  the reading is not the answer
+- A constant-width `Furigana` toggle only when optional ruby data exists and
+  the reading is not the answer. Readings hide without changing card size,
+  line breaks, or the position of any neighbouring content.
 - `Continue`
 - Correct answer marked in the existing option; an incorrect pick is marked
-  in place without adding a verdict row
+  in place without adding a verdict row. Correct uses the canonical frontend
+  green fill and stronger green border; incorrect uses the canonical frontend
+  red fill and stronger red border.
 - Explanation
 - Accepted variants
 - Important contrast
@@ -1228,6 +1276,10 @@ Composition:
 
 - The label-free map is twice the ordinary response-map height.
 - There is no candidate list and no baked-in place-label layer.
+- The map is a conventional Leaflet raster map using Esri's blue World Ocean
+  Base without its separate reference-label layer. The theme's background blue
+  remains the loading and gap colour. No SVG substitute, colour tint, blend
+  layer, or grayscale filter is permitted.
 - Keyboard users pan/zoom and press `Enter` to place the map centre.
 - Checking ends with `Continue`, not an Easy/Hard rating.
 

@@ -18,6 +18,7 @@
   --bg: #080c10;
   --bg-rgb: 8 12 16;
   --bg-raised: #0f161e;
+  --map-ocean: #2f8fdb;
 
   --line: rgb(61 77 98 / 0.72);
   /* Common Sage's disabled-text step is the first border-ramp colour that
@@ -26,19 +27,11 @@
   --glass: rgb(61 77 98 / 0.18);
   --glass-hover: rgb(91 167 255 / 0.2);
 
-  /* §3.5 veil law, as a real fill. Any surface that CARRIES TEXT uses this
-     rather than --glass: at 6% the card had almost no body of its own and
-     its legibility rested entirely on backdrop-filter, so the moment the
-     filter dropped out — which it does whenever an ancestor is promoted or
-     faded — the card read as transparent. --glass stays for surfaces that
-     only need a hint of edge. */
-  /* Raised from 0.30. At a third alpha the module frame was a sheet of
-     frosted glass with body text on it: prompt, options and captions all
-     sat on whatever the shader happened to be doing underneath, and the
-     card read as a wash rather than as a surface. §5 puts content on paper
-     and reserves the veil for chrome; this keeps the glass Jean wants but
-     gives it enough body to carry text. */
-  --panel: rgb(var(--bg-rgb) / 0.85);
+  /* §5 study glass. Seventy-two percent keeps the moving field visible
+     without putting text directly on it; --panel-blur removes the remaining
+     local detail. Reduced-transparency replaces this with --bg-raised. */
+  --panel: rgb(var(--bg-rgb) / 0.72);
+  --panel-blur: 28px;
 
   /* Text sitting directly on the shader, plus the veil that protects it. */
   --shader-ink: #f6f2ef;
@@ -81,6 +74,10 @@
   --primary: #3d8fcc;
   --primary-hover: #5ba7ff;
   --primary-dark: #6b83e6;
+  /* Selected controls must remain unmistakable against translucent panels.
+     This resolves per theme because --primary-hover is overridden below. */
+  --selected-fill: var(--primary-hover);
+  --selected-ink: #070707;
   --secondary: #1c2836;
   --info: #8b6ed4;
 
@@ -97,16 +94,26 @@
 
   /* ── §3.3 Semantic ────────────────────────────────────────────── */
   --ok: #5a9e59;
+  --ok-hover: #74e172;
   --warn: #c9a94d;
   /* The source error fill is 4.41:1 here; its hover step is the accessible
      member of the same Common Sage ramp for text and structural rules. */
-  --err: #e66b6b;
+  --err: #c95a5a;
+  --err-hover: #e66b6b;
+
+  /* Knowledge-graph progress colours are confined to the small circular
+     progress flag. Topic surfaces themselves stay in the product's blue
+     palette, so progress never floods the field. */
+  --graph-low: #f13f38;
+  --graph-mid: #f1d36a;
+  --graph-high: #84d292;
 
   /* ── §2 Geometry ──────────────────────────────────────────────── */
   /* §1: nothing has a radius. Square, hairline, zero-radius.
      ONE token, not three: --radius-sm/-lg implied a scale, and a scale
      implies some surface somewhere is rounded. None is. */
   --radius: 0;
+  --radius-lattice: 5px;
 
   /* §2.1 The lattice. The cell is the structural module of the product —
      the frosted background grid, the notes workspace and quantised
@@ -168,6 +175,8 @@
   --layer-dialog: 6;
   --layer-toast: 7;
   --layer-skip: 8;
+  /* Component-local Leaflet scale: tiles are 200, vectors begin at 400. */
+  --layer-leaflet-tint: 250;
 
   /* ── §4.1 Stacks. System faces only — no webfonts. ─────────────── */
   --font-sans:
@@ -227,6 +236,7 @@
   --bg: #f6f2ef;
   --bg-rgb: 246 242 239;
   --bg-raised: #ecfcff;
+  --map-ocean: #8ccfff;
 
   --line: rgb(38 38 38 / 0.38);
   --line-strong: #262626;
@@ -237,7 +247,7 @@
   /* Raised from 0.34 for the same reason as the dark theme — see there. The
      light gradient is pale and high-value, so a thin veil left dark text
      sitting on an unpredictable mid-tone. */
-  --panel: rgb(250 253 255 / 0.85);
+  --panel: rgb(250 253 255 / 0.72);
 
   /* The light gradients are pale and high-value, so text on top must be
      dark and the protective veil white rather than black. */
@@ -274,12 +284,11 @@
   --accent-flashcard: color-mix(in srgb, #6b83e6 76%, #070707);
   --accent-quiz: color-mix(in srgb, #38b6fe 60%, #070707);
 
-  /* Common Sage's light semantic colours are fills. Kite also uses these
-     tokens as small text, so mix each source hue with the palette's primary
-     ink until it clears the AA body-text floor on --bg. */
-  --ok: color-mix(in srgb, #5a9e59 60%, #070707);
+  --ok: #b1f9b0;
+  --ok-hover: #74e172;
   --warn: color-mix(in srgb, #c9a94d 60%, #070707);
-  --err: color-mix(in srgb, #c95a5a 60%, #070707);
+  --err: #ff8787;
+  --err-hover: #ff5757;
 }
 
 /* ── §9.5 Transparency contract. The veil never carried information, so
@@ -288,6 +297,7 @@
   :root {
     --veil: 1;
     --glass: rgb(61 77 98 / 0.36);
+    --panel: var(--bg-raised);
   }
   :root[data-theme='light'] {
     --glass: rgb(219 248 255 / 0.58);

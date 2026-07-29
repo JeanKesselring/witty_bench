@@ -48,8 +48,9 @@ export function useFurigana(): FuriganaMode {
   return useContext(FuriganaContext)
 }
 
-/** The header aid control. Cycles Show → Hide; `never` renders nothing, and
- *  §6.10 keeps the slot reserved either way so the header cannot move. */
+/** The header aid control. Its visible label stays constant while
+ *  `aria-pressed` communicates state, so toggling readings cannot resize the
+ *  header. `never` renders nothing, and §6.10 reserves that slot. */
 export function FuriganaToggle({
   mode,
   onChange,
@@ -63,10 +64,11 @@ export function FuriganaToggle({
     <button
       type="button"
       className="k-btn k-btn--quiet k-press"
+      aria-label={showing ? 'Hide furigana' : 'Show furigana'}
       aria-pressed={showing}
       onClick={() => onChange(showing ? 'off' : 'all')}
     >
-      {showing ? 'Hide furigana' : 'Show furigana'}
+      Furigana
     </button>
   )
 }
@@ -85,12 +87,12 @@ export function Ruby({ segments, className }: { segments: RubySegment[]; classNa
   return (
     <span className={className ? `k-ruby ${className}` : 'k-ruby'} lang="ja">
       {segments.map((seg, i) =>
-        seg.reading && show ? (
-          <ruby key={i}>
+        seg.reading ? (
+          <ruby key={i} data-furigana={show ? 'on' : 'off'}>
             {seg.text}
-            <rp>(</rp>
-            <rt>{seg.reading}</rt>
-            <rp>)</rp>
+            <rp aria-hidden={!show}>(</rp>
+            <rt aria-hidden={!show}>{seg.reading}</rt>
+            <rp aria-hidden={!show}>)</rp>
           </ruby>
         ) : (
           <span key={i}>{seg.text}</span>
