@@ -1,295 +1,452 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
-import type { Grade, Judgement, ModuleItem } from '@/lib/api/types'
-import { moduleTypeOrDefault } from '@/lib/modules/registry'
-import { Response, evaluate, isAnswered, type AnswerValue } from './Responses'
+/* The shared assessment card.
+ *
+ * It is intentionally content-sized. The former session-wide fixed bands
+ * aligned every button by reserving the tallest prompt, answer and verdict
+ * on every card; mixed sessions consequently contained more blank space than
+ * content. The lattice now comes from padding, target sizes and the outer
+ * boundary rather than from empty placeholder rows.
+ */
 
-/* §6.10 Module frame. Four bands, fixed heights, chosen once per session and
- * held for every card in it. Revealing an answer never resizes anything —
- * the response band already reserved the space. The judgement renders inside
- * the response band, so it cannot push the controls. */
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { motion, useReducedMotion } from 'motion/react'
+import type { Grade, Judgement, ModuleItem } from '@/lib/api/types'
+import { moduleTypeOrDefault, CONTENT_TYPE_LABEL } from '@/lib/modules/registry'
+import { judgeChoice, judgeOrder, judgeText } from '@/lib/grading'
+import { Response, PromptText, type ResponseValue } from './Responses'
+import {
+  AudioPrompt,
+  ExampleSentences,
+  FuriganaProvider,
+  FuriganaToggle,
+  Ruby,
+  type FuriganaMode,
+} from './Japanese'
+import { distanceKm, NEAR_KM, PART_KM, parsePick } from '@/lib/modules/geo'
+import { ModuleMenu } from './ModuleMenu'
+import { spring } from '@/lib/motion'
 
 export interface Outcome {
   grade: Grade
+  /** A hint bank was used — the engine caps the interval at Hard. */
   assisted: boolean
-  judgement: Judgement | null
+  /** Present for objectively graded types; absent when the learner self-rated. */
+  judgement?: Judgement
 }
 
-const RATINGS: Array<{ grade: Grade; label: string }> = [
-  { grade: 'again', label: 'Again' },
-  { grade: 'hard', label: 'Hard' },
-  { grade: 'good', label: 'Good' },
-  { grade: 'easy', label: 'Easy' },
+/** A prompt that is one or two CJK characters is a glyph, not a sentence. */
+function isGlyphPrompt(text: string, lang?: string): boolean {
+  if (lang !== 'ja') return false
+  return text.trim().length <= 3 && /[぀-ヿ一-龯]/.test(text)
+}
+
+const RATINGS: Array<{ grade: Grade; label: string; key: string }> = [
+  { grade: 'again', label: 'Again', key: '1' },
+  { grade: 'hard', label: 'Hard', key: '2' },
+  { grade: 'good', label: 'Good', key: '3' },
+  { grade: 'easy', label: 'Easy', key: '4' },
 ]
 
 export function ModuleFrame({
   item,
   onResolve,
   onSkip,
+  nav,
+  giveUpLabel = "I don't know",
 }: {
   item: ModuleItem
   onResolve: (o: Outcome) => void
   onSkip: () => void
+  /* Set navigation, when this card is one of several in a `flashcard_set` or
+   * a multi-question quiz. It renders INSIDE the prompt band rather than in
+   * the control band, because the band's four slots are spoken for and
+   * because moving between cards is not an answer. The band is measured with
+   * it present, so nothing shifts on the cards that have no nav. */
+  nav?: React.ReactNode
+  giveUpLabel?: string
 }) {
   const spec = moduleTypeOrDefault(item.moduleType)
-  const selfGraded = spec.response === 'none'
+  const selfGraded = spec.response === 'none' || spec.response === 'handwriting'
+  const flashcard = spec.response === 'none'
+  const reduceMotion = useReducedMotion()
 
-  const [value, setValue] = useState<AnswerValue>(spec.response === 'ordering' ? [] : '')
+  const [value, setValue] = useState<ResponseValue>(
+    spec.id === 'timeline_drag_exercise'
+      ? (item.tokens ?? [])
+      : spec.response === 'ordering'
+        ? []
+        : '',
+  )
   const [judged, setJudged] = useState<Judgement | null>(null)
   const [revealed, setRevealed] = useState(false)
+  const [backVisible, setBackVisible] = useState(false)
   const [assisted, setAssisted] = useState(false)
-  const frameRef = useRef<HTMLDivElement | null>(null)
+  const [gaveUp, setGaveUp] = useState(false)
+  const [furigana, setFurigana] = useState<FuriganaMode>(
+    // Where the reading IS the answer, furigana cannot be offered at all.
+    spec.id === 'kanji_reading' || spec.id === 'transcription' ? 'never' : 'auto',
+  )
+  const frameRef = useRef<HTMLElement | null>(null)
 
-  // Reset when the card changes — geometry stays, state does not.
   useEffect(() => {
-    setValue(spec.response === 'ordering' ? [] : '')
+    setValue(
+      spec.id === 'timeline_drag_exercise'
+        ? (item.tokens ?? [])
+        : spec.response === 'ordering'
+          ? []
+          : '',
+    )
     setJudged(null)
     setRevealed(false)
+    setBackVisible(false)
     setAssisted(false)
-  }, [item.id, spec.response])
+    setGaveUp(false)
+  }, [item.id, item.tokens, spec.id, spec.response])
 
+  const answered = judged !== null || revealed
+  /* The attempt is SETTLED when the machine has already fixed the grade:
+   * a wrong or partial answer, or a reveal on an objectively graded type.
+   * Settled cards do not ask the learner to rate themselves. */
+  const settled = gaveUp || judged?.outcome === 'incorrect'
+  const controlJudgement: Judgement | null =
+    judged ?? (gaveUp ? { outcome: 'incorrect', answer: item.answer } : null)
+  const ready =
+    spec.response === 'ordering'
+      ? Array.isArray(value) && value.length === (item.tokens?.length ?? 0) && value.length > 0
+      : String(value).trim().length > 0
+
+  /* Marking. The control reports a value; this decides what it was worth,
+   * and it is the only place that decides. */
   const check = useCallback(() => {
-    if (judged || selfGraded) return
-    if (!isAnswered(spec, value)) return
-    setJudged(evaluate(item, spec, value))
-  }, [item, spec, value, judged, selfGraded])
+    if (answered || !ready) return
+    if (spec.response === 'choice') {
+      setJudged(judgeChoice(String(value), item.answer))
+    } else if (spec.response === 'ordering') {
+      setJudged(judgeOrder(Array.isArray(value) ? value : [], item.answer.split('|')))
+    } else if (spec.response === 'map') {
+      setJudged(judgeMap(String(value), item))
+    } else {
+      setJudged(judgeText(String(value), item.answer, spec.tolerance))
+    }
+  }, [answered, ready, spec.response, spec.tolerance, value, item])
 
   const reveal = useCallback(() => {
-    if (selfGraded) {
-      setRevealed(true)
-      return
-    }
-    // §6.10: on an objectively graded type, Reveal means giving up and
-    // counts as Again. The control says so before it is pressed.
-    setJudged({ outcome: 'incorrect', answer: item.answer })
+    if (answered) return
     setRevealed(true)
-  }, [item.answer, selfGraded])
+    setBackVisible(true)
+    // §6.10: on an objectively graded type this is giving up, and it costs
+    // an `again`. The control says so before it is pressed; this is only
+    // where the cost is applied.
+    if (!selfGraded) setGaveUp(true)
+  }, [answered, selfGraded])
 
-  const advance = useCallback(
-    (grade?: Grade) => {
-      if (selfGraded) {
-        if (!grade) return
-        onResolve({ grade, assisted, judgement: null })
-        return
-      }
-      if (!judged) return
-      const auto: Grade =
-        revealed || judged.outcome === 'incorrect'
-          ? 'again'
-          : judged.outcome === 'partial' || assisted
-            ? 'hard'
-            : 'good'
-      onResolve({ grade: auto, assisted, judgement: judged })
+  const rate = useCallback(
+    (grade: Grade) => {
+      onResolve({ grade, assisted, judgement: judged ?? undefined })
     },
-    [selfGraded, judged, revealed, assisted, onResolve],
+    [assisted, judged, onResolve],
   )
 
-  /* §6.10 keyboard loop: Enter checks, Space advances. Two keys, so a
-   * repeated Enter can never carry a learner past a judgement they have
-   * not read. Space collides with Toggle (§7.1) and the collision is
-   * resolved by focus: where focus is inside a control that consumes
-   * Space, Space toggles it and nothing else. */
-  function consumesSpace(el: Element | null): boolean {
-    if (!el) return false
-    const tag = el.tagName.toLowerCase()
-    if (tag === 'input' || tag === 'textarea' || tag === 'select') return true
-    if (tag === 'button' || el.getAttribute('role') === 'radio') return true
-    return false
-  }
-
+  /* §6.10's keyboard loop. Enter checks, Space advances, 1–4 rate. Space is
+   * bound at the frame and steps aside whenever focus is inside a control
+   * that consumes it, which is why this listens on the frame rather than on
+   * the document. */
   useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      const root = frameRef.current
-      if (!root || !root.contains(document.activeElement)) return
+    const el = frameRef.current
+    if (!el) return
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null
+      const inControl =
+        !!target &&
+        (target.matches(
+          'button, input, textarea, select, [role="radio"], [role="checkbox"], canvas',
+        ) ||
+          target.isContentEditable)
 
-      if (e.key === 'Enter') {
-        if (!judged && !selfGraded) {
+      if (e.key === 'Enter' && !answered && !inControl) {
+        e.preventDefault()
+        if (selfGraded) reveal()
+        else check()
+        return
+      }
+      if (e.key === ' ' && selfGraded && !inControl) {
+        e.preventDefault()
+        if (!answered) reveal()
+        else if (flashcard) setBackVisible((shown) => !shown)
+        return
+      }
+      if (answered && /^[1-4]$/.test(e.key) && !inControl) {
+        const rating = RATINGS[Number(e.key) - 1]
+        if (allowed(rating.grade, judged, gaveUp)) {
           e.preventDefault()
-          check()
-        } else if (selfGraded && !revealed) {
-          e.preventDefault()
-          reveal()
+          rate(rating.grade)
         }
-        return
-      }
-
-      if (e.key === ' ') {
-        if (consumesSpace(document.activeElement)) return
-        e.preventDefault()
-        advance()
-        return
-      }
-
-      // §8.8: the system's only single-character shortcuts. Module-scoped,
-      // after reveal, and each maps to a visible control.
-      if (selfGraded && revealed && /^[1-4]$/.test(e.key)) {
-        e.preventDefault()
-        advance(RATINGS[Number(e.key) - 1].grade)
       }
     }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [check, reveal, advance, judged, selfGraded, revealed])
-
-  const canCheck = isAnswered(spec, value)
-  const showRatings = selfGraded && revealed
+    el.addEventListener('keydown', onKey)
+    return () => el.removeEventListener('keydown', onKey)
+  }, [answered, check, reveal, rate, selfGraded, judged, gaveUp, flashcard])
 
   return (
-    <article
-      ref={frameRef}
-      className="k-frame"
-      aria-label={`${spec.id.replace(/_/g, ' ')} module`}
-      style={{ '--accent': `var(--accent-${spec.contentType})` } as React.CSSProperties}
-    >
-      {/* HEADER — 1 cell. Type always; topic per §6.14's topic rule. */}
-      <header className="k-frame__header">
-        <span className="k-frame__type">{spec.contentType}</span>
-        {spec.showTopic ? (
-          <span className="k-frame__topic">{item.topicTitle}</span>
-        ) : (
-          // The slot is reserved whether or not the type fills it, so the
-          // band never changes height and ⋯ never moves (§6.10).
-          <span className="k-frame__topic" aria-hidden="true" />
-        )}
-        <button type="button" className="k-btn k-btn--quiet k-press" aria-label="Module options">
-          ⋯
-        </button>
-      </header>
+    <FuriganaProvider mode={furigana}>
+      <section
+        ref={frameRef}
+        className={`k-frame${flashcard ? ' k-frame--flip' : ''}`}
+        tabIndex={-1}
+        aria-label={`${CONTENT_TYPE_LABEL[spec.contentType]} module`}
+        style={{ ['--accent' as string]: `var(--accent-${spec.contentType})` }}
+      >
+        <div className="k-frame__menu">
+          <ModuleMenu item={item} />
+        </div>
 
-      {/* PROMPT — fixed per session. */}
-      <div className="k-frame__prompt">
-        <p lang={item.lang}>{item.prompt}</p>
-      </div>
+        {!flashcard && (spec.showTopic || answered || item.lang === 'ja') ? (
+          <header className="k-frame__header">
+            {spec.showTopic || answered ? (
+              <span className="k-frame__topic">{item.topicTitle}</span>
+            ) : null}
+            {item.lang === 'ja' ? (
+              <span className="k-frame__aid">
+                <FuriganaToggle mode={furigana} onChange={setFurigana} />
+              </span>
+            ) : null}
+          </header>
+        ) : null}
 
-      {/* RESPONSE — fixed per session. The judgement renders in here, not
-          appended below it, so it cannot push the controls. */}
-      <div className="k-frame__response">
-        {selfGraded ? (
-          revealed ? (
-            <p className="k-h3" lang={item.lang}>
-              {item.answer}
-            </p>
-          ) : (
-            <p className="k-body-sm" style={{ color: 'var(--ink-faint)' }}>
-              Recall the answer, then reveal it.
-            </p>
-          )
-        ) : (
-          <Response
-            item={item}
-            spec={spec}
-            value={value}
-            onChange={setValue}
-            judged={judged}
-            onAssisted={() => setAssisted(true)}
-            onCommit={check}
-          />
-        )}
-
-        {judged ? <JudgementBanner judgement={judged} lang={item.lang} /> : null}
-      </div>
-
-      {/* CONTROLS — 1 cell, four slots, never moves. */}
-      <div className="k-band">
-        {showRatings ? (
-          RATINGS.map((r, i) => (
-            <button
-              key={r.grade}
-              type="button"
-              className="k-btn k-btn--secondary k-btn--study k-press k-band__slot"
-              onClick={() => advance(r.grade)}
-            >
-              {r.label}
-              <span className="k-visually-hidden"> — shortcut {i + 1}</span>
-            </button>
-          ))
-        ) : (
+        {/* ── Prompt ────────────────────────────────────────────────── */}
+        {flashcard ? (
           <>
+            {nav}
             <button
               type="button"
-              className="k-btn k-btn--quiet k-btn--study k-press k-band__slot"
-              onClick={reveal}
-              disabled={Boolean(judged)}
-              // §6.10: the control states what it costs before it is pressed.
-              title={selfGraded ? undefined : 'Counts as Again'}
+              className="k-flipscene"
+              aria-label={
+                revealed
+                  ? backVisible
+                    ? 'Answer shown. Turn to front.'
+                    : 'Question shown. Turn to answer.'
+                  : 'Question shown. Reveal answer.'
+              }
+              onClick={() => {
+                if (!revealed) reveal()
+                else setBackVisible((shown) => !shown)
+              }}
             >
-              Reveal
-              {!selfGraded ? (
-                <span className="k-visually-hidden"> — counts as Again</span>
-              ) : null}
+              <motion.span
+                className="k-flipcard"
+                data-back={backVisible}
+                animate={
+                  reduceMotion
+                    ? { opacity: 1 }
+                    : {
+                        rotateY: backVisible ? 180 : 0,
+                      }
+                }
+                transition={{ type: 'spring', visualDuration: 0.55, bounce: 0.06 }}
+              >
+                <span className="k-flipcard__face k-flipcard__front" aria-hidden={backVisible}>
+                  <span
+                    className={isGlyphPrompt(item.prompt, item.lang) ? 'k-glyph-prompt' : 'k-h3'}
+                  >
+                    <PromptText item={item} />
+                  </span>
+                </span>
+                <span className="k-flipcard__face k-flipcard__back" aria-hidden={!backVisible}>
+                  <span className="k-h3" lang={item.lang}>
+                    {item.answerRuby ? <Ruby segments={item.answerRuby} /> : item.answer}
+                  </span>
+                  {item.examples ? <ExampleSentences examples={item.examples} /> : null}
+                </span>
+              </motion.span>
             </button>
-            <button
-              type="button"
-              className="k-btn k-btn--quiet k-btn--study k-press k-band__slot"
-              onClick={onSkip}
-            >
+          </>
+        ) : (
+          <div className="k-frame__prompt" tabIndex={0} aria-label="Prompt">
+            {nav}
+            <p className={isGlyphPrompt(item.prompt, item.lang) ? 'k-glyph-prompt' : undefined}>
+              <PromptText item={item} />
+            </p>
+            {item.audioSrc ? (
+              <AudioPrompt
+                src={item.audioSrc}
+                transcript={answered ? item.transcript : undefined}
+                label="the sentence"
+                autoPlay={spec.id === 'transcription'}
+              />
+            ) : null}
+          </div>
+        )}
+
+        {/* ── Response ──────────────────────────────────────────────── */}
+        {!flashcard ? (
+          <div className="k-frame__response" tabIndex={0} aria-label="Your response">
+            <Response
+              item={item}
+              spec={spec}
+              value={value}
+              onChange={setValue}
+              judged={controlJudgement}
+              revealed={revealed}
+              onAssisted={() => setAssisted(true)}
+              onCommit={check}
+            />
+            {revealed && !judged ? (
+              <p className="k-h3" lang={item.lang}>
+                {item.answerRuby ? <Ruby segments={item.answerRuby} /> : item.answer}
+              </p>
+            ) : null}
+            {judged && item.examples ? <ExampleSentences examples={item.examples} /> : null}
+          </div>
+        ) : null}
+
+        {!flashcard && answered ? (
+          <motion.div
+            className="k-frame__judge"
+            aria-live="assertive"
+            animate={
+              judged?.outcome === 'incorrect' && !reduceMotion
+                ? { x: [0, -6, 5, -3, 2, 0] }
+                : { x: 0 }
+            }
+            transition={judged?.outcome === 'incorrect' ? { duration: 0.32 } : spring.settle}
+          >
+            {judged ? (
+              <p
+                className={
+                  judged.outcome === 'correct'
+                    ? 'k-judge k-judge--ok'
+                    : judged.outcome === 'partial'
+                      ? 'k-judge k-judge--warn'
+                      : 'k-judge k-judge--err'
+                }
+              >
+                <strong>
+                  {judged.outcome === 'correct'
+                    ? 'Correct'
+                    : judged.outcome === 'partial'
+                      ? 'Nearly'
+                      : 'Try again'}
+                </strong>
+                {judged.outcome !== 'correct' ? (
+                  <span lang={item.lang}>{judged.answer}</span>
+                ) : null}
+                {judged.note ? <span className="k-meta">{judged.note}</span> : null}
+                {item.explanation ? <span>{item.explanation}</span> : null}
+              </p>
+            ) : (
+              <p className="k-judge k-judge--warn">Answer shown</p>
+            )}
+          </motion.div>
+        ) : null}
+
+        {flashcard && !answered ? (
+          <div className="k-band k-band--single">
+            <button type="button" className="k-btn k-btn--quiet k-press" onClick={onSkip}>
               Skip
             </button>
-            {/* The empty third slot holds the position Good will occupy. */}
-            <span className="k-band__slot" aria-hidden="true" />
-            {judged ? (
+          </div>
+        ) : (
+          <div
+            className={`k-band${answered ? ' k-band--ratings' : ''}`}
+            role="group"
+            aria-label="Card controls"
+          >
+            {!answered ? (
+              <>
+                {!selfGraded ? (
+                  <button type="button" className="k-btn k-btn--quiet k-press" onClick={reveal}>
+                    {giveUpLabel}
+                  </button>
+                ) : null}
+                <button type="button" className="k-btn k-btn--quiet k-press" onClick={onSkip}>
+                  Skip
+                </button>
+                <button
+                  type="button"
+                  className="k-btn k-btn--primary k-press"
+                  disabled={!selfGraded && !ready}
+                  onClick={selfGraded ? reveal : check}
+                >
+                  {selfGraded ? 'Reveal' : 'Check'}
+                </button>
+              </>
+            ) : settled ? (
               <button
                 type="button"
-                className="k-btn k-btn--primary k-btn--study k-press k-band__slot"
-                onClick={() => advance()}
+                className="k-btn k-btn--primary k-press"
+                onClick={() => rate('again')}
               >
-                Next
+                Continue
               </button>
             ) : (
-              <button
-                type="button"
-                className="k-btn k-btn--primary k-btn--study k-press k-band__slot"
-                onClick={selfGraded ? reveal : check}
-                aria-disabled={!selfGraded && !canCheck}
-              >
-                {selfGraded ? 'Reveal' : 'Check'}
-              </button>
+              RATINGS.map((rating) => (
+                <button
+                  key={rating.grade}
+                  type="button"
+                  className={`k-btn ${
+                    rating.grade === defaultGrade(judged, gaveUp)
+                      ? 'k-btn--primary'
+                      : 'k-btn--quiet'
+                  } k-press`}
+                  disabled={!allowed(rating.grade, judged, gaveUp)}
+                  onClick={() => rate(rating.grade)}
+                  aria-keyshortcuts={rating.key}
+                >
+                  {rating.label}
+                </button>
+              ))
             )}
-          </>
+          </div>
         )}
-      </div>
-    </article>
+      </section>
+    </FuriganaProvider>
   )
 }
 
-/* §3.3: colour is never the sole channel — glyph, rule and text alongside
- * hue. §11.6: the correct answer is ALWAYS shown after an incorrect
- * response, never just "wrong". §9.4: judgement is the assertive region. */
+/* Which ratings a learner may give themselves.
+ *
+ * Self-graded cards: all four, always — the whole point is that only the
+ * learner knows how the recall felt.
+ *
+ * Objectively graded cards: the machine already knows whether it was right,
+ * and letting someone mark a wrong answer `Easy` would poison the schedule.
+ * So a wrong answer is `Again`, a partial one is `Again` or `Hard`, and a
+ * correct one is anything except… nothing: `Again` stays available on a
+ * correct answer on purpose, because "I got it but I guessed" is real and
+ * the learner is the only one who can report it. */
+/** Which rating the band points at. Always one that `allowed` permits. */
+function defaultGrade(judged: Judgement | null, gaveUp: boolean): Grade {
+  if (gaveUp) return 'again'
+  if (judged?.outcome === 'incorrect') return 'again'
+  if (judged?.outcome === 'partial') return 'hard'
+  return 'good'
+}
 
-function JudgementBanner({
-  judgement,
-  lang,
-}: {
-  judgement: Judgement
-  lang?: string
-}) {
-  const tone =
-    judgement.outcome === 'correct'
-      ? 'ok'
-      : judgement.outcome === 'partial'
-        ? 'warn'
-        : 'err'
-  const glyph =
-    judgement.outcome === 'correct' ? '✓' : judgement.outcome === 'partial' ? '~' : '✕'
+function allowed(grade: Grade, judged: Judgement | null, gaveUp: boolean): boolean {
+  if (gaveUp) return grade === 'again'
+  if (!judged) return true
+  if (judged.outcome === 'incorrect') return grade === 'again'
+  if (judged.outcome === 'partial') return grade === 'again' || grade === 'hard'
+  return true
+}
 
-  return (
-    <div className={`k-judge k-judge--${tone}`} role="alert">
-      <p>
-        <span aria-hidden="true">{glyph} </span>
-        {judgement.outcome === 'correct'
-          ? 'Correct'
-          : judgement.outcome === 'partial'
-            ? 'Partly right'
-            : 'Not quite'}
-      </p>
-      {judgement.outcome !== 'correct' ? (
-        <p>
-          The answer is{' '}
-          <strong lang={lang}>{judgement.answer}</strong>
-          {judgement.note ? ` — ${judgement.note}` : ''}
-        </p>
-      ) : null}
-    </div>
-  )
+/** Distance grading for map_click_quiz, with the partial credit the Module
+ *  Factory's default configuration gives point questions. */
+function judgeMap(value: string, item: ModuleItem): Judgement {
+  const targets = item.mapTargets ?? []
+  const answer = targets.find((t) => t.label === item.answer) ?? targets[0]
+  const picked = parsePick(value)
+  if (!answer || !picked) {
+    return { outcome: 'incorrect', answer: item.answer }
+  }
+  const km = distanceKm(picked, answer)
+  if (km <= NEAR_KM) return { outcome: 'correct', answer: item.answer }
+  if (km <= PART_KM)
+    return {
+      outcome: 'partial',
+      answer: item.answer,
+      note: `${Math.round(km)} km off`,
+    }
+  return { outcome: 'incorrect', answer: item.answer, note: `${Math.round(km)} km off` }
 }

@@ -1,38 +1,75 @@
 /* Kite tokens — design_system.md §2, §3, §4, §10.
  *
- * Visual language carried over from the prototypes in src/: dark-first,
- * glass over a shader substrate, zero radius, one fluid gutter rather
- * than stepped breakpoints. Anything that used to be a hardcoded
- * rgb(8 8 12 / a) is rgb(var(--bg-rgb) / a), because scrims, veils and
- * glass all have to flip with the theme — not just text and backgrounds. */
+ * The geometry and material rules belong to Kite; the colour values come
+ * from Common Sage's canonical styles/_variables.scss. Keeping that source
+ * palette visible here makes future parity checks mechanical instead of
+ * relying on near-matching blues and neutrals. */
 
 :root {
   color-scheme: dark;
 
   /* ── §3.1 Ink and ground ───────────────────────────────────────── */
-  --ink: #f4f4f6;
-  --ink-dim: #a4a6b3;
-  --ink-faint: #6c6e7d;
-  --bg: #08080c;
-  --bg-rgb: 8 8 12;
-  --bg-raised: #101017;
+  --ink: #f6f2ef;
+  --ink-dim: #b8c5d4;
+  /* §3.1's third tier. Was a duplicate of --ink-dim, which collapsed the
+     ramp to two steps and made §9.5's prefers-contrast:more substitution a
+     no-op. 7.34:1 on --bg, so it still clears AA for meta text. */
+  --ink-faint: #8fa0b4;
+  --bg: #080c10;
+  --bg-rgb: 8 12 16;
+  --bg-raised: #0f161e;
 
-  --line: rgb(255 255 255 / 0.1);
-  --line-strong: rgb(255 255 255 / 0.2);
-  --glass: rgb(255 255 255 / 0.06);
-  --glass-hover: rgb(255 255 255 / 0.12);
+  --line: rgb(61 77 98 / 0.72);
+  /* Common Sage's disabled-text step is the first border-ramp colour that
+     clears the 3:1 non-text contrast floor on the dark surface. */
+  --line-strong: #5a6574;
+  --glass: rgb(61 77 98 / 0.18);
+  --glass-hover: rgb(91 167 255 / 0.2);
+
+  /* §3.5 veil law, as a real fill. Any surface that CARRIES TEXT uses this
+     rather than --glass: at 6% the card had almost no body of its own and
+     its legibility rested entirely on backdrop-filter, so the moment the
+     filter dropped out — which it does whenever an ancestor is promoted or
+     faded — the card read as transparent. --glass stays for surfaces that
+     only need a hint of edge. */
+  /* Raised from 0.30. At a third alpha the module frame was a sheet of
+     frosted glass with body text on it: prompt, options and captions all
+     sat on whatever the shader happened to be doing underneath, and the
+     card read as a wash rather than as a surface. §5 puts content on paper
+     and reserves the veil for chrome; this keeps the glass Jean wants but
+     gives it enough body to carry text. */
+  --panel: rgb(var(--bg-rgb) / 0.85);
 
   /* Text sitting directly on the shader, plus the veil that protects it. */
-  --shader-ink: #ffffff;
-  --shader-ink-dim: rgb(255 255 255 / 0.78);
-  --frame-line: rgb(255 255 255 / 0.55);
-  --on-accent: #0b0b10;
+  --shader-ink: #f6f2ef;
+  --shader-ink-dim: rgb(184 197 212 / 0.82);
+  /* Capped at 30% alpha. Any border drawn over the wave reads far heavier
+     than its number suggests, because it sits on a moving backdrop rather
+     than a flat one — 0.30 is the ceiling, not a starting point. */
+  --frame-line: rgb(91 167 255 / 0.3);
+  --on-accent: #0a0a0a;
+
+  /* §7.4 lattice hover: the tile fills very slightly rather than outlining.
+     An outline on hover competes with the rim that marks a frosted tile, so
+     the two states became hard to tell apart; a fill change does not. */
+  --lattice-hover: rgb(91 167 255 / 0.12);
+  /* §3.1: text selection is a native surface, so it escapes the ramp
+   * unless it is named here. Neutral by design — selection must not read
+   * as a ContentType accent (§3.2) or a semantic state (§3.3). */
+  --selection: rgb(255 255 255 / 0.18);
 
   /* §5: a tile's lit edge is a gain applied to the backdrop, not a fixed
      highlight colour — so the rim samples whatever the wave is doing
      underneath it and shifts as the wave travels. */
-  --glass-gain: 2;
-  --glass-sat: 2.4;
+  /* Weighted towards saturation, not brightness. A rim that is mostly
+     brightness blows out to the same near-white on every tile, which is why
+     it read as a painted, static line — the one thing this technique exists
+     to avoid. Pushing saturation instead makes the rim take on the HUE
+     underneath it, so it goes blue over a crest and near-black over a
+     trough, and shifts as the wave travels. That is what reads as a
+     reflection. */
+  --glass-gain: 1.32;
+  --glass-sat: 3.6;
   /* Whole-panel gain. Much gentler than the 1px rim's --glass-gain: a
      panel lifted as hard as a rim would read as a lightbox, not glass. */
   --panel-gain: 1.08;
@@ -40,31 +77,36 @@
   /* §3.5 Veil law: text over the canvas sits on at least this much cover. */
   --veil: 0.72;
 
-  /* ── §3.2 Content-type accents — monochromatic, not monochrome.
-     One hue, six steps of value and saturation, so the six types stay
-     distinguishable without the scheme becoming polychrome. Value is a
-     weaker channel than hue, which is acceptable here and only here: the
-     icon and the text label were already mandatory as the second channel
-     (§3.3), and §9.5 already made them the only channel under forced
-     colours. This brings the default case in line with the case the
-     system was built to survive. */
-  --accent-summary: #e4dcff;
-  --accent-text: #cfc2fb;
-  --accent-video: #b9a8f5;
-  --accent-audio: #a48eee;
-  --accent-flashcard: #d9cdff;
-  --accent-quiz: #8f78e6;
+  /* ── Common Sage identity ─────────────────────────────────────── */
+  --primary: #3d8fcc;
+  --primary-hover: #5ba7ff;
+  --primary-dark: #6b83e6;
+  --secondary: #1c2836;
+  --info: #8b6ed4;
+
+  /* ── §3.2 Content-type accents. Each value is drawn from the Common
+     Sage palette; labels and icons remain the required second channel. */
+  --accent-summary: #5ba7ff;
+  --accent-text: #6b83e6;
+  /* Was #8b6ed4 — 4.49:1 on --glass, just under AA. Lifted 2% toward white:
+     same hue, now 4.64. §3.2's table records the measurement. */
+  --accent-video: #8d71d5;
+  --accent-audio: #3d8fcc;
+  --accent-flashcard: #87d3ff;
+  --accent-quiz: #d0acff;
 
   /* ── §3.3 Semantic ────────────────────────────────────────────── */
-  --ok: #5fd18d;
-  --warn: #e0b453;
-  --err: #ff8a80;
+  --ok: #5a9e59;
+  --warn: #c9a94d;
+  /* The source error fill is 4.41:1 here; its hover step is the accessible
+     member of the same Common Sage ramp for text and structural rules. */
+  --err: #e66b6b;
 
   /* ── §2 Geometry ──────────────────────────────────────────────── */
-  /* §1: nothing has a radius. Square, hairline, zero-radius. */
-  --radius-sm: 0;
+  /* §1: nothing has a radius. Square, hairline, zero-radius.
+     ONE token, not three: --radius-sm/-lg implied a scale, and a scale
+     implies some surface somewhere is rounded. None is. */
   --radius: 0;
-  --radius-lg: 0;
 
   /* §2.1 The lattice. The cell is the structural module of the product —
      the frosted background grid, the notes workspace and quantised
@@ -77,13 +119,25 @@
   --u: 8px;
   --cell: 48px;
 
-  /* Fluid: 20px on a phone, 64px on a wide desktop, no breakpoints. */
-  --gutter: clamp(1.25rem, 4vw, 4rem);
-  --shell: 1240px;
-  --measure: 62ch;
-  --measure-frame: 48ch;
-  --panel-w: 340px;
-  --rail: 340px;
+  /* The gutter is ONE CELL. §2.1's table gives 16/24/32, but those are not
+     multiples of the cell at any breakpoint, so the content column's edge
+     landed between tiles; the previous `clamp(1.25rem, 4vw, 4rem)` was worse
+     still — 57.6px at 1440, 60.48px at 1512, a different fraction of a cell
+     at every width. §1's tie-breaker is "when a decision is ambiguous, snap
+     to the cell", so it snaps. §2.1's table needs updating to match. */
+  --gutter: var(--cell);
+  /* §2.1: 18 cells. Was 1240px, which is 19.375 cells — so the content
+     column never lined up with the lattice behind it at any width. */
+  --shell: 1152px;
+  /* Expressed in cells, not ch. 10 cells is 640px at lg — within a line or
+     two of the 62ch this replaced — and unlike ch it is a whole number of
+     cells at every breakpoint, so a prose block's BOX fits the lattice as
+     well as sitting on it. */
+  --measure: calc(var(--cell) * 10);
+  --measure-frame: calc(var(--cell) * 7);
+  /* 5 cells each. */
+  --panel-w: 320px;
+  --rail: 320px;
 
   --space-1: 8px;
   --space-2: 16px;
@@ -93,8 +147,15 @@
   --space-8: 64px;
   --space-12: 96px;
   --optical: 4px;
+  /* Reading surfaces use more air at the sides than at the top and bottom.
+     Both values remain on the 8px unit and are shared so cards do not drift
+     back to unrelated local padding. */
+  --card-pad-block: var(--space-4);
+  --card-pad-inline: var(--space-6);
 
-  --target: 46px;
+  /* 6u, and comfortably over SC 2.5.8's 24px floor. 46px was neither a
+     multiple of the unit nor of anything else. */
+  --target: 48px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* ── §2.6 Layer order. No literal z-index anywhere. ───────────── */
@@ -110,9 +171,9 @@
 
   /* ── §4.1 Stacks. System faces only — no webfonts. ─────────────── */
   --font-sans:
-    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto,
-    Helvetica, Arial, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN',
-    'Yu Gothic Medium', 'Yu Gothic', 'Noto Sans JP', Meiryo, sans-serif;
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, Helvetica, Arial,
+    'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic Medium', 'Yu Gothic', 'Noto Sans JP',
+    Meiryo, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 
   /* ── §4.2 Scale ───────────────────────────────────────────────── */
@@ -125,6 +186,30 @@
   --size-label: 0.75rem;
   --size-meta: 0.6875rem;
 
+  /* ── Roles §4.2's scale does not name ──────────────────────────────
+   * Each was a literal in kite.css. Tokenised rather than rounded to the
+   * nearest existing step, because rounding is a design change and this is
+   * a mechanical one. §4.2 needs these three rows added — see the §13.3
+   * governance note at the head of this block's PR. */
+  --size-prompt: 1.25rem; /* §6.10 module-frame prompt, and the cloze run */
+  --size-monogram: 0.8rem; /* §13.5 brand monogram inside its 32px box */
+  --size-glyph-option: 40px; /* §4.3 glyph on a choice tile: between inline and isolated */
+
+  /* Figure typography. Sized against the SVG viewBox rather than the page,
+   * so these do not belong on the Latin scale (§4.2) at all. */
+  --size-fig-node: 13px;
+  --size-fig-label: 12px;
+
+  /* ── §4.3 Japanese size floors ─────────────────────────────────────
+   * Below these, stroke-dense kanji stop being readable at typical viewing
+   * distance, so they are accessibility floors rather than type choices —
+   * which is why they sit outside §4.2's Latin scale and are absolute
+   * rather than relative. Tokenised so the floor is stated once and
+   * `kite/eight-px-grid` can see it is deliberate. */
+  --size-glyph-inline: 20px; /* inline glyph in an exercise sentence */
+  --size-glyph: 64px; /* isolated prompt glyph (kana/kanji recognition) */
+  --size-glyph-pair: 96px; /* discrimination module — confusable pair */
+
   --leading-body: 1.6;
   --track-tight: -0.02em;
   --track-label: 0.14em;
@@ -136,43 +221,65 @@
 :root[data-theme='light'] {
   color-scheme: light;
 
-  --ink: #14141a;
-  --ink-dim: #55566a;
-  --ink-faint: #83849a;
-  --bg: #f7f7fa;
-  --bg-rgb: 247 247 250;
-  --bg-raised: #ffffff;
+  --ink: #070707;
+  --ink-dim: #262626;
+  --ink-faint: #525252;
+  --bg: #f6f2ef;
+  --bg-rgb: 246 242 239;
+  --bg-raised: #ecfcff;
 
-  --line: rgb(10 10 20 / 0.12);
-  --line-strong: rgb(10 10 20 / 0.22);
-  --glass: rgb(10 10 20 / 0.04);
-  --glass-hover: rgb(10 10 20 / 0.08);
+  --line: rgb(38 38 38 / 0.38);
+  --line-strong: #262626;
+  --glass: rgb(219 248 255 / 0.22);
+  --glass-hover: rgb(188 242 255 / 0.36);
+  /* Lightens rather than darkens here, for the same reason --lattice-hover
+     does: the panel must sit above the pale gradient, not bruise it. */
+  /* Raised from 0.34 for the same reason as the dark theme — see there. The
+     light gradient is pale and high-value, so a thin veil left dark text
+     sitting on an unpredictable mid-tone. */
+  --panel: rgb(250 253 255 / 0.85);
 
   /* The light gradients are pale and high-value, so text on top must be
      dark and the protective veil white rather than black. */
-  --shader-ink: #14141a;
-  --shader-ink-dim: rgb(20 20 26 / 0.72);
-  --frame-line: rgb(20 20 30 / 0.45);
+  --shader-ink: #070707;
+  --shader-ink-dim: rgb(38 38 38 / 0.78);
+  --frame-line: rgb(53 77 173 / 0.3);
+  /* Still a lightening, not a darkening — the gesture reads the same way in
+     both themes. It needs more alpha here because the pale gradient leaves
+     less headroom above it. */
+  --lattice-hover: rgb(236 252 255 / 0.52);
+  --selection: rgb(10 10 20 / 0.12);
   --on-accent: #ffffff;
 
   /* A pale backdrop is already near clipping, so the rim darkens instead
      of brightening — same idea, opposite direction. */
-  --glass-gain: 0.86;
-  --glass-sat: 1.6;
+  --glass-gain: 0.88;
+  --glass-sat: 2.6;
   /* A pale backdrop is already near clipping, so panels darken slightly
      instead of lifting — same idea, opposite direction. */
   --panel-gain: 0.97;
 
-  --accent-summary: #2b1f52;
-  --accent-text: #3a2a69;
-  --accent-video: #4a3782;
-  --accent-audio: #5b459b;
-  --accent-flashcard: #33255e;
-  --accent-quiz: #6b53ad;
+  --primary: #87d3ff;
+  --primary-hover: #38b6fe;
+  --primary-dark: #354dad;
+  --secondary: #dbf8ff;
+  --info: #d0acff;
 
-  --ok: #1a6b3c;
-  --warn: #8a5a00;
-  --err: #b32020;
+  --accent-summary: #354dad;
+  --accent-text: #3d4d62;
+  --accent-video: color-mix(in srgb, #8b6ed4 80%, #070707);
+  /* 80% mix measured 4.50:1 on --glass — on the line. 76% clears at 4.90. */
+  --accent-audio: color-mix(in srgb, #3d8fcc 76%, #070707);
+  /* 80% mix measured 4.46:1 on --glass. 76% clears at 4.88. */
+  --accent-flashcard: color-mix(in srgb, #6b83e6 76%, #070707);
+  --accent-quiz: color-mix(in srgb, #38b6fe 60%, #070707);
+
+  /* Common Sage's light semantic colours are fills. Kite also uses these
+     tokens as small text, so mix each source hue with the palette's primary
+     ink until it clears the AA body-text floor on --bg. */
+  --ok: color-mix(in srgb, #5a9e59 60%, #070707);
+  --warn: color-mix(in srgb, #c9a94d 60%, #070707);
+  --err: color-mix(in srgb, #c95a5a 60%, #070707);
 }
 
 /* ── §9.5 Transparency contract. The veil never carried information, so
@@ -180,10 +287,10 @@
 @media (prefers-reduced-transparency: reduce) {
   :root {
     --veil: 1;
-    --glass: rgb(255 255 255 / 0.12);
+    --glass: rgb(61 77 98 / 0.36);
   }
   :root[data-theme='light'] {
-    --glass: rgb(10 10 20 / 0.08);
+    --glass: rgb(219 248 255 / 0.58);
   }
 }
 

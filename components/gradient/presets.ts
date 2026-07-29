@@ -243,11 +243,11 @@ export const PRESETS: GradientPreset[] = [
 ]
 
 /**
- * Monochromatic, and deliberately quiet.
+ * Common Sage blue, and deliberately quiet.
  *
- * Monochromatic, not monochrome: one hue — the violet the prototypes
- * established — varied in value and saturation, so the field reads as a
- * single material lit unevenly rather than as a blend of two colours.
+ * The stops come directly from Common Sage's light and dark surface/primary
+ * palette. The narrow cyan-blue range keeps the field reading as one
+ * material lit unevenly rather than as a decorative rainbow.
  *
  * Quiet on every axis: uSpeed a third of the default, low strength, low
  * density. The gradient is atmosphere and never information (§1, law 2).
@@ -259,16 +259,12 @@ export const PRESETS: GradientPreset[] = [
  */
 const MONO: GradientPreset = {
   id: 'mono',
-  label: 'Mono',
-  swatch: ['#3b2a63', '#140f22'],
+  label: 'Common Sage',
+  swatch: ['#3d8fcc', '#080c10'],
   config: preset({
-    // Monochromatic: one hue, varied in value and saturation. The three
-    // stops stay inside the violet family the prototypes established, so
-    // the field reads as a single material lit unevenly rather than as a
-    // blend of two colours.
-    color1: '#3b2a63',
-    color2: '#57407f',
-    color3: '#140f22',
+    color1: '#0f161e',
+    color2: '#3d8fcc',
+    color3: '#080c10',
     uSpeed: 0.035,
     uStrength: 1.4,
     uDensity: 1.3,
@@ -283,16 +279,16 @@ const MONO: GradientPreset = {
     rotationX: 45,
     rotationZ: -55,
   }),
-  swatchLight: ['#ded7f0', '#f4f1fb'],
+  swatchLight: ['#d7e8e5', '#fff9f3'],
   configLight: preset({
-    color1: '#ded7f0',
-    color2: '#f0ecfa',
-    color3: '#c9c0e4',
+    color1: '#d7e8e5',
+    color2: '#f2e5d8',
+    color3: '#fff9f3',
     uSpeed: 0.035,
-    uStrength: 1.4,
+    uStrength: 1.65,
     uDensity: 1.3,
     uFrequency: 0,
-    brightness: 1.05,
+    brightness: 1.12,
     cDistance: 3.2,
     cPolarAngle: 90,
     cAzimuthAngle: 180,

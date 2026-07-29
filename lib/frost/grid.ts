@@ -12,10 +12,12 @@
 export const EDGE = {
   /** Device pixels, held constant by `non-scaling-stroke`. */
   width: 0.75,
-  /** Mask alpha of the lit edges. This is the ceiling for the whole rim. */
-  lit: 0.3,
+  /** Mask alpha of the lit edges. This is the ceiling for the whole rim,
+   *  and it stays at or below 0.30 — the rim marks where a tile ends, it is
+   *  not itself a line in the composition. */
+  lit: 0.2,
   /** The opposing edges, kept well under `lit` so the light keeps a direction. */
-  dim: 0.1,
+  dim: 0.07,
 } as const
 
 const svgUrl = (body: string, cols: number, rows: number) =>

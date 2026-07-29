@@ -15,13 +15,7 @@ import type { SessionSummary } from '@/lib/api/types'
  * §10.4F full form: sections assemble on a stagger, numbers land in
  * tabular-nums so nothing jitters. Stagger is hard-capped (§10.5). */
 
-export function StopSummary({
-  summary,
-  courseId,
-}: {
-  summary: SessionSummary
-  courseId: string
-}) {
+export function StopSummary({ summary, courseId }: { summary: SessionSummary; courseId: string }) {
   const sections: Array<[string, React.ReactNode]> = [
     [
       'This session',
@@ -75,10 +69,7 @@ export function StopSummary({
           Done
         </Link>
         {/* Offered once, plainly, and never argued for (§11.8). */}
-        <Link
-          className="k-btn k-btn--primary k-press"
-          href={`/courses/${courseId}/start` as Route}
-        >
+        <Link className="k-btn k-btn--primary k-press" href={`/courses/${courseId}/start` as Route}>
           Keep going
         </Link>
       </div>

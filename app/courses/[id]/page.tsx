@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import type { Route } from 'next'
-import { api } from '@/lib/api/client'
+import { api } from '@/lib/api/server'
 import { Surface } from '@/components/ui/Surface'
 import { Mastery } from '@/components/ui/Mastery'
 

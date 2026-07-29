@@ -25,9 +25,7 @@ export function DeckSurface({ courseId }: { courseId: string }) {
     queryFn: () => api.notes(),
   })
 
-  const related = (notes ?? []).filter(
-    (n) => n.topicTitle === subject && n.kind === 'learner',
-  )
+  const related = (notes ?? []).filter((n) => n.topicTitle === subject && n.kind === 'learner')
 
   return (
     <Surface

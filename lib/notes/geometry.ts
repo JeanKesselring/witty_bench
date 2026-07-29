@@ -33,6 +33,16 @@ export const NOTE_SIZES: readonly { w: number; h: number }[] = [
   { w: 2, h: 2 },
   { w: 2, h: 3 },
   { w: 3, h: 2 },
+  // Larger sizes, for a note that is a paragraph rather than a line. The
+  // ladder stays coarse on purpose: these are the sizes a drag SNAPS to, so
+  // adding intermediate steps would make the snap feel indecisive rather
+  // than giving finer control.
+  { w: 3, h: 3 },
+  { w: 4, h: 3 },
+  { w: 3, h: 4 },
+  { w: 4, h: 4 },
+  { w: 6, h: 4 },
+  { w: 4, h: 6 },
 ]
 
 /** The size a keyboard Place produces, since there is no drag to measure. */

@@ -10,14 +10,15 @@ import type { Grade, SessionSummary } from '@/lib/api/types'
 import { spring } from '@/lib/motion'
 import { useToast } from '@/components/ui/Toast'
 import { ModuleFrame, type Outcome } from './ModuleFrame'
+import { SetModule, hasSet } from './SetModule'
 import { ScrollModule } from './ScrollModule'
 import { Loading, Empty, ErrorState } from '@/components/ui/ResourceState'
 import { StopSummary } from './StopSummary'
 
-/* §7.2 Learner deck. A card stack: the current module centred, the next two
- * visible behind it so session depth is tangible (§10.4D). Judgement is
- * immediate and optimistic (§7.4). Advancing is explicit; nothing
- * auto-advances. Sessions are open-ended — no denominator anywhere. */
+/* §7.2 Learner deck. The current module is centred without decorative cards
+ * behind it. Judgement is immediate and optimistic (§7.4). Advancing is
+ * explicit; nothing auto-advances. Sessions are open-ended — no denominator
+ * anywhere. */
 
 export function Deck({
   courseId,
@@ -42,6 +43,8 @@ export function Deck({
    * steering their own queue is a learner avoiding what they find hard. */
   const queue = data ?? []
 
+  /* Must run before the early returns below — hooks are unconditional. It
+   * no-ops on an empty queue, which is what every one of those returns has. */
   if (isPending) return <Loading label="Loading your session" rows={1} />
   if (isError)
     return (
@@ -67,16 +70,13 @@ export function Deck({
       modules: log.length,
       topics: new Set(log.map((l) => l.topic)).size,
       mastered: [],
-      weaker: Array.from(
-        new Set(log.filter((l) => l.grade === 'again').map((l) => l.topic)),
-      ),
+      weaker: Array.from(new Set(log.filter((l) => l.grade === 'again').map((l) => l.topic))),
     }
     return <StopSummary summary={summary} courseId={courseId} />
   }
 
   const item = queue[index % queue.length]
   const spec = moduleTypeOrDefault(item.moduleType)
-  const behind = Math.min(2, queue.length - 1)
 
   function next() {
     onInspect(null)
@@ -101,8 +101,10 @@ export function Deck({
     }
   }
 
-  async function engaged(wasEngaged: boolean, dwellMs: number) {
-    setLog((l) => [...l, { topic: item.topicTitle, grade: null }])
+  async function engaged(wasEngaged: boolean, dwellMs: number, rating: Grade | null) {
+    // An ungraded card's Hard/Easy is a preference signal, not a recall one —
+    // it is logged as the learner gave it and never turned into a grade.
+    setLog((l) => [...l, { topic: item.topicTitle, grade: rating }])
     next()
     if (wasEngaged) {
       try {
@@ -122,31 +124,34 @@ export function Deck({
   return (
     <div style={{ display: 'grid', gap: 'var(--space-4)' }}>
       <div className="k-stack">
-        {/* §10.7: the stack renders at most 3 cards; the rest is not mounted. */}
-        {spec.graded
-          ? Array.from({ length: behind }).map((_, i) => (
-              <div
-                key={i}
-                className="k-stack__behind"
-                aria-hidden="true"
-                style={{
-                  transform: `translateY(${(i + 1) * 8}px) scale(${1 - (i + 1) * 0.02})`,
-                }}
-              />
-            ))
-          : null}
-
-        <AnimatePresence mode="wait" initial={false}>
+        {/* §10.4D card stack. The movement is deliberately transform-only:
+            fading this wrapper made the card TRANSPARENT rather than faded,
+            because an ancestor below opacity 1 — and the `will-change` motion
+            sets while animating — becomes a backdrop root, so .k-frame's
+            backdrop-filter had nothing left to sample. Measured: the card's
+            lift over the background fell from 36 to 11 under `will-change`,
+            and roughly halved at opacity 0.99. The card now also carries a
+            real fill (--panel), so even a momentary dropout is invisible. */}
+        <AnimatePresence mode="popLayout" initial={false}>
           <motion.div
             key={item.id}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -24, rotate: -1 }}
+            initial={{ y: 16 }}
+            animate={{ y: 0 }}
+            exit={{ y: -24, rotate: -1 }}
             transition={spring.lift}
-            style={{ position: 'relative', inlineSize: '100%', display: 'grid', justifyItems: 'center' }}
+            style={{
+              position: 'relative',
+              inlineSize: '100%',
+              display: 'grid',
+              justifyItems: 'center',
+            }}
           >
             {spec.graded ? (
-              <ModuleFrame item={item} onResolve={resolve} onSkip={skip} />
+              hasSet(item) ? (
+                <SetModule item={item} onResolve={resolve} onSkip={skip} />
+              ) : (
+                <ModuleFrame item={item} onResolve={resolve} onSkip={skip} />
+              )
             ) : (
               <ScrollModule item={item} onContinue={engaged} />
             )}
@@ -156,7 +161,11 @@ export function Deck({
 
       {/* §11.6: stop whenever the learner chooses. No target to fall short of. */}
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <button type="button" className="k-btn k-btn--secondary k-press" onClick={() => setStopped(true)}>
+        <button
+          type="button"
+          className="k-btn k-btn--secondary k-press"
+          onClick={() => setStopped(true)}
+        >
           Stop for now
         </button>
       </div>

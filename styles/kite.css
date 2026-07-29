@@ -65,12 +65,15 @@
    effect is carried by the blur. A white veil would have been the easy way
    to make the tiles visible, and it is exactly what we do not want.
    The radius is free here: measured identical from blur(0) to blur(64px),
-   because the cost is the backdrop capture, not the kernel. */
+   because the cost is the backdrop capture, not the kernel. So this number
+   is chosen purely for how it reads — at 64px a tile dissolved whatever was
+   behind it into flat colour; lower, it still reads as glass but the wave
+   stays legible through it. */
 .frost__glass {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  backdrop-filter: blur(64px);
+  backdrop-filter: blur(28px);
   -webkit-mask-size: 100% 100%;
   mask-size: 100% 100%;
   -webkit-mask-repeat: no-repeat;
@@ -120,15 +123,24 @@
   padding: 0;
   background: transparent;
   cursor: crosshair;
-  /* Hover/focus is the only affordance — it must not tint the frost itself,
-     so it lives on this separate transparent layer. */
-  box-shadow: inset 0 0 0 0 var(--frame-line);
-  transition: box-shadow 0.15s var(--ease);
+  /* The affordance lives on this separate transparent layer so it never
+     tints the frost itself. */
+  transition: background-color 0.15s var(--ease);
 }
 
-.frost__hit:hover,
+/* Hover lightens the cell instead of outlining it. An outline read as a
+   frosted tile's rim, which made "this is under the pointer" and "this one
+   is frosted" the same signal. */
+.frost__hit:hover {
+  background: var(--lattice-hover);
+}
+
+/* Focus keeps a real ring: a fill alone is not a sufficient focus indicator
+   (SC 2.4.7, and 2.4.13's minimum area), and keyboard users have no pointer
+   position to fall back on. */
 .frost__hit:focus-visible {
-  box-shadow: inset 0 0 0 1px var(--frame-line);
+  background: var(--lattice-hover);
+  box-shadow: inset 0 0 0 2px var(--frame-line);
   outline: none;
 }
 
@@ -152,7 +164,7 @@
 
 .k-frost {
   background: var(--glass);
-  backdrop-filter: blur(30px) saturate(1.4);
+  backdrop-filter: blur(30px) saturate(1.1);
   border: 1px solid var(--line);
   border-radius: var(--radius);
 }
@@ -162,6 +174,7 @@
    backdrop-filter, so the rim colour is sampled from the backdrop — hot
    over a crest, dim over deep colour. No colour is specified; only a gain. */
 .k-frost--lit {
+  /* stylelint-disable-next-line kite/boundary-is-border */
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14);
 }
 
@@ -191,13 +204,10 @@
   overflow: hidden;
   display: flex;
   pointer-events: auto;
-  background: var(--glass);
-  backdrop-filter: blur(36px) saturate(1.7) brightness(var(--panel-gain));
+  background: var(--panel);
+  backdrop-filter: blur(36px) saturate(1.1) brightness(var(--panel-gain));
   border: 1px solid var(--line-strong);
-  border-radius: var(--radius-sm);
-  box-shadow:
-    inset 1px 1px 0 rgb(255 255 255 / 0.12),
-    inset -1px -1px 0 rgb(0 0 0 / 0.22);
+  border-radius: var(--radius);
 }
 
 /* §3.4: dashed is reserved for provisional state — here, the drag preview.
@@ -231,10 +241,13 @@
   border: none;
   color: var(--ink);
   /* Top padding clears the move and remove controls in the corners. */
-  padding: 28px 0.7rem 0.9rem;
+  padding: 32px var(--space-1) var(--space-1);
   resize: none;
 }
-.k-note__text:focus {
+/* Scoped to :not(:focus-visible). As `.k-note__text:focus` this outranked
+   base.css's global `:focus-visible` (0,2,0 beats 0,1,0) and removed the
+   keyboard ring entirely — SC 2.4.7. Pointer focus still loses it. */
+.k-note__text:focus:not(:focus-visible) {
   outline: none;
 }
 .k-note__text::placeholder {
@@ -247,7 +260,7 @@
   inset-block-start: 0;
   display: grid;
   place-items: center;
-  block-size: 22px;
+  block-size: 24px;
   padding: 0;
   border: 0;
   background: none;
@@ -259,7 +272,7 @@
 .k-note__move {
   inset-inline-start: 0;
   inline-size: 32px;
-  padding-block-end: 5px;
+  padding-block-end: var(--optical);
   border-inline-end: 1px solid var(--line-strong);
   border-block-end: 1px solid var(--line-strong);
   cursor: grab;
@@ -273,16 +286,16 @@
 
 .k-note__close {
   inset-inline-end: 0;
-  inline-size: 22px;
+  inline-size: 24px;
   border-inline-start: 1px solid var(--line-strong);
   border-block-end: 1px solid var(--line-strong);
-  font-size: 1rem;
+  font-size: var(--size-body);
 }
 
 .k-note__size {
   position: absolute;
-  inset-inline-end: 5px;
-  inset-block-end: 4px;
+  inset-inline-end: var(--optical);
+  inset-block-end: var(--optical);
   font-size: var(--size-meta);
   color: var(--ink-faint);
   pointer-events: none;
@@ -321,14 +334,22 @@
   position: sticky;
   inset-block-start: 0;
   z-index: var(--layer-chrome);
-  min-block-size: 64px;
+  /* ONE CELL, not a hardcoded 64. The cell contracts to 56 at md and 48 at
+     sm, so a fixed 64 pushed every region below the bar 8px (md) or 16px
+     (sm) off the lattice. */
+  min-block-size: var(--cell);
   display: flex;
   align-items: center;
   gap: var(--space-3);
   padding-inline: var(--gutter);
   background: rgb(var(--bg-rgb) / var(--veil));
-  backdrop-filter: blur(20px) saturate(1.4);
-  border-block-end: 1px solid var(--line);
+  backdrop-filter: blur(20px) saturate(1.1);
+  /* An inset shadow, not a border: a 1px border is part of the box, so it
+     made the bar 1 cell + 1px and pushed the whole page off the lattice at
+     sm, where the cell (48) equals the control target and there is no slack
+     to absorb it. This draws the same hairline and costs no layout. */
+  /* stylelint-disable-next-line kite/boundary-is-border */
+  box-shadow: inset 0 -1px 0 var(--line);
 }
 
 .k-topbar__nav {
@@ -336,6 +357,13 @@
   align-items: center;
   gap: var(--space-1);
   margin-inline-end: auto;
+}
+
+/* §6.5 current page. Two channels, neither of them an underline: full ink
+   against the nav's dimmed default, plus a filled cell behind it. */
+.k-topbar__nav [data-current='true'] {
+  color: var(--ink);
+  background: var(--glass-hover);
 }
 
 .k-topbar__tools {
@@ -347,25 +375,27 @@
 .k-brand {
   display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: var(--space-1);
   color: var(--ink);
   text-decoration: none;
 }
 
 .k-brand__monogram {
-  inline-size: 34px;
-  block-size: 34px;
+  /* Half a cell. §13.5 calls for a 1-cell mark, but the topbar IS one
+     cell tall, so a 64px monogram would run edge to edge with no room. */
+  inline-size: 32px;
+  block-size: 32px;
   display: grid;
   place-items: center;
   background: var(--ink);
   color: var(--bg);
-  font-size: 0.8rem;
+  font-size: var(--size-monogram);
   font-weight: 700;
   letter-spacing: 0;
 }
 
 .k-brand__wordmark {
-  font-size: 1rem;
+  font-size: var(--size-body);
   font-weight: 600;
   letter-spacing: var(--track-tight);
   white-space: nowrap;
@@ -373,11 +403,19 @@
 
 .k-main {
   inline-size: min(100%, var(--shell));
+  /* §2.5: the column is a WHOLE NUMBER OF CELLS wide, not merely aligned at
+     its left edge. Below lg the shell does not cap it, so without this the
+     column inherits the viewport's arbitrary width. `round()` resolves the
+     percentage against the containing block, so this floors 800 → 784 (14
+     cells) and 500 → 480 (10). Behind @supports because round() is above
+     §13.4's Chrome 111 floor; older browsers keep today's behaviour. */
   margin-inline: auto;
   padding-inline: var(--gutter);
-  padding-block: var(--space-8) var(--space-12);
+  padding-block: var(--cell) calc(var(--cell) * 2);
   display: grid;
-  gap: var(--space-6);
+  /* Cell gaps, so each stacked region starts on a tile edge rather than
+     accumulating a half-cell drift down the page. */
+  gap: var(--cell);
   align-content: start;
   /* The column spans the shell whether or not it is full, so capturing the
      pointer across all of it would leave the lattice clickable only in the
@@ -391,6 +429,12 @@
   pointer-events: auto;
 }
 
+@supports (inline-size: round(down, 100%, 1px)) {
+  .k-main {
+    inline-size: min(round(down, 100%, var(--cell)), var(--shell));
+  }
+}
+
 .k-main--railed {
   grid-template-columns: minmax(0, 1fr);
 }
@@ -398,7 +442,8 @@
 @media (min-width: 1024px) {
   .k-main--railed {
     grid-template-columns: minmax(0, 1fr) var(--rail);
-    column-gap: var(--space-4);
+    /* 16 cells inner − 5 rail − 1 gap = a 10-cell work column, exactly. */
+    column-gap: var(--cell);
     align-items: start;
   }
   .k-main--railed > .k-head,
@@ -411,9 +456,17 @@
   max-inline-size: var(--measure);
   display: grid;
   gap: var(--space-2);
+  /* §2.5 quantised growth. The head is a title plus one line of orientation;
+     3 cells holds both even when the title wraps to two lines, and keeping it
+     a whole number of cells is what stops every region BELOW it inheriting a
+     fractional offset. `min-` not `block-` so unusually long titles still
+     grow rather than clip (§4.4 forbids truncation). */
+  min-block-size: calc(var(--cell) * 3);
+  align-content: start;
 }
 .k-head p {
-  color: var(--ink-dim);
+  color: var(--shader-ink);
+  max-inline-size: var(--measure);
 }
 
 .k-context {
@@ -424,8 +477,17 @@
 }
 
 .k-foot {
-  padding: var(--space-4) var(--gutter);
-  border-block-start: 1px solid var(--line);
+  /* One cell tall, mirroring the topbar, with the rule drawn as an inset
+     shadow so the hairline costs no layout — a 1px border would make the bar
+     one cell PLUS a pixel, which is what pushed the page off the lattice at
+     sm. Padding is inline only; the cell sets the height and the content is
+     centred in it. */
+  display: flex;
+  align-items: center;
+  min-block-size: var(--cell);
+  padding-inline: var(--gutter);
+  /* stylelint-disable-next-line kite/boundary-is-border */
+  box-shadow: inset 0 1px 0 var(--line);
   color: var(--ink-faint);
   font-size: var(--size-body-sm);
   background: rgb(var(--bg-rgb) / var(--veil));
@@ -442,8 +504,8 @@
   background: var(--bg-raised);
   color: var(--ink);
   border: 1px solid var(--line-strong);
-  border-radius: var(--radius-sm);
-  padding: 0.6rem 1rem;
+  border-radius: var(--radius);
+  padding: var(--space-1) var(--space-2);
   text-decoration: none;
 }
 .k-skip a:nth-of-type(2) {
@@ -461,15 +523,19 @@
   font-weight: 500;
   line-height: 1;
   min-block-size: var(--target);
-  padding-inline: 1.1rem;
+  padding-inline: var(--space-2);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
+  gap: var(--space-1);
   border: 1px solid transparent;
   border-radius: 0;
   background: none;
   color: var(--ink);
+  /* A .k-btn is often an <a> (nav, Help, Sign in). Without this it keeps the
+     UA underline, which is where most of the lines under "links" came from —
+     they were never the .k-link rule at all. */
+  text-decoration: none;
   cursor: pointer;
   transition:
     background-color var(--dur-flat) linear,
@@ -496,7 +562,7 @@
   color: var(--err);
 }
 .k-btn--study {
-  min-block-size: 56px;
+  min-block-size: var(--cell);
   font-size: var(--size-body);
   border-radius: var(--radius);
 }
@@ -515,9 +581,13 @@
   cursor: not-allowed;
 }
 
-/* §10.3 The shared control response — every interactive control. */
+/* §10.3 The shared control response — every interactive control.
+   No transition: §10.1 is springs-only and CSS cannot express one, which is
+   why the tokens live in lib/motion.ts. components/ui/Button drives this
+   with `whileTap` + spring.snap; plain elements carrying .k-press get the
+   scale instantly, which is honest rather than eased-wrong. */
 .k-press {
-  transition: transform 150ms var(--ease);
+  will-change: transform;
 }
 .k-press:active:not(:disabled):not([aria-disabled='true']) {
   transform: scale(0.98);
@@ -525,6 +595,25 @@
 @media (prefers-reduced-motion: reduce) {
   .k-press:active {
     transform: none;
+  }
+  .k-diagram__edges line {
+    animation: none;
+  }
+  .k-flipcard__face {
+    transition: none;
+  }
+  .k-flipcard__back {
+    transform: none;
+    opacity: 0;
+    visibility: hidden;
+  }
+  .k-flipcard[data-back='true'] .k-flipcard__front {
+    opacity: 0;
+    visibility: hidden;
+  }
+  .k-flipcard[data-back='true'] .k-flipcard__back {
+    opacity: 1;
+    visibility: visible;
   }
 }
 
@@ -535,7 +624,7 @@
   text-transform: uppercase;
   font-weight: 600;
   min-block-size: var(--target);
-  padding-inline: 0.9rem;
+  padding-inline: var(--space-2);
   display: inline-flex;
   align-items: center;
   gap: var(--optical);
@@ -564,14 +653,11 @@
 .k-card,
 .k-tile,
 .k-panel {
-  background: var(--glass);
-  backdrop-filter: blur(36px) saturate(1.7) brightness(var(--panel-gain));
+  background: var(--panel);
+  backdrop-filter: blur(36px) saturate(1.1) brightness(var(--panel-gain));
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: var(--space-3);
-  box-shadow:
-    inset 1px 1px 0 rgb(255 255 255 / 0.12),
-    inset -1px -1px 0 rgb(0 0 0 / 0.22);
+  padding: var(--card-pad-block) var(--card-pad-inline);
 }
 
 .k-card {
@@ -580,7 +666,9 @@
   align-content: start;
   text-decoration: none;
   color: inherit;
-  transition: border-color var(--dur-flat) linear, background-color var(--dur-flat) linear;
+  transition:
+    border-color var(--dur-flat) linear,
+    background-color var(--dur-flat) linear;
 }
 .k-card:hover {
   background: var(--glass-hover);
@@ -592,8 +680,11 @@
 
 .k-grid-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: var(--space-2);
+  /* 4 cells minimum per column, 3-cell rows, 1-cell gutters: the whole grid
+     is expressed in cells so nothing in it can land between tiles (§2.5). */
+  grid-template-columns: repeat(auto-fill, minmax(calc(var(--cell) * 4), 1fr));
+  grid-auto-rows: calc(var(--cell) * 3);
+  gap: var(--cell);
 }
 
 /* ── §6.6 Tables ──────────────────────────────────────────────────── */
@@ -603,7 +694,7 @@
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--glass);
-  backdrop-filter: blur(30px) saturate(1.4);
+  backdrop-filter: blur(30px) saturate(1.1);
 }
 .k-table {
   inline-size: 100%;
@@ -612,7 +703,7 @@
 }
 .k-table :is(th, td) {
   text-align: start;
-  padding: 0.85rem 1rem;
+  padding: var(--space-2) var(--space-2);
   border-block-end: 1px solid var(--line);
   vertical-align: top;
 }
@@ -668,6 +759,33 @@
   display: grid;
   gap: var(--space-1);
 }
+/* A label belongs beside or above its control, never cut into the border of
+   a titled field box. This explicitly neutralises the browser fieldset
+   treatment everywhere in the product. */
+fieldset.k-field {
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+/* Field-level toggles (the katakana switch) belong under the field's leading
+   edge. `justify-items: start` on the field was the wrong way to get that —
+   it also shrank every input to min-content, leaving a 165px box adrift in a
+   400px band on six module types. The alignment belongs on the button. */
+.k-field > .k-btn {
+  justify-self: start;
+  margin-block-start: var(--optical);
+}
+/* Answers are short; a field spanning the whole card implies an essay. §6.13
+   caps the measure at 48ch inside a frame, and an exact-form answer needs far
+   less than that. */
+.k-field > .k-input,
+.k-field .k-compose {
+  max-inline-size: 32ch;
+}
+.k-field > textarea.k-input--prose {
+  max-inline-size: 48ch;
+}
 .k-field__label {
   font-size: var(--size-label);
   letter-spacing: var(--track-label);
@@ -681,17 +799,20 @@ select.k-input {
   font-family: inherit;
   font-size: var(--size-body);
   min-block-size: var(--target);
-  padding: 0.6rem 0.9rem;
+  padding: var(--space-1) var(--space-2);
   background: rgb(var(--bg-rgb) / 0.5);
   color: var(--ink);
   border: 1px solid var(--line-strong);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius);
   inline-size: 100%;
 }
-.k-textarea {
+.k-textarea,
+/* Prose answers stay readable and only resize vertically. */
+textarea.k-input--prose {
   min-block-size: 6rem;
   line-height: var(--leading-body);
   resize: vertical;
+  max-inline-size: 48ch;
 }
 .k-field__hint {
   font-size: var(--size-body-sm);
@@ -708,8 +829,10 @@ select.k-input {
   position: fixed;
   inset: 0;
   z-index: var(--layer-scrim);
+  /* §6.11: flat, NO blur. A blur here spends a backdrop-filter against
+     the §5 budget and adds nothing to legibility (§3.5) — the scrim is
+     the one place the shader is meant to be occluded outright. */
   background: rgb(var(--bg-rgb) / 0.6);
-  backdrop-filter: blur(8px);
   display: grid;
   place-items: center;
   padding: var(--gutter);
@@ -719,8 +842,8 @@ select.k-input {
   inline-size: min(100%, 32rem);
   background: var(--bg-raised);
   border: 1px solid var(--line-strong);
-  border-radius: var(--radius-lg);
-  padding: var(--space-4);
+  border-radius: var(--radius);
+  padding: var(--card-pad-block) var(--card-pad-inline);
   display: grid;
   gap: var(--space-3);
 }
@@ -755,13 +878,20 @@ select.k-input {
 
 /* ── §3.3 Judgement — colour is never the sole channel ────────────── */
 
+/* Laid out on one line inside the reserved strip: the verdict and the
+   correct answer read as a single statement, and a fixed row height means
+   the wording can never change the card's geometry. §3.3's second channel
+   is the glyph and the 3px rule, not the height. */
 .k-judge {
-  display: grid;
-  gap: var(--space-1);
-  padding: var(--space-2);
-  border-radius: var(--radius-sm);
-  border-inline-start: 3px solid currentColor;
-  background: var(--glass);
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  padding-inline-start: var(--space-2);
+  border-inline-start: 2px solid currentColor;
+}
+.k-judge p {
+  margin: 0;
 }
 .k-judge--ok {
   color: var(--ok);
@@ -785,84 +915,253 @@ select.k-input {
 }
 
 .k-frame {
-  inline-size: min(100%, 40rem);
-  block-size: min(70vh, 34rem);
-  background: var(--glass);
-  backdrop-filter: blur(40px) saturate(1.8) brightness(var(--panel-gain));
+  position: relative;
+  inline-size: min(100%, calc(var(--cell) * 10));
+  background: var(--panel);
+  backdrop-filter: blur(16px) saturate(1.1) brightness(var(--panel-gain));
   border: 1px solid var(--line-strong);
-  border-radius: var(--radius-lg);
-  box-shadow:
-    inset 1px 1px 0 rgb(255 255 255 / 0.14),
-    inset -1px -1px 0 rgb(0 0 0 / 0.24);
+  border-radius: var(--radius);
   display: grid;
-  grid-template-rows: 56px 3fr 2fr 72px;
-  overflow: hidden;
+  grid-template-rows: auto;
+  gap: 0;
 }
 
 .k-frame__header {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  padding-inline: var(--space-3);
-  border-block-end: 1px solid var(--line);
-}
-.k-frame__type {
-  font-size: var(--size-label);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
-  font-weight: 600;
-  color: var(--accent, var(--ink-dim));
+  gap: var(--space-1);
+  min-block-size: var(--target);
+  padding: var(--space-2) calc(var(--target) + var(--card-pad-inline)) 0
+    var(--card-pad-inline);
 }
 .k-frame__topic {
   font-size: var(--size-body-sm);
   color: var(--ink-dim);
+}
+.k-frame__aid {
+  display: flex;
+  align-items: center;
   margin-inline-start: auto;
+}
+.k-frame__menu {
+  position: absolute;
+  inset-block-start: var(--space-1);
+  inset-inline-end: var(--space-1);
+  z-index: var(--layer-content);
+}
+
+/* Reduced media player (§6.9): play, replay, rate, transcript. */
+.k-audio {
+  display: grid;
+  gap: var(--space-2);
+  margin-block-start: var(--space-2);
+}
+.k-audio__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.k-audio__rate select.k-input {
+  inline-size: auto;
+  font-variant-numeric: tabular-nums;
+}
+.k-audio__transcript {
+  color: var(--ink-dim);
+}
+/* `hidden="until-found"` needs `content-visibility: hidden` rather than the
+   UA's `display: none`, which is what makes the text reachable by
+   find-in-page while still being invisible and out of the a11y tree. */
+.k-audio__transcript[hidden='until-found'] {
+  display: block;
+  content-visibility: hidden;
+}
+
+/* Example sentences, from JKG's flashcard flip. */
+.k-examples {
+  margin-block-start: var(--space-2);
+}
+.k-examples ul {
+  display: grid;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.k-examples li {
+  display: grid;
+  gap: var(--optical);
+}
+.k-examples .k-body-sm {
+  color: var(--ink-dim);
+}
+
+/* §4.3 size floor: an inline glyph inside an exercise sentence is 20px, and
+   CJK never takes negative tracking. */
+.k-ja {
+  font-size: max(var(--size-glyph-inline), var(--size-body));
+  letter-spacing: 0;
+  line-height: 1.75;
+  line-break: strict;
+  word-break: normal;
+  overflow-wrap: normal;
 }
 
 .k-frame__prompt,
 .k-frame__response {
-  padding: var(--space-3);
-  overflow-y: auto;
   display: grid;
-  align-content: center;
+  align-content: start;
   gap: var(--space-2);
+  padding-inline: var(--card-pad-inline);
 }
 .k-frame__prompt {
-  border-block-end: 1px solid var(--line);
-  font-size: 1.25rem;
+  font-size: var(--size-prompt);
+  padding-block: var(--space-2) var(--space-1);
+}
+.k-frame__response {
+  padding-block: var(--space-1) var(--space-2);
+}
+
+.k-frame--flip {
+  border: 0;
+  background: transparent;
+  backdrop-filter: none;
+  overflow: visible;
+}
+.k-flipscene {
+  inline-size: 100%;
+  min-block-size: calc(var(--cell) * 4);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  perspective: 1200px;
+}
+.k-flipcard {
+  position: relative;
+  display: grid;
+  inline-size: 100%;
+  block-size: 100%;
+  min-block-size: calc(var(--cell) * 4);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.k-flipcard__face {
+  grid-area: 1 / 1;
+  display: grid;
+  align-content: safe center;
+  justify-items: center;
+  gap: var(--space-2);
+  padding: var(--card-pad-block) var(--card-pad-inline);
+  backface-visibility: hidden;
+  border: 1px solid var(--line-strong);
+  background: var(--panel);
+  text-align: center;
+}
+.k-flipcard__back {
+  transform: rotateY(180deg);
+}
+.k-flipscene:focus-visible .k-flipcard__face {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+@media (prefers-reduced-motion: reduce) {
+  .k-flipcard__back {
+    transform: none;
+    opacity: 0;
+    visibility: hidden;
+  }
+  .k-flipcard[data-back='true'] .k-flipcard__front {
+    opacity: 0;
+    visibility: hidden;
+  }
+  .k-flipcard[data-back='true'] .k-flipcard__back {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+/* §4.3: "Isolated prompt glyph (kana/kanji recognition) — 64px", and CJK
+   never takes negative tracking. */
+.k-glyph-prompt {
+  font-size: var(--size-glyph);
+  line-height: 1.3;
+  letter-spacing: 0;
+}
+.k-glyph-prompt .k-ruby {
+  line-height: 1.5;
+}
+/* Glyph option sets tile instead of stacking as full-width bars, and the
+   option is sized to the glyph rather than the glyph to the option. */
+.k-options--glyph {
+  grid-template-columns: repeat(auto-fit, minmax(calc(var(--cell) * 1.5), 1fr));
+}
+.k-options--glyph .k-option {
+  justify-content: center;
+  text-align: center;
+}
+.k-glyph-option {
+  font-size: var(--size-glyph-option);
+  line-height: 1.4;
+  letter-spacing: 0;
+}
+
+.k-frame__judge {
+  display: grid;
+  padding: 0 var(--card-pad-inline) var(--card-pad-block);
 }
 
 .k-band {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  border-block-start: 1px solid var(--line);
+  grid-template-columns: repeat(auto-fit, minmax(calc(var(--cell) * 1.5), 1fr));
+  gap: 1px;
+  padding: var(--space-1);
+  background: var(--line);
 }
-.k-band > * {
-  border-inline-start: 1px solid var(--line);
+.k-frame .k-band .k-btn {
+  border: 0;
   border-radius: 0;
+  background: var(--panel);
 }
-.k-band > *:first-child {
-  border-inline-start: none;
+.k-band .k-btn--primary {
+  background: var(--ink);
 }
-.k-band__slot {
-  min-block-size: 72px;
+.k-frame--flip .k-band {
+  margin-block-start: var(--space-1);
+  border: 1px solid var(--line-strong);
+}
+.k-band--single {
+  display: flex;
+  justify-content: flex-end;
+  background: transparent;
+  border: 0;
+  padding-inline: 0;
+}
+.k-frame--flip .k-band--single {
+  border: 0;
 }
 
 .k-scrollmodule {
-  inline-size: min(100%, 46rem);
-  background: var(--glass);
-  backdrop-filter: blur(30px) saturate(1.4);
+  /* §6.10: ungraded types have no fixed frame and scroll to a single
+     Continue, so only the width is quantised — 10 cells, matching .k-frame
+     so the column does not jump between graded and ungraded modules. */
+  inline-size: min(100%, calc(var(--cell) * 10));
+  background: var(--panel);
+  backdrop-filter: blur(30px) saturate(1.1);
   border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius);
   display: grid;
-  gap: var(--space-3);
-  padding: 0 var(--space-3) var(--space-3);
+  gap: var(--space-2);
+  padding: 0 var(--card-pad-inline) var(--card-pad-block);
 }
-.k-scrollmodule__foot {
-  display: flex;
-  justify-content: flex-end;
-  padding-block-start: var(--space-2);
-  border-block-start: 1px solid var(--line);
+.k-scrollmodule .k-frame__header {
+  padding-inline-start: 0;
+  padding-inline-end: 0;
+}
+.k-scrollmodule .k-menu {
+  margin-inline-start: auto;
 }
 
 /* ── §6.12 Response controls ──────────────────────────────────────── */
@@ -876,16 +1175,18 @@ select.k-input {
   font-size: var(--size-body);
   text-align: start;
   min-block-size: var(--target);
-  padding: 0.7rem 1rem;
+  padding: var(--space-1) var(--space-2);
   background: var(--glass);
   border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius);
   color: var(--ink);
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  transition: background-color var(--dur-flat) linear, border-color var(--dur-flat) linear;
+  transition:
+    background-color var(--dur-flat) linear,
+    border-color var(--dur-flat) linear;
 }
 .k-option:hover:not(:disabled) {
   background: var(--glass-hover);
@@ -905,16 +1206,6 @@ select.k-input {
   display: grid;
   gap: var(--space-2);
 }
-.k-order__row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-  min-block-size: 60px;
-  align-content: start;
-  padding: var(--space-1);
-  border: 1px dashed var(--line);
-  border-radius: var(--radius-sm);
-}
 .k-order__row--answer {
   border-style: solid;
   border-color: var(--line-strong);
@@ -924,10 +1215,10 @@ select.k-input {
   font-family: inherit;
   font-size: var(--size-body);
   min-block-size: var(--target);
-  padding-inline: 0.9rem;
+  padding-inline: var(--space-2);
   background: var(--glass);
   border: 1px solid var(--line-strong);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius);
   color: var(--ink);
   cursor: pointer;
 }
@@ -936,7 +1227,7 @@ select.k-input {
 }
 
 .k-cloze {
-  font-size: 1.25rem;
+  font-size: var(--size-prompt);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -950,7 +1241,7 @@ select.k-input {
   text-align: center;
   background: rgb(var(--bg-rgb) / 0.5);
   border: 1px solid var(--line-strong);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius);
   color: var(--ink);
 }
 .k-bank {
@@ -974,7 +1265,7 @@ select.k-input {
 .k-mastery {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--space-1);
   font-size: var(--size-meta);
   letter-spacing: var(--track-label);
   text-transform: uppercase;
@@ -982,8 +1273,8 @@ select.k-input {
   color: var(--ink-dim);
 }
 .k-mastery__mark {
-  inline-size: 10px;
-  block-size: 10px;
+  inline-size: 8px;
+  block-size: 8px;
   border: 1px solid var(--ink-dim);
 }
 .k-mastery--inprogress .k-mastery__mark {
@@ -1013,13 +1304,2089 @@ select.k-input {
   display: grid;
   justify-items: center;
 }
-.k-stack__behind {
+/* ── Module type harness (design surface) ─────────────────────────────
+   A picker beside a live module. Cell-derived like everything else: the
+   list is 5 cells, the gap 1, so the stage is a whole number of cells too. */
+
+.k-harness {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .k-harness {
+    grid-template-columns: calc(var(--cell) * 5) minmax(0, 1fr);
+  }
+}
+
+.k-harness__list {
+  display: grid;
+  gap: var(--space-3);
+  align-content: start;
+}
+@media (min-width: 1024px) {
+  .k-harness__list {
+    position: sticky;
+    inset-block-start: calc(var(--cell) + var(--space-2));
+    max-block-size: calc(100vh - var(--cell) - var(--space-4));
+    overflow-y: auto;
+    padding-inline-end: var(--space-1);
+  }
+}
+.k-harness__list .k-input {
+  inline-size: 100%;
+}
+.k-harness__list ul {
+  display: grid;
+  gap: 1px;
+  list-style: none;
+  padding-inline-start: 0;
+  margin-block-start: var(--space-1);
+}
+
+.k-harness__item {
+  inline-size: 100%;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-inline: var(--space-1);
+  text-align: start;
+}
+.k-harness__item small {
+  color: var(--ink-faint);
+  font-size: var(--size-meta);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+.k-harness__item[data-current='true'] {
+  background: var(--glass-hover);
+  color: var(--ink);
+}
+
+.k-harness__stage {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+  scroll-margin-block-start: calc(var(--cell) + var(--space-3));
+}
+
+.k-harness__foot {
+  display: grid;
+  gap: var(--space-2);
+  inline-size: 100%;
+}
+
+.k-harness__log {
+  display: grid;
+  gap: var(--optical);
+  list-style: none;
+  padding-inline-start: 0;
+  color: var(--ink-dim);
+}
+
+/* ── Ungraded module compositions ─────────────────────────────────────
+   Ported in structure from the Common Sage renderers, restyled to Kite:
+   square, hairline, zero radius, cell-derived spacing. Colour never works
+   alone — the wrong/right pair carries a glyph and a word too (§3.3). */
+
+.k-fig {
+  inline-size: 100%;
+  margin-block: 0;
+}
+.k-fig__note {
+  color: var(--ink-dim);
+  margin-block-start: var(--space-1);
+}
+
+/* Stat row — the value is the point, so it carries the display weight. */
+.k-fig--stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(calc(var(--cell) * 2.25), 1fr));
+  gap: 1px;
+}
+/* The rules are drawn ON the tiles, not as a background showing through a
+   1px gap. With the old trick, 5 stats in a 4-column grid left three empty
+   cells painted in --line — a large block of rule colour where there was no
+   content at all. An outset shadow costs no layout and leaves empty grid
+   area invisible. */
+.k-stat {
+  display: grid;
+  align-content: start;
+  gap: var(--optical);
+  padding: var(--space-2);
+  background: var(--surface-sunken, rgb(var(--bg-rgb) / 0.35));
+  border: 1px solid var(--line);
+}
+/* Two lines reserved for the label so a wrapping one ("Life expectancy")
+   cannot drop its value out of line with the rest of the row. */
+.k-stat dt {
+  color: var(--ink-dim);
+}
+.k-stat__value {
+  font-size: var(--size-h2);
+  font-weight: 600;
+  letter-spacing: var(--track-tight);
+}
+.k-stat__unit {
+  color: var(--ink-dim);
+  font-size: var(--size-body-sm);
+  margin-inline-start: var(--optical);
+}
+/* The source tinted whole tiles to tell them apart; here the separation is
+   the 1px grid gap and the value's weight, and this qualifier stays quiet
+   underneath so it never competes with the number it qualifies. */
+.k-stat__note {
+  display: block;
+  color: var(--ink-dim);
+  margin-block-start: var(--optical);
+  text-wrap: balance;
+}
+
+/* Timeline — a real spine, not a bulleted list. */
+/* Rebuilt. The previous version drew the spine per-row with `inset-block: 0`
+   so it broke at every gap, put a full-width rule under each row (which reads
+   as a table and fights the spine outright), gave the date a 96px column for
+   four digits, and set the EVENT — the actual content — in --ink-dim while
+   the date got full ink. The index was louder than the thing it indexed.
+
+   Now: one continuous spine on the list, markers centred on it, date and
+   event on one baseline with the date sized to its content. */
+.k-fig--timeline {
+  --spine: 5px;
+  display: grid;
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  padding-inline-start: 0;
+  position: relative;
+}
+/* One spine for the whole list, inset half a row at each end so it starts and
+   stops at the first and last marker rather than floating past them. */
+.k-fig--timeline::before {
+  content: '';
+  position: absolute;
+  inset-block: 1.1em calc(1.1em + var(--space-2));
+  inset-inline-start: var(--spine);
+  inline-size: 1px;
+  background: var(--line-strong);
+}
+.k-fig--timeline li {
+  display: grid;
+  grid-template-columns: calc(var(--spine) * 2 + 8px) max-content 1fr;
+  align-items: baseline;
+  column-gap: var(--space-2);
+  padding-block: var(--space-1);
+  position: relative;
+}
+/* Sits ON the spine: a filled dot knocked out of the surface, so the line
+   passes behind it rather than stopping at it. */
+.k-timeline__mark {
+  inline-size: 8px;
+  block-size: 8px;
+  /* Square. A round marker would be the only circle in the product (§1);
+     the spine still passes behind it via the knockout below. */
+  border-radius: var(--radius);
+  background: var(--ink);
+  box-shadow: 0 0 0 3px var(--panel);
+  justify-self: start;
+  align-self: baseline;
+  translate: calc(var(--spine) - 4px) -0.35em;
+}
+/* Tabular so the dates form a true column without a fixed width. */
+.k-timeline__when {
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+/* The event is the content and gets full ink. */
+.k-timeline__what {
+  color: var(--ink);
+  text-wrap: pretty;
+}
+
+/* Comparison — two columns, contained vertical rule between them. */
+.k-fig--comparison {
+  display: grid;
+  gap: var(--space-1);
+}
+.k-compare {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+  align-items: start;
+}
+.k-compare__side ul {
+  display: grid;
+  gap: var(--space-1);
+  margin-block-start: var(--space-1);
+  padding-inline-start: var(--space-2);
+  color: var(--ink-dim);
+  font-size: var(--size-body-sm);
+}
+.k-compare__note {
+  grid-column: 1 / -1;
+  color: var(--ink-dim);
+  padding-block-start: var(--space-1);
+}
+
+/* Wrong / right pairs. */
+.k-fig--mistakes {
+  display: grid;
+  gap: var(--space-2);
+}
+.k-mistake {
+  background: var(--glass);
+}
+.k-mistake__row {
+  display: grid;
+  grid-template-columns: calc(var(--cell) * 1.5) 1fr;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  align-items: baseline;
+}
+.k-mistake__label {
+  font-size: var(--size-meta);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.k-mistake__row[data-tone='wrong'] .k-mistake__label {
+  color: var(--err);
+}
+.k-mistake__row[data-tone='right'] .k-mistake__label {
+  color: var(--ok);
+}
+.k-mistake__why {
+  padding: 0 var(--space-2) var(--space-2);
+  color: var(--ink-dim);
+}
+
+/* Key/value table. */
+.k-fig--pairs {
+  display: grid;
+  border-block-start: 1px solid var(--line);
+}
+.k-fig--pairs > div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-2);
+  padding-block: var(--space-1);
+  border-block-end: 1px solid var(--line);
+}
+.k-fig--pairs dt {
+  color: var(--ink-dim);
+}
+.k-fig--pairs dd {
+  font-weight: 600;
+}
+
+/* Formula plus legend. */
+.k-fig--formula {
+  background: var(--glass);
+}
+.k-formula__expression {
+  padding: var(--space-2);
+  font-size: var(--size-h2);
+  text-align: center;
+}
+.k-formula__legend {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-2);
+}
+.k-formula__legend > div {
+  display: grid;
+  grid-template-columns: calc(var(--cell) * 1.5) 1fr;
+  gap: var(--space-2);
+}
+.k-formula__legend dt {
+  font-weight: 600;
+}
+.k-formula__legend dd {
+  color: var(--ink-dim);
+}
+
+/* In − Out = Stored. */
+.k-fig--balance {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr;
+  gap: var(--space-2);
+  align-items: start;
+}
+.k-balance__col ul {
+  display: grid;
+  gap: var(--optical);
+  margin-block-start: var(--space-1);
+  padding-inline-start: var(--space-2);
+  color: var(--ink-dim);
+  font-size: var(--size-body-sm);
+}
+.k-balance__op {
+  align-self: center;
+  font-size: var(--size-h3);
+  color: var(--ink-faint);
+}
+.k-fig--balance .k-fig__note {
+  grid-column: 1 / -1;
+}
+
+/* Hero image and 3D poster — the two that carry a real asset.
+   Zero radius, hairline, and the caption is paper below the image rather
+   than an overlay: text over a generated image has no contrast guarantee. */
+.k-fig--image,
+.k-fig--model {
+  margin-block: 0;
+}
+.k-hero {
+  position: relative;
+  display: block;
+  inline-size: 100%;
+  min-block-size: var(--cell);
+  block-size: auto;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+.k-fig--image figcaption,
+.k-fig--model figcaption {
+  margin-block-start: var(--space-2);
+  max-inline-size: 62ch;
+}
+.k-credit {
+  color: var(--ink-faint);
+  margin-block-start: var(--optical);
+}
+
+/* Globe pin — a static SVG locator, not a tiled map (see Figures.tsx). */
+.k-fig--globe {
+  margin-block: 0;
+}
+.k-globe__scroll {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+.k-globe {
+  display: block;
+  inline-size: 100%;
+  min-inline-size: calc(var(--cell) * 5);
+  block-size: auto;
+}
+.k-globe__land path {
+  fill: var(--glass);
+  stroke: var(--line-strong);
+  stroke-width: 0.5;
+  vector-effect: non-scaling-stroke;
+}
+/* Two rings so a pin stays findable over land and over sea alike — weight
+   and a knockout, never colour alone (§3.3). */
+.k-globe__halo {
+  fill: none;
+  stroke: var(--panel);
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+}
+.k-globe__pin {
+  fill: var(--ink);
+  stroke: var(--panel);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.k-globe__list p {
+  max-inline-size: 62ch;
+}
+
+/* Map-click response — the globe locator, made selectable. */
+.k-maprsp {
+  display: grid;
+  gap: var(--space-2);
+}
+.k-maprsp__scroll {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+/* The whole world at 2:1 inside a card band is a letterbox nobody can hit.
+   WORLD_VIEWBOX crops to 85N–60S for a 2.4:1 ratio that fills the card's
+   width at a height a band can hold. */
+.k-maprsp__map {
+  inline-size: 100%;
+  block-size: auto;
+  aspect-ratio: 720 / 300;
+  max-block-size: 200px;
+  min-inline-size: 0;
+}
+/* The map and the list are the SAME four candidates, and stacking them at
+   full width made the response band 581px of duplicated content. The labels
+   are short, so the list goes two-up underneath the map: both paths stay
+   fully present (§9.3B) without the card paying twice for one question. */
+.k-maprsp .k-options {
+  grid-template-columns: repeat(2, 1fr);
+}
+.k-maprsp__hit {
+  fill: transparent;
+}
+.k-maprsp__target {
+  cursor: pointer;
+}
+.k-maprsp__halo {
+  fill: none;
+  stroke: var(--panel);
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+}
+.k-maprsp__dot {
+  fill: var(--ink-dim);
+  stroke: var(--panel);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+/* §9.3B: selected, correct and wrong differ in outline WEIGHT and PATTERN,
+   never in colour alone — so this survives forced colours and greyscale. */
+.k-maprsp__target[data-state='on'] .k-maprsp__dot {
+  fill: var(--ink);
+  r: 6;
+}
+.k-maprsp__target[data-state='on'] .k-maprsp__halo {
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+.k-maprsp__target[data-state='ok'] .k-maprsp__dot {
+  fill: var(--ok);
+  r: 6;
+}
+.k-maprsp__target[data-state='ok'] .k-maprsp__halo {
+  stroke: var(--ok);
+  stroke-width: 3;
+}
+.k-maprsp__target[data-state='err'] .k-maprsp__dot {
+  fill: var(--err);
+}
+.k-maprsp__target[data-state='err'] .k-maprsp__halo {
+  stroke: var(--err);
+  stroke-width: 2;
+  stroke-dasharray: 3 3;
+}
+/* §13.3 exception. Rule broken: kite/outline-needs-replacement.
+   Why: base.css's 2px ring does not follow an SVG <g>, so the appearance is
+     rebuilt on the marker itself in the rule directly below. The rule can
+     only inspect sibling declarations, not descendant selectors.
+   Mitigation: the replacement is the same weight and colour as the ring it
+     replaces, and is declared immediately adjacent.
+   Proof: §9.6's keyboard pass tabs the map targets. */
+.k-maprsp__target:focus-visible {
+  /* stylelint-disable-next-line kite/outline-needs-replacement */
+  outline: none;
+}
+/* The 2px --ink ring from base.css does not follow an SVG <g>, so the focus
+   appearance is rebuilt on the marker itself at the same weight. */
+.k-maprsp__target:focus-visible .k-maprsp__halo {
+  stroke: var(--ink);
+  stroke-width: 3;
+}
+
+/* Diagram / schematic — auto-laid-out SVG.
+   Everything strokes with currentColor so the whole graph inherits one ink
+   and the arrowhead marker (context-stroke) can never drift from its line.
+   Node kind is carried by SHAPE, not colour: §3.2 reserves colour for
+   ContentType, and shape survives forced colours and greyscale besides. */
+.k-fig--diagram {
+  margin-block: 0;
+}
+/* §9.2: wide content scrolls in its own named container rather than
+   forcing the page sideways. */
+.k-diagram__scroll {
+  overflow-x: auto;
+  background: var(--glass);
+  padding: var(--space-1);
+}
+.k-diagram {
+  display: block;
+  inline-size: 100%;
+  min-inline-size: calc(var(--cell) * 6);
+  block-size: auto;
+  color: var(--ink);
+}
+.k-diagram__edges line {
+  stroke: var(--ink-dim);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 5;
+  animation: k-flow 1.2s linear infinite;
+  transition:
+    opacity 160ms ease,
+    stroke-width 160ms ease;
+}
+.k-diagram__edges .is-lit line {
+  stroke: var(--ink);
+  stroke-width: 2.5;
+}
+.k-diagram__edges .is-dim,
+.k-diagram__node.is-dim {
+  opacity: 0.24;
+}
+.k-diagram__node {
+  cursor: pointer;
+  transition: opacity 160ms ease;
+}
+.k-diagram__node.is-current :is(rect, ellipse, circle, polygon),
+.k-diagram__node:focus-visible :is(rect, ellipse, circle, polygon) {
+  stroke-width: 3;
+}
+@keyframes k-flow {
+  to {
+    stroke-dashoffset: -11;
+  }
+}
+.k-diagram__edgelabel {
+  fill: var(--ink-dim);
+  font-size: var(--size-fig-label);
+  text-anchor: middle;
+  dominant-baseline: middle;
+  /* Knocks a gap in the line behind the label without a backing rect that
+     would have to be measured from the text. */
+  paint-order: stroke;
+  stroke: var(--panel);
+  stroke-width: 5px;
+  stroke-linejoin: round;
+}
+.k-diagram__node rect,
+.k-diagram__node ellipse,
+.k-diagram__node circle,
+.k-diagram__node polygon {
+  fill: var(--panel);
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+/* A process is outlined, a reservoir is filled — the one contrast the
+   source got from its colour enum that is actually load-bearing. */
+.k-diagram__node[data-shape='oval'] ellipse,
+.k-diagram__node[data-shape='circle'] circle {
+  fill: var(--glass);
+}
+.k-diagram__node text {
+  fill: var(--ink);
+  font-size: var(--size-fig-node);
+  font-weight: 500;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+.k-diagram__text {
+  margin-block-start: var(--space-2);
+}
+.k-diagram__text summary {
+  cursor: pointer;
+  color: var(--ink-dim);
+  padding-block: var(--optical);
+}
+.k-diagram__gloss {
+  display: grid;
+  gap: var(--optical);
+  margin-block: var(--space-2);
+}
+.k-diagram__gloss dt {
+  font-weight: 600;
+}
+.k-diagram__gloss dd {
+  margin-inline-start: 0;
+  color: var(--ink-dim);
+  margin-block-end: var(--space-1);
+}
+.k-diagram__relations {
+  display: grid;
+  gap: var(--optical);
+  margin: 0;
+  padding-inline-start: var(--space-3);
+  color: var(--ink-dim);
+  font-size: var(--size-body-sm);
+}
+
+@media (max-width: 599px) {
+  .k-compare,
+  .k-fig--balance {
+    grid-template-columns: 1fr;
+  }
+  .k-balance__op {
+    border-inline: 0;
+    border-block: 0;
+    padding-block: 0;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Module layer, second pass — added when the catalogue's rich renderers
+   replaced the static ones (complete_modules.md is the authority on
+   interaction). Everything below either supports a control that did not
+   exist before, or corrects something that a screenshot showed was wrong.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* The visually-hidden utility. Its ABSENCE was the single worst defect in
+   the first pass: every `k-sr` label — "Move X up", "More for this module",
+   "Image 3" — rendered on screen at full size, so the ordering control read
+   as two paragraphs per row and the header carried a sentence. Clip rather
+   than `display: none`, so the text stays in the accessibility tree. */
+.k-sr {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Compact lattice footer: controls share one row without placeholder cells. */
+.k-frame .k-band > .k-btn {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 0;
+  padding-inline: var(--space-1);
+  text-align: center;
+  line-height: 1.2;
+}
+.k-frame .k-band .k-btn .k-meta {
+  font-size: var(--size-meta);
+  letter-spacing: var(--track-label);
+}
+
+/* ── Ordering ─────────────────────────────────────────────────────────
+   Rows were 64px of dashed box with two full-width sentences inside. The
+   row is now a single line: the token takes the space, the controls are
+   square icon buttons at the end, and the whole thing is one cell tall so
+   four of them fit a band without scrolling. */
+.k-order__row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--target);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--glass);
+  flex-wrap: nowrap;
+}
+.k-order ol {
+  display: grid;
+  gap: var(--space-1);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: order;
+}
+.k-order__grip {
+  display: flex;
+  gap: var(--optical);
+}
+.k-order__grip .k-btn {
+  min-inline-size: var(--space-4);
+  padding-inline: 0;
+  justify-content: center;
+}
+.k-order .k-bank {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Slippy maps ──────────────────────────────────────────────────────
+   Leaflet sizes itself to its container and its container to nothing, so a
+   map with no declared height renders as a 0px strip — which is exactly
+   what globe_pin did. Both hosts get a real, cell-derived height. */
+.k-globe,
+.k-maprsp__map {
+  display: block;
+  inline-size: 100%;
+  block-size: calc(var(--cell) * 4);
+  border: 1px solid var(--line-strong);
+  background: var(--bg-raised);
+  aspect-ratio: auto;
+  max-block-size: none;
+}
+/* Leaflet's own chrome is white-on-white by default and unreadable on the
+   dark ground. Restyled rather than hidden — the attribution is a licence
+   obligation and the zoom buttons are a real control. */
+.leaflet-container {
+  font-family: var(--font-sans);
+  background: var(--bg-raised);
+}
+.leaflet-bar a,
+.leaflet-control-attribution {
+  background: var(--bg-raised);
+  color: var(--ink-dim);
+  border-radius: var(--radius);
+}
+.leaflet-bar a {
+  border-block-end: 1px solid var(--line);
+  color: var(--ink);
+}
+.leaflet-control-attribution a {
+  color: var(--ink);
+}
+.leaflet-tooltip {
+  background: var(--bg-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  color: var(--ink);
+  box-shadow: none;
+}
+/* The placeholder matches the map to avoid a loading jump. */
+.k-map-skeleton {
+  display: block;
+  inline-size: 100%;
+  block-size: calc(var(--cell) * 4);
+  border: 1px solid var(--line);
+  background: var(--glass);
+}
+
+.k-globe__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  background: none;
+  border: 0;
+  padding: var(--space-2) 0 0;
+}
+.k-globe__list li {
+  display: block;
+  padding: 0;
+  background: none;
+}
+.k-globe__list .k-btn {
+  display: grid;
+  justify-items: start;
+  gap: 0;
+  text-align: start;
+}
+.k-globe__list .k-btn[data-current='true'] {
+  background: var(--glass-hover);
+  border-color: var(--line-strong);
+}
+
+.k-maprsp__list fieldset {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-1);
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+.k-maprsp__list legend {
+  padding: 0;
+  margin-block-end: var(--space-1);
+}
+
+/* ── Assets ───────────────────────────────────────────────────────────
+   A generated poster is whatever size the generator felt like. Unbounded,
+   the 3D still pushed the card past the viewport and overlapped the topbar. */
+.k-hero img,
+.k-fig--model img {
+  display: block;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  block-size: auto;
+  max-block-size: calc(var(--cell) * 6);
+  object-fit: contain;
+}
+.k-hero__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-block-start: var(--space-2);
+}
+/* ── 3D ───────────────────────────────────────────────────────────── */
+.k-model {
+  display: block;
+  inline-size: 100%;
+  block-size: calc(var(--cell) * 4);
+  border: 1px solid var(--line-strong);
+  background: var(--bg-raised);
+}
+.k-model canvas {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  touch-action: none;
+}
+.k-model__controls {
+  display: flex;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+  margin-block: var(--space-2);
+}
+
+/* ── Media player ─────────────────────────────────────────────────── */
+.k-player video {
+  display: block;
+  inline-size: 100%;
+  max-block-size: calc(var(--cell) * 6);
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+}
+.k-player__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-block-start: var(--space-2);
+}
+.k-player__seek {
+  flex: 1 1 calc(var(--cell) * 3);
+  min-inline-size: calc(var(--cell) * 2);
+}
+.k-player__seek input,
+.k-player__vol input {
+  inline-size: 100%;
+  accent-color: var(--ink);
+}
+.k-player__vol {
+  inline-size: calc(var(--cell) * 1.5);
+}
+.k-player__time {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Conversion calculator ────────────────────────────────────────── */
+.k-fig--conversion {
+  display: grid;
+  gap: var(--space-2);
+}
+.k-convert__input {
+  display: flex;
+  gap: var(--space-1);
+  align-items: center;
+}
+.k-convert__input .k-input {
+  flex: 1 1 auto;
+}
+
+/* ── Handwriting and speech ───────────────────────────────────────── */
+.k-write {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+}
+.k-write__pad {
+  inline-size: calc(var(--cell) * 4);
+  block-size: calc(var(--cell) * 4);
+  border: 1px solid var(--line-strong);
+  background: var(--bg-raised);
+  touch-action: none;
+  cursor: crosshair;
+}
+.k-write__controls,
+.k-speech__controls {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  flex-wrap: wrap;
+}
+.k-speech {
+  display: grid;
+  gap: var(--space-2);
+}
+.k-speech__heard {
+  font-size: var(--size-glyph-inline);
+}
+.k-romaji {
+  display: grid;
+  gap: var(--optical);
+}
+.k-romaji .k-input,
+.k-romaji .k-textarea {
+  inline-size: 100%;
+}
+
+/* ── Overflow menu ────────────────────────────────────────────────── */
+.k-menu {
+  position: relative;
+  display: flex;
+}
+.k-menu__list {
+  position: absolute;
+  inset-block-start: 100%;
+  inset-inline-end: 0;
+  display: grid;
+  min-inline-size: calc(var(--cell) * 3);
+  background: var(--bg-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  z-index: var(--layer-popover);
+}
+.k-menu__list .k-btn {
+  justify-content: flex-start;
+  inline-size: 100%;
+}
+
+/* ── Scroll-module furniture ──────────────────────────────────────── */
+.k-prose {
+  display: grid;
+  gap: var(--space-2);
+  max-inline-size: var(--measure);
+}
+.k-prose h3 {
+  font-size: var(--size-h3);
+  margin-block-start: var(--space-2);
+}
+.k-prose ul,
+.k-prose ol {
+  display: grid;
+  gap: var(--space-1);
+  padding-inline-start: var(--space-3);
+}
+.k-prose blockquote {
+  border-inline-start: 2px solid var(--line-strong);
+  padding-inline-start: var(--space-2);
+  color: var(--ink-dim);
+}
+.k-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.k-scrollmodule__foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+.k-scrollmodule__rate {
+  display: flex;
+  gap: var(--space-1);
+  margin-inline-end: auto;
+}
+.k-scrollmodule__rate .k-btn[aria-pressed='true'] {
+  background: var(--glass-hover);
+  border-color: var(--line-strong);
+}
+
+/* ── Composite ────────────────────────────────────────────────────── */
+.k-fig--composite {
+  display: grid;
+  gap: var(--space-2);
+}
+.k-fig--composite .k-panel {
+  border: 0;
+  padding: 0;
+}
+.k-fig--composite summary {
+  cursor: pointer;
+}
+
+/* Compact set navigation. */
+.k-setnav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  padding-block-end: var(--space-1);
+}
+/* Per-question review on a finished quiz set. */
+.k-results {
+  display: grid;
+  gap: var(--space-1);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.k-results li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-2);
+  align-items: baseline;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--line);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Part 1 — the full-page study functions. Lesson · labs · placement ·
+   explorer · tutor · feed. Same lattice, same ramp, no new primitives:
+   every one of these is built from the panel, the chipset and the field.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Shared furniture the pages assume. */
+.k-chipset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+.k-chipset .k-btn[aria-pressed='true'] {
+  background: var(--glass-hover);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+.k-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-block-start: var(--space-2);
+}
+.k-check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--target);
+}
+.k-check input {
+  inline-size: var(--space-3);
+  block-size: var(--space-3);
+  accent-color: var(--ink);
+}
+
+/* ── Daily lesson ─────────────────────────────────────────────────── */
+.k-lesson {
+  display: grid;
+  gap: var(--space-4);
+  justify-items: start;
+}
+/* The six stages, always all six. A rail that showed only the current stage
+   would hide the one thing it exists to say: how long the day is. */
+.k-stages {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.k-stages li {
+  display: grid;
+  gap: var(--optical);
+  padding: var(--space-2);
+  background: var(--panel);
+  color: var(--ink-faint);
+}
+.k-stages li[data-state='done'] {
+  color: var(--ink-dim);
+}
+.k-stages li[data-state='current'] {
+  color: var(--ink);
+  background: var(--glass-hover);
+}
+.k-planlist {
+  display: grid;
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  list-style: none;
+  margin: var(--space-2) 0;
+  padding: 0;
+}
+.k-planlist li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  padding: var(--space-1) var(--space-2);
+  min-block-size: var(--target);
+  background: var(--panel);
+}
+/* A suppressed item stays visible and legible — it is a decision the learner
+   made and may want back — but stops competing for attention. Struck through
+   AND dimmed, because dimming alone is colour doing the work (§3.3). */
+.k-planlist li[data-suppressed] {
+  color: var(--ink-faint);
+  text-decoration: line-through;
+}
+.k-planlist__acts {
+  display: flex;
+  gap: var(--space-1);
+  margin-inline-start: auto;
+}
+.k-sheet {
+  display: grid;
+  gap: var(--space-4);
+  margin-block-start: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--line-strong);
+}
+.k-sheet__kanji {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-3);
+  align-items: start;
+  padding-block: var(--space-2);
+  border-block-start: 1px solid var(--line);
+}
+
+/* ── Text labs ────────────────────────────────────────────────────── */
+.k-lab {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--cell);
+}
+@media (min-width: 1024px) {
+  .k-lab {
+    grid-template-columns: calc(var(--cell) * 5) minmax(0, 1fr);
+    grid-template-areas: 'library stage';
+    align-items: start;
+  }
+  .k-lab__controls {
+    grid-area: controls;
+  }
+  .k-lab__library {
+    grid-area: library;
+  }
+  .k-lab__stage {
+    grid-area: stage;
+  }
+}
+.k-lab__controls {
+  display: grid;
+  gap: var(--space-3);
+}
+.k-lab__library ul,
+.k-chat__list {
+  display: grid;
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+}
+.k-lab__library li,
+.k-chat__list li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  background: var(--panel);
+}
+.k-lab__library .k-btn,
+.k-chat__list .k-btn {
+  display: grid;
+  justify-items: start;
+  gap: 0;
+  text-align: start;
+  inline-size: 100%;
+}
+.k-lab__library .k-btn[data-current='true'],
+.k-chat__list .k-btn[data-current='true'] {
+  background: var(--glass-hover);
+}
+
+/* ── Reader ───────────────────────────────────────────────────────── */
+.k-reader {
+  position: relative;
+  display: grid;
+  gap: var(--space-3);
+}
+.k-reader__controls {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  flex-wrap: wrap;
+}
+.k-reader__text {
+  max-inline-size: var(--measure);
+}
+.k-reader__para p {
+  line-height: 2.2;
+  margin-block: var(--space-2);
+}
+/* A word is a button, but it must not read as one — a page of buttons is a
+   page nobody can read. Underline on hover and focus only; the affordance is
+   learned once from the instruction line, not repeated 200 times. */
+.k-word {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  border-block-end: 1px solid transparent;
+}
+.k-word:hover,
+.k-word:focus-visible {
+  border-block-end-color: var(--ink);
+}
+.k-word[aria-expanded='true'] {
+  background: var(--glass-hover);
+}
+.k-reader__gloss {
+  display: block;
+  font-size: var(--size-body-sm);
+  color: var(--ink-dim);
+  line-height: 1.6;
+}
+.k-wordcard {
+  position: sticky;
+  inset-block-end: var(--space-2);
+  display: grid;
+  gap: var(--space-1);
+  inline-size: min(100%, calc(var(--cell) * 4));
+  margin-inline-start: auto;
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-raised);
+  border: 1px solid var(--line-strong);
+  justify-items: start;
+}
+
+/* ── Listening ────────────────────────────────────────────────────── */
+.k-listen {
+  display: grid;
+  gap: var(--space-3);
+}
+.k-listen__controls {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  flex-wrap: wrap;
+}
+.k-listen__lines {
+  display: grid;
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.k-listen__lines li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  padding: var(--space-1) var(--space-2);
+  min-block-size: var(--target);
+  background: var(--panel);
+}
+.k-listen__lines li[data-current='true'] {
+  background: var(--glass-hover);
+}
+
+/* ── Karaoke ──────────────────────────────────────────────────────── */
+.k-karaoke {
+  display: grid;
+  gap: var(--space-3);
+}
+.k-karaoke__controls {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  flex-wrap: wrap;
+}
+.k-karaoke__line {
+  font-size: var(--size-h2);
+  line-height: 2;
+}
+/* Read / current / ahead, by weight and rule rather than by colour, so the
+   progress is legible in forced-colors and to anyone who cannot separate the
+   two hues (§3.3). */
+.k-karaoke__line span[data-state='read'] {
+  color: var(--ink-faint);
+}
+.k-karaoke__line span[data-state='current'] {
+  color: var(--ink);
+  border-block-end: 2px solid var(--ink);
+}
+.k-karaoke__line span[data-state='ahead'] {
+  color: var(--ink-dim);
+}
+.k-karaoke__translation {
+  display: grid;
+  gap: var(--space-1);
+  color: var(--ink-dim);
+  padding-inline-start: var(--space-3);
+}
+
+/* ── Placement ────────────────────────────────────────────────────── */
+.k-estimates {
+  display: grid;
+  gap: var(--space-1);
+  list-style: none;
+  margin: var(--space-2) 0;
+  padding: 0;
+}
+.k-estimates li {
+  display: grid;
+  grid-template-columns: calc(var(--cell) * 2) 1fr auto;
+  gap: var(--space-2);
+  align-items: center;
+}
+/* Width IS the uncertainty: the bar shrinks as the estimate settles. It is
+   not a progress bar and must not be read as one, which is why it carries no
+   fill and no percentage. */
+.k-estimates__bar {
+  block-size: var(--space-1);
+  inline-size: var(--spread, 100%);
+  max-inline-size: 100%;
+  background: var(--line-strong);
+}
+
+/* ── Explorer ─────────────────────────────────────────────────────── */
+.k-explorer {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: minmax(0, 1fr);
+}
+.k-explorer__filters {
+  display: grid;
+  gap: var(--space-3);
+}
+.k-explorer__filterbody {
+  display: grid;
+  gap: var(--space-3);
+}
+.k-explorer__filterbody[hidden] {
+  display: none;
+}
+.k-conceptlist {
+  display: grid;
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  list-style: none;
+  margin: var(--space-2) 0;
+  padding: 0;
+}
+.k-conceptlist li {
+  background: var(--panel);
+}
+.k-conceptlist .k-btn {
+  display: grid;
+  justify-content: start;
+  justify-items: start;
+  gap: 0;
+  inline-size: 100%;
+  text-align: start;
+  border-inline-start: var(--space-1) solid transparent;
+}
+.k-conceptlist .k-btn[data-current='true'] {
+  background: var(--glass-hover);
+}
+/* The mastery overlay, as a left rule of three weights. Colour would have
+   been the obvious channel and is spoken for by ContentType (§3.2).
+   A real border, not an inset shadow: stylelint's `boundary-is-border` is
+   right that a shadow disappears under forced colours, and this rule is the
+   overlay's only visual carrier. The transparent base keeps the text from
+   shifting when the overlay is switched on, and it is one unit wide because
+   §2.2 has no 3px. */
+.k-conceptlist .k-btn[data-band='proficient'] {
+  border-inline-start-color: var(--ink);
+}
+.k-conceptlist .k-btn[data-band='learning'] {
+  border-inline-start-color: var(--ink-faint);
+}
+.k-conceptlist .k-btn[data-band='unseen'] {
+  border-inline-start-style: dashed;
+  border-inline-start-color: var(--line-strong);
+}
+.k-conceptgraph {
+  inline-size: 100%;
+  block-size: auto;
+  max-block-size: calc(var(--cell) * 7);
+}
+.k-conceptgraph__edge {
+  stroke: var(--line-strong);
+  stroke-width: 1;
+}
+.k-conceptgraph__node rect {
+  fill: var(--panel);
+  stroke: var(--line-strong);
+}
+.k-conceptgraph__node text {
+  fill: var(--ink);
+  font-size: var(--size-fig-node);
+}
+.k-conceptgraph__node[data-current='true'] rect {
+  fill: var(--glass-hover);
+  stroke-width: 2;
+}
+.k-conceptgraph__node[data-band='proficient'] rect {
+  stroke-width: 3;
+}
+.k-conceptgraph__node[data-band='unseen'] rect {
+  stroke-dasharray: 3 3;
+}
+.k-spark {
+  inline-size: calc(var(--cell) * 2);
+  block-size: auto;
+}
+.k-spark polyline {
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+.k-explorer__detail {
+  display: grid;
+  gap: var(--space-2);
+  align-content: start;
+  padding: 0 0 0 var(--space-4);
+  border: 0;
+  border-inline-start: 1px solid var(--line);
+}
+
+.k-graphsearch {
+  position: relative;
+  display: flex;
+  align-items: end;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-block-end: var(--space-3);
+}
+.k-graphsearch .k-field {
+  flex: 1 1 calc(var(--cell) * 4);
+}
+.k-graphsearch__results {
+  display: grid;
+  gap: 1px;
+  flex-basis: 100%;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  background: var(--line);
+}
+.k-graphsearch__results .k-btn {
+  display: grid;
+  justify-items: start;
+  inline-size: 100%;
+  background: var(--panel);
+  text-align: start;
+}
+
+/* ── Tutor chat ───────────────────────────────────────────────────── */
+.k-chat {
+  display: grid;
+  gap: var(--space-3);
+}
+.k-chat__panel {
+  display: grid;
+  gap: var(--space-3);
+}
+.k-chat__log {
+  display: grid;
+  gap: var(--space-3);
+  max-block-size: calc(var(--cell) * 8);
+  overflow-y: auto;
+  padding: var(--space-2);
+  border: 1px solid var(--line);
+}
+.k-bubble {
+  display: grid;
+  gap: var(--optical);
+  max-inline-size: var(--measure);
+}
+/* The learner's turn is indented, the tutor's is flush. Position rather than
+   a coloured bubble: two tinted rectangles would spend colour on something
+   the layout already says. */
+.k-bubble[data-role='learner'] {
+  justify-self: end;
+  text-align: end;
+  border-inline-end: 2px solid var(--line-strong);
+  padding-inline-end: var(--space-2);
+}
+.k-bubble[data-role='sage'] {
+  border-inline-start: 2px solid var(--line-strong);
+  padding-inline-start: var(--space-2);
+}
+
+/* ── Feed ─────────────────────────────────────────────────────────── */
+.k-feed {
+  display: grid;
+  gap: var(--space-3);
+}
+.k-feed__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  position: sticky;
+  /* Below the topbar, which is also sticky at 0 — pinned to 0 as well, the
+     filters slid underneath the brand and the nav read as two rows of
+     controls fighting for the same strip. */
+  inset-block-start: var(--cell);
+  padding: var(--space-2) var(--space-3);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  z-index: var(--layer-chrome);
+}
+.k-feed__list {
+  display: grid;
+  gap: var(--space-8);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  justify-items: center;
+}
+.k-feed__card {
+  display: grid;
+  gap: 0;
+  justify-items: center;
+  inline-size: 100%;
+}
+.k-feed__rate {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  inline-size: min(100%, calc(var(--cell) * 10));
+  justify-content: flex-end;
+  /* Attached to the card above it rather than floating between cards on the
+     shader, where it was pale ink on a pale gradient. It is a footer for the
+     card, and it should look like one. */
+  padding-block-start: var(--space-1);
+}
+.k-feed__more {
+  min-block-size: var(--cell);
+  display: grid;
+  place-items: center;
+}
+
+/* ── The paper rule, applied to the Part 1 surfaces ──────────────────
+   §5's material map: content sits on opaque paper, and only chrome is
+   veiled. The deck's cards carry their own paper (.k-frame, .k-scrollmodule)
+   so this never came up; the full-page functions put their controls and
+   their text straight onto the shader, and a screenshot showed exactly what
+   that costs — on the light gradient, every label on Read, Listen, Karaoke,
+   Concepts and Tutor was pale ink on a pale wash and simply could not be
+   read. Legibility here is not a preference; a study surface that cannot be
+   read is not a study surface.
+
+   The panel goes on the WORK REGION rather than on each block, so the page
+   reads as one sheet with structure on it rather than as a scatter of
+   floating cards. */
+.k-lab,
+.k-explorer,
+.k-language-tutor,
+.k-listen,
+.k-karaoke,
+.k-reader,
+.k-estimates,
+.k-lesson-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: var(--card-pad-block) var(--card-pad-inline);
+}
+/* Nested regions inside a papered parent must not paper themselves again —
+   two stacked 85% veils read as a different, muddier surface. */
+.k-lab .k-reader,
+.k-lab .k-listen,
+.k-lab .k-karaoke {
+  background: none;
+  border: 0;
+  padding: 0;
+}
+
+/* The review index at /try. Dev-facing, so it borrows the list treatment
+   from the labs rather than introducing anything of its own. */
+.k-try {
+  display: grid;
+  gap: var(--space-6);
+  max-inline-size: var(--measure);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: var(--card-pad-block) var(--card-pad-inline);
+}
+.k-try__list {
+  display: grid;
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+}
+.k-try__list li {
+  background: var(--panel);
+}
+.k-try__list .k-btn {
+  display: grid;
+  gap: var(--optical);
+  justify-content: start;
+  justify-items: start;
+  text-align: start;
+  inline-size: 100%;
+  min-block-size: var(--target);
+  padding: var(--space-2);
+}
+.k-try__list small {
+  text-transform: none;
+  letter-spacing: 0;
+}
+.k-try__notes {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 0;
+  padding-inline-start: var(--space-3);
+}
+
+/* ── Part 1 composition refresh ───────────────────────────────────── */
+.k-dialog__head,
+.k-section-row,
+.k-lab-focus-head,
+.k-lesson-card__head,
+.k-lesson-card__foot,
+.k-language-tutor__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.k-icon-close {
+  inline-size: var(--target);
+  block-size: var(--target);
+  flex: 0 0 var(--target);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--size-h3);
+  cursor: pointer;
+}
+
+/* Daily lesson: one lattice-aligned card and one mixed run. */
+.k-lesson-card {
+  inline-size: min(100%, calc(var(--cell) * 12));
+  display: grid;
+  gap: var(--space-4);
+  align-content: start;
+}
+.k-lesson-card--runner {
+  justify-items: stretch;
+}
+.k-lesson-card--runner .k-frame {
+  justify-self: center;
+}
+.k-locale,
+.k-planlist__acts {
+  display: flex;
+  gap: var(--space-1);
+}
+.k-locale .k-btn,
+.k-plan-action {
+  min-block-size: var(--cell);
+}
+.k-lesson-counts {
+  display: grid;
+  gap: var(--space-1);
+}
+.k-count-row {
+  min-block-size: var(--cell);
+  display: grid;
+  grid-template-columns: minmax(calc(var(--cell) * 2), 1fr) repeat(3, var(--cell));
+  align-items: center;
+  gap: 0;
+}
+.k-count-row__label {
+  text-transform: capitalize;
+}
+.k-count-row output,
+.k-cell-button {
+  inline-size: var(--cell);
+  block-size: var(--cell);
+  display: grid;
+  place-items: center;
+}
+.k-count-row output {
+  font-variant-numeric: tabular-nums;
+  font-size: var(--size-h3);
+}
+.k-cell-button {
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  background: var(--glass);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--size-h3);
+  cursor: pointer;
+}
+.k-planlist--lesson {
+  gap: var(--space-1);
+  margin: 0;
+  background: none;
+  border: 0;
+}
+.k-planlist--lesson li {
+  min-block-size: calc(var(--cell) * 2);
+  padding: var(--space-2) 0;
+  background: none;
+}
+.k-planlist__word {
+  display: grid;
+  gap: var(--optical);
+}
+.k-planlist--lesson .k-planlist__acts {
+  margin-inline-start: auto;
+}
+.k-plan-action {
+  min-inline-size: calc(var(--cell) * 2);
+  border-color: var(--line-strong);
+}
+.k-planlist--lesson li[data-suppressed] .k-plan-action {
+  color: var(--ink);
+  text-decoration: none;
+}
+.k-lesson-card__foot {
+  align-items: flex-end;
+}
+.k-lesson-card__foot > p {
+  max-inline-size: var(--measure);
+}
+
+/* Text labs: library first; generation and upload live behind one final
+   action rather than occupying a permanent tab. */
+.k-lab__library {
+  grid-area: library;
+  display: grid;
+  gap: var(--space-3);
+}
+.k-lab__stage {
+  grid-area: stage;
+  min-inline-size: 0;
+}
+.k-lab__library ul {
+  gap: var(--space-1);
+  margin: 0;
+  background: none;
+  border: 0;
+}
+.k-lab__library li {
+  background: var(--glass);
+  border: 1px solid transparent;
+}
+.k-lab__library li:has(.k-btn[data-current='true']) {
+  border-color: var(--line-strong);
+}
+.k-lab__library .k-btn {
+  min-block-size: var(--cell);
+}
+.k-new-text {
+  inline-size: 100%;
+  min-block-size: var(--cell);
+  justify-content: flex-start;
+  border-color: var(--line-strong);
+}
+.k-new-text-dialog {
+  inline-size: min(100%, calc(var(--cell) * 12));
+  max-block-size: calc(100dvh - var(--space-8));
+  overflow-y: auto;
+}
+.k-new-text-dialog__settings {
+  display: grid;
+  gap: var(--space-1);
+}
+.k-setting-row {
+  min-block-size: var(--cell);
+  display: grid;
+  grid-template-columns: calc(var(--cell) * 2) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-2);
+}
+.k-setting-row > .k-input {
+  max-inline-size: none;
+}
+.k-setting-row__options {
+  display: flex;
+  min-inline-size: 0;
+}
+.k-setting-row__options .k-btn {
+  flex: 1 1 0;
+  white-space: nowrap;
+}
+.k-setting-row .k-btn[aria-pressed='true'],
+.k-option-row .k-btn[aria-pressed='true'],
+.k-view-switch .k-btn[aria-pressed='true'],
+.k-language-tutor__tools .k-btn[aria-pressed='true'] {
+  background: var(--glass-hover);
+  border-color: var(--line-strong);
+}
+.k-upload-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-2);
+  padding-block-start: var(--space-3);
+  border-block-start: 1px solid var(--line);
+}
+
+/* Reading controls form one option row. Word detail stays compact and closes
+   with the standard corner cross. */
+.k-option-row {
+  min-block-size: var(--cell);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.k-option-row__buttons,
+.k-view-switch {
+  display: flex;
+}
+.k-wordcard .k-icon-close {
   position: absolute;
   inset-block-start: 0;
-  inline-size: min(100%, 40rem);
-  block-size: min(70vh, 34rem);
+  inset-inline-end: 0;
+}
+.k-wordcard .k-h3 {
+  padding-inline-end: var(--target);
+}
+
+/* The listening and read-aloud stages start with the chosen text, then keep
+   their main action and material visually dominant. */
+.k-lab-focus-head {
+  align-items: flex-start;
+  padding-block-end: var(--space-3);
+  border-block-end: 1px solid var(--line);
+}
+.k-lab-next {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.k-comprehension {
+  display: grid;
+  gap: var(--space-4);
+  padding-block-start: var(--space-4);
+  border-block-start: 1px solid var(--line);
+}
+
+/* Explorer selectors are a single horizontal instrument above both views. */
+.k-explorer__toolbar {
+  display: flex;
+  align-items: end;
+  gap: var(--space-2);
+  min-inline-size: 0;
+  overflow-x: auto;
+  padding-block-end: var(--space-2);
+}
+.k-inline-select {
+  flex: 0 0 auto;
+  min-block-size: var(--cell);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  white-space: nowrap;
+}
+.k-inline-select > span {
+  font-size: var(--size-label);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+.k-inline-select .k-input {
+  inline-size: auto;
+  min-inline-size: calc(var(--cell) * 2);
+}
+.k-inline-select--search .k-input {
+  min-inline-size: calc(var(--cell) * 3);
+}
+.k-explorer__body {
+  display: grid;
+  gap: var(--cell);
+}
+@media (min-width: 1024px) {
+  .k-explorer__body {
+    grid-template-columns: minmax(0, 1fr) calc(var(--cell) * 4);
+    align-items: start;
+  }
+}
+/* Language tutor: chat first, with infrequent controls in the top-right
+   settings callout. */
+.k-language-tutor {
+  position: relative;
+  display: grid;
+  gap: var(--space-4);
+}
+.k-language-tutor__head {
+  position: relative;
+}
+.k-language-tutor__tools {
+  display: flex;
+  gap: var(--space-1);
+}
+.k-tutor-settings {
+  position: absolute;
+  inset-block-start: calc(var(--cell) + var(--space-1));
+  inset-inline-end: 0;
+  z-index: var(--layer-popover);
+  inline-size: min(calc(var(--cell) * 7), calc(100vw - var(--space-6)));
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--bg-raised);
+  border: 1px solid var(--line-strong);
+}
+.k-language-tutor__body {
+  display: grid;
+  grid-template-columns: calc(var(--cell) * 3) minmax(0, 1fr);
+  gap: var(--cell);
+  min-inline-size: 0;
+}
+.k-conversation-rail {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+}
+.k-conversation-rail .k-chat__list {
+  gap: var(--space-1);
+  margin: 0;
+  background: none;
+  border: 0;
+}
+.k-conversation-rail .k-chat__list li {
+  display: block;
+  background: none;
+}
+.k-conversation-rail .k-chat__list .k-btn {
+  min-block-size: var(--cell);
   background: var(--glass);
+}
+.k-language-tutor__conversation {
+  min-inline-size: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+.k-language-tutor .k-chat__log {
+  min-block-size: calc(var(--cell) * 7);
+  max-block-size: calc(var(--cell) * 9);
+  align-content: start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: rgb(var(--bg-rgb) / 0.28);
   border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  pointer-events: none;
+}
+.k-language-tutor .k-bubble {
+  position: relative;
+  inline-size: fit-content;
+  max-inline-size: min(78%, var(--measure));
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  text-align: start;
+}
+.k-language-tutor .k-bubble[data-role='sage'] {
+  justify-self: start;
+  background: var(--glass);
+}
+.k-language-tutor .k-bubble[data-role='learner'] {
+  justify-self: end;
+  background: var(--glass-hover);
+}
+.k-bubble__name {
+  margin: 0;
+  font-size: var(--size-meta);
+  color: var(--ink-faint);
+}
+.k-bubble__translation {
+  color: var(--ink-dim);
+}
+.k-bubble__audio {
+  position: absolute;
+  inset-block-start: var(--space-1);
+  inset-inline-end: var(--space-1);
+  inline-size: var(--space-4);
+  block-size: var(--space-4);
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+.k-chat-empty {
+  place-self: center;
+  text-align: center;
+  color: var(--ink-dim);
+}
+.k-tutor-compose {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: end;
+}
+.k-tutor-compose .k-textarea {
+  max-inline-size: none;
+}
+.k-tutor-compose__actions {
+  display: flex;
+  gap: var(--space-1);
+}
+.k-tutor-analysis {
+  display: grid;
+  gap: var(--space-3);
+  padding-block-start: var(--space-4);
+  border-block-start: 1px solid var(--line);
+}
+
+@media (max-width: 1023px) {
+  .k-language-tutor__body {
+    grid-template-columns: 1fr;
+  }
+  .k-conversation-rail .k-chat__list {
+    grid-template-columns: repeat(auto-fit, minmax(calc(var(--cell) * 3), 1fr));
+  }
+  .k-conversation-rail .k-chat__list li {
+    min-inline-size: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .k-lesson-card__head,
+  .k-lesson-card__foot,
+  .k-language-tutor__head,
+  .k-lab-focus-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .k-locale,
+  .k-language-tutor__tools {
+    inline-size: 100%;
+  }
+  .k-locale .k-btn,
+  .k-language-tutor__tools .k-btn {
+    flex: 1;
+  }
+  .k-count-row {
+    grid-template-columns: minmax(var(--cell), 1fr) repeat(3, var(--cell));
+  }
+  .k-planlist--lesson li {
+    align-items: flex-start;
+  }
+  .k-planlist--lesson .k-planlist__acts {
+    inline-size: 100%;
+    margin-inline-start: 0;
+  }
+  .k-plan-action {
+    flex: 1;
+    min-inline-size: 0;
+  }
+  .k-setting-row {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+  .k-setting-row__options {
+    overflow-x: auto;
+  }
+  .k-upload-row,
+  .k-tutor-compose {
+    grid-template-columns: 1fr;
+  }
+  .k-upload-row .k-btn {
+    inline-size: 100%;
+  }
+  .k-tutor-compose__actions {
+    flex-wrap: wrap;
+  }
+  .k-language-tutor .k-chat__log {
+    padding: var(--space-3);
+  }
+  .k-language-tutor .k-bubble {
+    max-inline-size: 92%;
+  }
 }

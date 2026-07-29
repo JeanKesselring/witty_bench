@@ -98,7 +98,7 @@ export function FrostStage() {
   const nextNoteId = useRef(1)
   const seedRef = useRef(0)
 
-  const [grid, setGrid] = useState({ cols: 1, rows: 1, cell: 64 })
+  const [grid, setGrid] = useState({ cols: 1, rows: 1, cell: 64, offset: 0 })
   const [frost, setFrost] = useState<boolean[]>([false])
   const [draft, setDraft] = useState<GridRect | null>(null)
   const [notes, setNotes] = useState<GridNote[]>([])
@@ -115,14 +115,29 @@ export function FrostStage() {
     seedRef.current = Math.floor(Math.random() * 1e6)
     const measure = () => {
       const cell = readCell(stage)
-      // Ceil, then centre below: the lattice must cover the stage, so a
-      // partial column at each edge is correct and a gap never is.
-      const cols = Math.max(1, Math.ceil(stage.clientWidth / cell))
+      // The lattice is anchored to the CONTENT COLUMN, not to the viewport
+      // and not to the centre. Those three only coincide when the viewport is
+      // a whole number of cells wide, and when they disagree it is the
+      // content that has to line up — that is where the reading happens.
+      //
+      // Centring alone was exact at lg/xl (the shell is narrower than the
+      // viewport, so it is centred) but off by 8px at md, where the shell
+      // fills the viewport and the content edge IS the viewport edge.
+      // Measuring the real column handles both without re-deriving layout.
+      const main = document.querySelector('.k-main')
+      const stageLeft = stage.getBoundingClientRect().left
+      const contentLeft = main
+        ? main.getBoundingClientRect().left - stageLeft
+        : Math.max(0, (stage.clientWidth - 1152) / 2)
+      // Largest cell boundary at or left of the content edge, so the lattice
+      // still covers the full width.
+      const offset = contentLeft - Math.ceil(contentLeft / cell) * cell
+      const cols = Math.max(1, Math.ceil((stage.clientWidth - offset) / cell))
       const rows = Math.max(1, Math.ceil(stage.clientHeight / cell))
       setGrid((old) =>
-        old.cols === cols && old.rows === rows && old.cell === cell
+        old.cols === cols && old.rows === rows && old.cell === cell && old.offset === offset
           ? old
-          : { cols, rows, cell },
+          : { cols, rows, cell, offset },
       )
     }
     measure()
@@ -404,14 +419,10 @@ export function FrostStage() {
     }
   }
 
-  // The lattice can be wider than the stage by up to one cell, so it is
-  // centred: the partial columns are then equal on both sides instead of
-  // piling up on the right. Centre on the lattice's true midpoint, not on a
-  // cell boundary — the prototype rounded to a whole cell, which pushed the
-  // whole grid right by half a cell and left a dead strip down the left
-  // edge that the pointer fell straight through.
+  // Positioned from the measured offset above, so column boundaries fall on
+  // the content column's edges at every breakpoint.
   const gridLayerStyle: CSSProperties = {
-    left: `calc(50% - ${(grid.cols * grid.cell) / 2}px)`,
+    left: `${grid.offset}px`,
     right: 'auto',
     bottom: 'auto',
     width: `${grid.cols * grid.cell}px`,

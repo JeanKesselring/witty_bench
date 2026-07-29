@@ -28,13 +28,12 @@ export function KnowledgeGraph({ courseId }: { courseId: string }) {
 
   const [parentId, setParentId] = useState<string | null>(null)
   const [selected, setSelected] = useState<Topic | null>(null)
+  const [query, setQuery] = useState('')
+  const [detailOpen, setDetailOpen] = useState(true)
   const refs = useRef<Array<SVGGElement | null>>([])
 
-  const all = data ?? []
-  const field = useMemo(
-    () => all.filter((t) => t.parentId === parentId),
-    [all, parentId],
-  )
+  const all = useMemo(() => data ?? [], [data])
+  const field = useMemo(() => all.filter((t) => t.parentId === parentId), [all, parentId])
   const crumbs = useMemo(() => {
     const chain: Topic[] = []
     let id = parentId
@@ -46,6 +45,19 @@ export function KnowledgeGraph({ courseId }: { courseId: string }) {
     }
     return chain
   }, [all, parentId])
+  const results = useMemo(() => {
+    const needle = query.trim().toLowerCase()
+    if (!needle) return []
+    return all
+      .filter((topic) => `${topic.title} ${topic.blurb}`.toLowerCase().includes(needle))
+      .slice(0, 8)
+  }, [all, query])
+
+  const focusTopic = (topic: Topic) => {
+    setParentId(topic.parentId)
+    setSelected(topic)
+    setQuery('')
+  }
 
   // Cell-snapped tile packing, 1×1 to 3×3 (§2.4).
   const placed = useMemo(() => {
@@ -67,8 +79,7 @@ export function KnowledgeGraph({ courseId }: { courseId: string }) {
   }, [field])
 
   const width = 6 * (CELL + GAP)
-  const height =
-    (placed.reduce((m, p) => Math.max(m, p.y + p.topic.span), 0) || 1) * (CELL + GAP)
+  const height = (placed.reduce((m, p) => Math.max(m, p.y + p.topic.span), 0) || 1) * (CELL + GAP)
 
   function onKeyDown(e: React.KeyboardEvent, i: number) {
     let next = i
@@ -110,51 +121,113 @@ export function KnowledgeGraph({ courseId }: { courseId: string }) {
         </nav>
       }
       inspector={
-        <Inspector
-          subject={selected?.title}
-          empty="Select a topic to preview it."
-          rows={
-            selected
-              ? [
-                  ['Mastery', <Mastery key="m" state={selected.mastery} />],
-                  ['Modules', selected.moduleCount],
-                  ['Contains', selected.childIds.length || '—'],
-                ]
-              : undefined
-          }
-        >
-          {selected ? (
-            <div style={{ display: 'grid', gap: 'var(--space-1)', marginBlockStart: 'var(--space-2)' }}>
-              <p className="k-body-sm">{selected.blurb}</p>
-              {/* §7.1: only the explicit open control descends. Selecting
+        detailOpen ? (
+          <Inspector
+            subject={selected?.title}
+            empty="Select a topic to preview it."
+            rows={
+              selected
+                ? [
+                    ['Mastery', <Mastery key="m" state={selected.mastery} />],
+                    ['Modules', selected.moduleCount],
+                    ['Contains', selected.childIds.length || '—'],
+                  ]
+                : undefined
+            }
+          >
+            {selected ? (
+              <div
+                style={{
+                  display: 'grid',
+                  gap: 'var(--space-1)',
+                  marginBlockStart: 'var(--space-2)',
+                }}
+              >
+                <p className="k-body-sm">{selected.blurb}</p>
+                {/* §7.1: only the explicit open control descends. Selecting
                   previews; it must never cost a navigation. */}
-              {selected.childIds.length ? (
-                <button
-                  type="button"
-                  className="k-btn k-btn--primary k-press"
-                  onClick={() => {
-                    setParentId(selected.id)
-                    setSelected(null)
-                  }}
+                {selected.childIds.length ? (
+                  <button
+                    type="button"
+                    className="k-btn k-btn--primary k-press"
+                    onClick={() => {
+                      setParentId(selected.id)
+                      setSelected(null)
+                    }}
+                  >
+                    Open — {selected.childIds.length} topics inside
+                  </button>
+                ) : null}
+                <Link
+                  className="k-btn k-btn--secondary k-press"
+                  href={`/topics/${selected.id}` as Route}
                 >
-                  Open — {selected.childIds.length} topics inside
-                </button>
-              ) : null}
-              <Link className="k-btn k-btn--secondary k-press" href={`/topics/${selected.id}` as Route}>
-                Topic detail
-              </Link>
-            </div>
-          ) : null}
-        </Inspector>
+                  Topic detail
+                </Link>
+              </div>
+            ) : null}
+          </Inspector>
+        ) : undefined
       }
     >
+      <div className="k-graphsearch">
+        <label className="k-field">
+          <span className="k-field__label">Search concepts</span>
+          <input
+            type="search"
+            className="k-input"
+            value={query}
+            placeholder="Search concepts…"
+            onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && results[0]) {
+                event.preventDefault()
+                focusTopic(results[0])
+              }
+              if (event.key === 'Escape') {
+                event.preventDefault()
+                setQuery('')
+              }
+            }}
+          />
+        </label>
+        <button
+          type="button"
+          className="k-btn k-btn--quiet k-press"
+          aria-pressed={detailOpen}
+          onClick={() => setDetailOpen((open) => !open)}
+        >
+          {detailOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+        </button>
+        {results.length > 0 ? (
+          <ul className="k-graphsearch__results" aria-label="Search results">
+            {results.map((topic) => (
+              <li key={topic.id}>
+                <button
+                  type="button"
+                  className="k-btn k-btn--quiet k-press"
+                  onClick={() => focusTopic(topic)}
+                >
+                  {topic.title}
+                  <small className="k-meta">{topic.blurb}</small>
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+
       {isPending ? (
         <Loading label="Loading the graph" rows={1} />
       ) : placed.length === 0 ? (
         // §7.2: an atomic topic shows an empty-state tile, not an empty grid.
         <div className="k-state">
           <p>This topic contains no further topics.</p>
-          <button type="button" className="k-btn k-btn--secondary k-press" onClick={() => setParentId(null)}>
+          <button
+            type="button"
+            className="k-btn k-btn--secondary k-press"
+            onClick={() => setParentId(null)}
+          >
             Back to the top
           </button>
         </div>
@@ -189,11 +262,7 @@ export function KnowledgeGraph({ courseId }: { courseId: string }) {
                   y={p.y * (CELL + GAP)}
                   width={w}
                   height={w}
-                  fill={
-                    p.topic.mastery === 'mastered'
-                      ? 'var(--bg-raised)'
-                      : 'var(--glass)'
-                  }
+                  fill={p.topic.mastery === 'mastered' ? 'var(--bg-raised)' : 'var(--glass)'}
                   stroke={isSel ? 'var(--ink)' : 'var(--line-strong)'}
                   strokeWidth={isSel ? 2 : 1}
                 />
@@ -214,9 +283,7 @@ export function KnowledgeGraph({ courseId }: { courseId: string }) {
                   fill="var(--ink)"
                   style={{ fontFamily: 'var(--font-sans)' }}
                 >
-                  {p.topic.title.length > 14
-                    ? `${p.topic.title.slice(0, 13)}…`
-                    : p.topic.title}
+                  {p.topic.title.length > 14 ? `${p.topic.title.slice(0, 13)}…` : p.topic.title}
                 </text>
                 <text
                   x={p.x * (CELL + GAP) + 8}

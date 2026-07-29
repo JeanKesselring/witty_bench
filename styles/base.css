@@ -15,7 +15,8 @@ html {
   font-family: var(--font-sans);
   font-size: 100%;
   /* §2.3: the sticky topbar can never obscure focus (SC 2.4.11). */
-  scroll-padding-block-start: 80px;
+  /* Clears the sticky bar (1 cell) plus a unit of air. */
+  scroll-padding-block-start: calc(var(--cell) + var(--space-2));
   -webkit-text-size-adjust: 100%;
 }
 
@@ -35,7 +36,7 @@ body {
 }
 
 :where(a, button, input, textarea, select, summary, [tabindex]) {
-  scroll-margin-block-start: 80px;
+  scroll-margin-block-start: calc(var(--cell) + var(--space-2));
 }
 
 /* ── §4.2 Scale ───────────────────────────────────────────────────── */
@@ -123,16 +124,16 @@ body {
 /* §4.3 size floors. */
 .k-glyph:lang(ja) {
   letter-spacing: 0.02em;
-  font-size: 64px;
+  font-size: var(--size-glyph);
   line-height: 1.1;
 }
 .k-glyph-pair:lang(ja) {
   letter-spacing: 0.02em;
-  font-size: 96px;
+  font-size: var(--size-glyph-pair);
   line-height: 1.1;
 }
 .k-glyph-inline:lang(ja) {
-  font-size: 20px;
+  font-size: var(--size-glyph-inline);
 }
 
 ruby > rt {
@@ -140,6 +141,19 @@ ruby > rt {
   ruby-position: over;
   font-weight: 400;
   color: var(--ink-dim);
+}
+
+/* §4.3: "Reserve line-box space so ruby never shifts the lines around it."
+   The reservation is on the RUN, not on the ruby element, and it holds
+   whether or not furigana is currently shown — otherwise toggling it makes
+   every line below jump, which is the one thing the toggle must not do.
+   1.75 is §4.3's CJK line-height; the extra 0.5em is the <rt>. */
+.k-ruby {
+  display: inline-block;
+  line-height: calc(1.75em + 0.5em);
+}
+.k-ruby ruby {
+  ruby-align: center;
 }
 
 /* ── §4.4 German ──────────────────────────────────────────────────── */
@@ -185,20 +199,27 @@ ruby > rt {
 .k-md h3 {
   font-size: var(--size-h3);
 }
-/* Links carry an underline, so the channel is not colour alone and
-   forced colours change nothing. */
+/* No resting underline. The underline returns on hover and on focus, so the
+   affordance is still there when a reader goes looking for it.
+
+   Note this trades away part of what §6.2 relied on: with no underline at
+   rest and links set in the same ink as body text, a link inside a paragraph
+   is not distinguishable without interacting. Links that sit on their own —
+   nav, buttons, card titles — are unaffected, because position identifies
+   them. If a link ever needs to be found mid-sentence, give that one a
+   resting underline back rather than reverting this globally. */
 .k-md a,
 .k-link {
   color: var(--ink);
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 3px;
+  text-decoration: none;
 }
 .k-md a:hover,
 .k-link:hover,
 .k-md a:focus-visible,
 .k-link:focus-visible {
-  text-decoration-thickness: 2px;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
 }
 .k-md :is(ul, ol) {
   padding-inline-start: var(--space-3);
@@ -230,7 +251,7 @@ ruby > rt {
 }
 /* No italics — italic is never applied to CJK (§4.3). */
 .k-md blockquote {
-  border-inline-start: 3px solid var(--line-strong);
+  border-inline-start: 2px solid var(--line-strong);
   padding-inline-start: var(--space-2);
   color: var(--ink-dim);
   font-style: normal;
@@ -248,11 +269,8 @@ ruby > rt {
 /* ── §3.1 Native surfaces that would otherwise escape the ramp ────── */
 
 ::selection {
-  background: rgb(255 255 255 / 0.18);
+  background: var(--selection);
   color: var(--ink);
-}
-:root[data-theme='light'] ::selection {
-  background: rgb(10 10 20 / 0.12);
 }
 
 :root {
@@ -263,6 +281,15 @@ ruby > rt {
 input:-webkit-autofill,
 input:-webkit-autofill:focus {
   -webkit-text-fill-color: var(--ink);
+  /* §13.3 exception. Rule broken: kite/boundary-is-border.
+     Why: Chrome's autofill background cannot be set with `background`; an
+       inset shadow larger than the field is the only override. The 100px is
+       "bigger than any input", not a dimension.
+     Mitigation: it paints a fill, never a boundary — the field's border is
+       declared on .k-input and is untouched here.
+     Proof: under forced colours (§9.5) the UA supplies its own autofill
+       colours and this rule is discarded wholesale, boundary intact. */
+  /* stylelint-disable-next-line kite/boundary-is-border */
   box-shadow: 0 0 0 100px var(--bg-raised) inset;
 }
 
@@ -323,9 +350,20 @@ input:-webkit-autofill:focus {
   }
 }
 
+/* §13.3 exception. Rule broken: kite/eight-px-grid.
+   Why: this box is never seen, so it has no dimension in §2.2's sense. The
+     1px is the standard clip pattern — 0 would drop the element from the
+     accessibility tree in some engines, which is the exact opposite of what
+     the class is for.
+   Mitigation: it is `position: absolute` and clipped, so it can never
+     participate in the lattice or displace anything that does.
+   Proof: any content inside it is still announced; the §9.6 screen-reader
+     pass exercises it on every skip link and icon-button label. */
 .k-visually-hidden {
   position: absolute;
+  /* stylelint-disable-next-line kite/eight-px-grid */
   inline-size: 1px;
+  /* stylelint-disable-next-line kite/eight-px-grid */
   block-size: 1px;
   overflow: hidden;
   clip-path: inset(50%);

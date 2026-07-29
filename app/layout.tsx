@@ -6,6 +6,7 @@ import { SkipLinks } from '@/components/shell/SkipLinks'
 import { Foot } from '@/components/shell/Foot'
 import { FrostStage } from '@/components/shell/FrostStage'
 import { AccountControl } from '@/components/shell/AccountControl'
+import { LatticeFit } from '@/components/shell/LatticeFit'
 import { ToastRegion } from '@/components/ui/Toast'
 import { getCurrentUser } from '@/lib/auth/session'
 
@@ -14,15 +15,30 @@ export const metadata: Metadata = {
   description: 'Educator-authored, knowledge-graph-backed learning.',
 }
 
-/* §3.1: theme resolves before paint, so there is no flash to design around. */
+/* §3.1: theme resolves before paint, so there is no flash to design around.
+ *
+ * It stamps a CONCRETE value every time, including when nothing is stored.
+ * Leaving the attribute off meant three components each guessed the default
+ * separately and disagreed: the token sheet fell through to `:root`, which is
+ * the dark ramp; ThemeToggle initialised to 'light'; and GradientBackdrop
+ * read `prefers-color-scheme` and picked the pale preset. The visible result
+ * was light ink on a light gradient — every page title and orientation line
+ * was washed out until you toggled the theme and back.
+ *
+ * One attribute, resolved once, is what makes those three agree by
+ * construction rather than by each of them happening to guess the same.
+ */
 const themeScript = `
 (function () {
   try {
     var stored = localStorage.getItem('cs-theme');
-    if (stored === 'light' || stored === 'dark') {
-      document.documentElement.setAttribute('data-theme', stored);
-    }
-  } catch (e) {}
+    var theme = (stored === 'light' || stored === 'dark')
+      ? stored
+      : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    document.documentElement.setAttribute('data-theme', theme);
+  } catch (e) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }
 })();
 `
 
@@ -58,6 +74,8 @@ export default async function RootLayout({
             <Foot />
           </div>
           <ToastRegion />
+          {/* §2.5: snaps content-driven box heights up to whole cells. */}
+          <LatticeFit />
         </Providers>
       </body>
     </html>

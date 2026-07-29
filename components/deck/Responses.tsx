@@ -1,463 +1,60 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import type { ModuleItem, Judgement } from '@/lib/api/types'
+/* Response controls — design_system.md §6.12, widened by complete_modules.md.
+ *
+ * The closed set is: none · choice · text · cloze · ordering · map ·
+ * handwriting · speech. Nothing else may be invented per module type; a new
+ * type picks one of these or the set is reopened deliberately.
+ *
+ * Every control here obeys three rules:
+ *   1. It reports its value up. It never grades — grading is lib/grading.ts,
+ *      because a control that decides whether it was right will eventually
+ *      disagree with the server that also decided.
+ *   2. Its POST-JUDGEMENT state is the same size as its pre-judgement state.
+ *      Marks are drawn on the controls that already existed (§6.10).
+ *   3. It is fully operable from the keyboard, including the ones whose
+ *      primary gesture is a drag or a click on a map (SC 2.5.7, 2.1.1).
+ */
+
+import { useId, useMemo, useRef, useState } from 'react'
+import dynamic from 'next/dynamic'
+import { motion } from 'motion/react'
+import type { Judgement, ModuleItem } from '@/lib/api/types'
 import type { ModuleTypeSpec } from '@/lib/modules/registry'
-import { judgeChoice, judgeOrder, judgeText } from '@/lib/grading'
-import { finalise, toKana } from '@/lib/japanese/romaji'
+import { RomajiInput, Ruby } from './Japanese'
+import { spring } from '@/lib/motion'
 
-/* §6.12 Response controls. A closed set of six: a new module type reuses
- * one or argues for a seventh. */
+/* Both are client-only: one measures a canvas, the other reaches for
+ * Leaflet's window-bound globals. They are also the two heaviest controls in
+ * the set, and most sessions contain neither. */
+const MapResponse = dynamic(() => import('./MapResponse').then((m) => m.MapResponse), {
+  ssr: false,
+  loading: () => <span className="k-map-skeleton" aria-label="Loading the map" />,
+})
+const Handwriting = dynamic(() => import('./Handwriting').then((m) => m.Handwriting), {
+  ssr: false,
+  loading: () => <p className="k-meta">Loading the writing pad…</p>,
+})
+const SpeechResponse = dynamic(() => import('./SpeechResponse').then((m) => m.SpeechResponse), {
+  ssr: false,
+  loading: () => <p className="k-meta">Loading the recorder…</p>,
+})
 
-export type AnswerValue = string | string[]
+export type ResponseValue = string | string[]
 
 export interface ResponseProps {
   item: ModuleItem
   spec: ModuleTypeSpec
-  value: AnswerValue
-  onChange: (v: AnswerValue) => void
-  /** Set once judged — controls stop accepting input (§6.10). */
+  value: ResponseValue
+  onChange: (v: ResponseValue) => void
+  /** Non-null once the attempt has been marked; controls go read-only. */
   judged: Judgement | null
-  /** §6.12: using the cloze bank caps the grade at Hard. */
+  /** True once a self-graded response has been revealed. */
+  revealed?: boolean
+  /** Raised when the learner used a hint bank — caps the grade at Hard. */
   onAssisted: () => void
-  /** Double-tap accelerator on single choice commits directly. */
+  /** The double-tap / Enter accelerator: commit without leaving the control. */
   onCommit: () => void
-}
-
-export function evaluate(
-  item: ModuleItem,
-  spec: ModuleTypeSpec,
-  value: AnswerValue,
-): Judgement {
-  switch (spec.response) {
-    case 'ordering':
-      return judgeOrder(
-        Array.isArray(value) ? value : [],
-        item.answer.split('|'),
-      )
-    case 'choice':
-    case 'map':
-      return judgeChoice(String(value), item.answer)
-    case 'text':
-    case 'cloze':
-      return judgeText(String(value), item.answer, spec.tolerance)
-    default:
-      return { outcome: 'correct', answer: item.answer }
-  }
-}
-
-export function isAnswered(spec: ModuleTypeSpec, value: AnswerValue): boolean {
-  if (spec.response === 'ordering') return Array.isArray(value) && value.length > 0
-  if (spec.response === 'none' || spec.response === 'scroll') return true
-  return String(value).trim().length > 0
-}
-
-/* ── Single choice ──────────────────────────────────────────────────
- * Select, then Check. Selection is reversible until Check, so Check keeps
- * meaning exactly what it means on every other type. Activating an already
- * selected option commits it — an accelerator, never taught, never required.
- * One tab stop, arrows to move (§8.4). */
-
-export function ChoiceResponse({
-  item,
-  value,
-  onChange,
-  judged,
-  onCommit,
-}: ResponseProps) {
-  const options = item.options ?? []
-  const refs = useRef<Array<HTMLButtonElement | null>>([])
-  const selected = String(value)
-  // Discrimination pairs carry their glyphs at the §4.3 96px floor.
-  const isPair = item.moduleType === 'discrimination'
-
-  function onKeyDown(e: React.KeyboardEvent, index: number) {
-    let next = index
-    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') next = index + 1
-    else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') next = index - 1
-    else if (e.key === 'Home') next = 0
-    else if (e.key === 'End') next = options.length - 1
-    else return
-    e.preventDefault()
-    // §8.4: arrow navigation does not wrap. A hard stop teaches the boundary.
-    if (next < 0 || next >= options.length) return
-    refs.current[next]?.focus()
-  }
-
-  return (
-    <div
-      className="k-options"
-      role="radiogroup"
-      aria-label="Answer"
-      style={isPair ? { gridAutoFlow: 'column' } : undefined}
-    >
-      {options.map((opt, i) => {
-        const isSelected = selected === opt
-        let tone = ''
-        if (judged) {
-          if (opt === item.answer) tone = ' k-option--ok'
-          else if (isSelected) tone = ' k-option--err'
-        }
-        return (
-          <button
-            key={opt}
-            ref={(el) => {
-              refs.current[i] = el
-            }}
-            type="button"
-            role="radio"
-            aria-checked={isSelected}
-            // Roving tabindex: the selected option holds 0, others -1.
-            tabIndex={isSelected || (!selected && i === 0) ? 0 : -1}
-            className={`k-option k-press${tone}`}
-            disabled={Boolean(judged)}
-            onKeyDown={(e) => onKeyDown(e, i)}
-            onClick={() => {
-              if (isSelected) onCommit()
-              else onChange(opt)
-            }}
-          >
-            <span
-              lang={item.lang}
-              className={isPair ? 'k-glyph-pair' : undefined}
-            >
-              {opt}
-            </span>
-          </button>
-        )
-      })}
-    </div>
-  )
-}
-
-/* ── Text entry ─────────────────────────────────────────────────────
- * Japanese uses the romaji converter (§4.3); the Latin buffer is visible
- * while composing so the learner sees what they are producing. */
-
-export function TextResponse({ item, value, onChange, judged }: ResponseProps) {
-  const japanese = item.lang === 'ja'
-  const [raw, setRaw] = useState('')
-  const [katakana, setKatakana] = useState(false)
-
-  const converted = japanese ? toKana(raw, katakana) : null
-
-  useEffect(() => {
-    if (!japanese) return
-    onChange(finalise(toKana(raw, katakana), katakana))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [raw, katakana])
-
-  if (!japanese) {
-    return (
-      <div className="k-field">
-        <label className="k-field__label" htmlFor="answer">
-          Your answer
-        </label>
-        <input
-          id="answer"
-          className="k-input"
-          value={String(value)}
-          disabled={Boolean(judged)}
-          onChange={(e) => onChange(e.target.value)}
-          autoComplete="off"
-        />
-      </div>
-    )
-  }
-
-  return (
-    <div className="k-field">
-      <label className="k-field__label" htmlFor="answer">
-        Your answer — type in romaji
-      </label>
-      <div className="k-compose">
-        <input
-          id="answer"
-          className="k-input"
-          value={raw}
-          disabled={Boolean(judged)}
-          onChange={(e) => setRaw(e.target.value)}
-          autoComplete="off"
-          spellCheck={false}
-          aria-describedby="compose-out"
-        />
-        <output id="compose-out" className="k-compose__buffer">
-          <span lang="ja" style={{ fontSize: 'var(--size-body)', color: 'var(--ink)' }}>
-            {converted?.kana}
-          </span>
-          {converted?.buffer ? <span> {converted.buffer}</span> : null}
-        </output>
-      </div>
-      <button
-        type="button"
-        className="k-btn k-btn--quiet k-press"
-        aria-pressed={katakana}
-        onClick={() => setKatakana((k) => !k)}
-        disabled={Boolean(judged)}
-      >
-        {katakana ? 'Katakana on' : 'Katakana off'}
-      </button>
-    </div>
-  )
-}
-
-/* ── Cloze ──────────────────────────────────────────────────────────
- * Typed by default; the bank is a hint reached by an explicit control.
- * Using it caps the grade at Hard (§6.12). The gap does not resize. */
-
-export function ClozeResponse({
-  item,
-  value,
-  onChange,
-  judged,
-  onAssisted,
-}: ResponseProps) {
-  const [bankOpen, setBankOpen] = useState(false)
-  const [raw, setRaw] = useState('')
-
-  useEffect(() => {
-    if (!bankOpen) onChange(finalise(toKana(raw), false))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [raw])
-
-  return (
-    <div style={{ display: 'grid', gap: 'var(--space-2)' }}>
-      <p className="k-cloze" lang={item.lang}>
-        <span>{item.clozeBefore}</span>
-        <input
-          className="k-cloze__gap"
-          value={String(value)}
-          disabled={Boolean(judged)}
-          onChange={(e) => {
-            setRaw(e.target.value)
-            onChange(e.target.value)
-          }}
-          aria-label="Missing particle"
-          autoComplete="off"
-        />
-        <span>{item.clozeAfter}</span>
-      </p>
-
-      {!bankOpen ? (
-        <button
-          type="button"
-          className="k-btn k-btn--quiet k-press"
-          disabled={Boolean(judged)}
-          onClick={() => {
-            setBankOpen(true)
-            onAssisted()
-          }}
-        >
-          Show candidates — counts as assisted
-        </button>
-      ) : (
-        <div className="k-bank" role="group" aria-label="Candidate particles">
-          {(item.bank ?? []).map((b) => (
-            <button
-              key={b}
-              type="button"
-              className="k-token k-press"
-              lang={item.lang}
-              disabled={Boolean(judged)}
-              onClick={() => onChange(b)}
-            >
-              {b}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-/* ── Ordering ───────────────────────────────────────────────────────
- * Tap to append, tap again to remove — the single-pointer path that
- * satisfies SC 2.5.7 alongside §8.5's keyboard reorder. The answer row
- * reserves its full height from the start, so adding never grows it. */
-
-export function OrderingResponse({ item, value, onChange, judged }: ResponseProps) {
-  const placed = Array.isArray(value) ? value : []
-  const pool = (item.tokens ?? []).filter((t) => !placed.includes(t))
-
-  return (
-    <div className="k-order">
-      <div>
-        <p className="k-label" style={{ marginBlockEnd: 'var(--optical)' }}>
-          Your answer
-        </p>
-        <div className="k-order__row k-order__row--answer" role="list">
-          {placed.map((t, i) => (
-            <button
-              key={`${t}-${i}`}
-              type="button"
-              role="listitem"
-              className="k-token k-press"
-              lang={item.lang}
-              disabled={Boolean(judged)}
-              onClick={() => onChange(placed.filter((_, j) => j !== i))}
-              aria-label={`${t}, position ${i + 1} of ${placed.length}. Activate to remove.`}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div>
-        <p className="k-label" style={{ marginBlockEnd: 'var(--optical)' }}>
-          Available
-        </p>
-        <div className="k-order__row" role="list">
-          {pool.map((t) => (
-            <button
-              key={t}
-              type="button"
-              role="listitem"
-              className="k-token k-press"
-              lang={item.lang}
-              disabled={Boolean(judged)}
-              onClick={() => onChange([...placed, t])}
-              aria-label={`${t}. Activate to add to your answer.`}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/* ── Map click ──────────────────────────────────────────────────────
- * §9.3B: the non-map path is mandatory, not a fallback. Every map question
- * also presents its candidates as a labelled list of buttons, and a learner
- * who never touches the map completes the module at full credit. */
-
-export function MapResponse(props: ResponseProps) {
-  return (
-    <div style={{ display: 'grid', gap: 'var(--space-2)' }}>
-      <div
-        className="k-skeleton"
-        style={{ blockSize: '8rem', display: 'grid', placeItems: 'center' }}
-        aria-hidden="true"
-      >
-        <span className="k-meta">Map</span>
-      </div>
-      <p className="k-body-sm" style={{ color: 'var(--ink-dim)' }}>
-        Choose on the map, or from the list — both count the same.
-      </p>
-      <ChoiceResponse {...props} />
-    </div>
-  )
-}
-
-/* ── Handwriting ────────────────────────────────────────────────────
- * §9.3D. The canvas is aria-hidden with state carried in text beside it;
- * undo per stroke and clear are real buttons. The type is optional and
- * never blocking — a learner turns it off in /me/settings.
- *
- * Grading is shape plus stroke order and direction, which needs a stroke
- * database per character (§12.1). Strokes are captured here; the comparison
- * is a backend call that does not exist yet, so this reports capture state
- * honestly rather than pretending to grade. */
-
-export function HandwritingResponse({ judged, onChange }: ResponseProps) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  const [strokes, setStrokes] = useState<Array<Array<[number, number]>>>([])
-  const drawing = useRef<Array<[number, number]> | null>(null)
-
-  useEffect(() => {
-    const c = canvasRef.current
-    if (!c) return
-    const ctx = c.getContext('2d')
-    if (!ctx) return
-    ctx.clearRect(0, 0, c.width, c.height)
-    ctx.strokeStyle = getComputedStyle(document.documentElement)
-      .getPropertyValue('--ink')
-      .trim()
-    ctx.lineWidth = 6
-    ctx.lineCap = 'round'
-    ctx.lineJoin = 'round'
-    for (const stroke of strokes) {
-      ctx.beginPath()
-      stroke.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)))
-      ctx.stroke()
-    }
-  }, [strokes])
-
-  useEffect(() => {
-    onChange(String(strokes.length))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [strokes])
-
-  function point(e: React.PointerEvent): [number, number] {
-    const r = (e.target as HTMLCanvasElement).getBoundingClientRect()
-    return [e.clientX - r.left, e.clientY - r.top]
-  }
-
-  return (
-    <div style={{ display: 'grid', gap: 'var(--space-1)', justifyItems: 'start' }}>
-      <canvas
-        ref={canvasRef}
-        width={256}
-        height={256}
-        aria-hidden="true"
-        style={{
-          border: '1px solid var(--line-strong)',
-          background: 'var(--bg-raised)',
-          touchAction: 'none',
-          inlineSize: '16rem',
-          blockSize: '16rem',
-        }}
-        onPointerDown={(e) => {
-          if (judged) return
-          // §7.3: pointer capture on every drag.
-          ;(e.target as HTMLCanvasElement).setPointerCapture(e.pointerId)
-          const stroke: Array<[number, number]> = [point(e)]
-          drawing.current = stroke
-          setStrokes((s) => [...s, stroke])
-        }}
-        onPointerMove={(e) => {
-          const stroke = drawing.current
-          if (!stroke) return
-          stroke.push(point(e))
-          // Replace the in-progress stroke by identity so the redraw runs.
-          setStrokes((s) => [...s.slice(0, -1), [...stroke]])
-        }}
-        onPointerUp={() => {
-          drawing.current = null
-        }}
-        onPointerCancel={() => {
-          // §7.3: pointercancel reverts to the pre-drag state.
-          if (drawing.current) setStrokes((s) => s.slice(0, -1))
-          drawing.current = null
-        }}
-      />
-      {/* State in real text, since the canvas is not exposed to AT. */}
-      <p className="k-body-sm" role="status">
-        {strokes.length === 0
-          ? 'Nothing drawn yet.'
-          : `${strokes.length} stroke${strokes.length === 1 ? '' : 's'} drawn.`}
-      </p>
-      <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
-        <button
-          type="button"
-          className="k-btn k-btn--secondary k-press"
-          disabled={Boolean(judged) || strokes.length === 0}
-          onClick={() => setStrokes((s) => s.slice(0, -1))}
-        >
-          Undo stroke
-        </button>
-        <button
-          type="button"
-          className="k-btn k-btn--quiet k-press"
-          disabled={Boolean(judged) || strokes.length === 0}
-          onClick={() => setStrokes([])}
-        >
-          Clear
-        </button>
-      </div>
-    </div>
-  )
 }
 
 export function Response(props: ResponseProps) {
@@ -473,9 +70,430 @@ export function Response(props: ResponseProps) {
     case 'map':
       return <MapResponse {...props} />
     case 'handwriting':
-      return <HandwritingResponse {...props} />
-    case 'none':
+      return <Handwriting {...props} />
+    case 'speech':
+      return <SpeechResponse {...props} />
     default:
       return null
   }
+}
+
+/* ── Choice ──────────────────────────────────────────────────────────
+ * Select, then Check. Not select-to-answer: the first version of this in
+ * Common Sage locked on first click, which turns a misclick into a wrong
+ * answer and a scheduling penalty. The accelerator for people who find that
+ * slow is a second click on the same option, which commits — so the fast
+ * path costs one extra tap and the slow path costs nothing.
+ *
+ * A radiogroup, not buttons: arrow keys move between options and Space
+ * selects, which is what a screen-reader user expects from a single choice
+ * and what §8 requires. */
+
+function ChoiceResponse({ item, value, onChange, judged, onCommit }: ResponseProps) {
+  const options = item.options ?? []
+  const name = useId()
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([])
+  const selected = typeof value === 'string' ? value : ''
+
+  // A set of short CJK options tiles as glyphs rather than stacking as
+  // full-width bars — §4.3's floors make a 40px glyph the readable size.
+  const glyphs = options.every((o) => o.length <= 3 && /[぀-ヿ一-龯]/.test(o))
+
+  return (
+    <div
+      role="radiogroup"
+      aria-label="Answer"
+      className={glyphs ? 'k-options k-options--glyph' : 'k-options'}
+    >
+      {options.map((opt, index) => {
+        const isSelected = selected === opt
+        const isAnswer = judged !== null && opt === judged.answer
+        const isWrongPick = judged !== null && isSelected && opt !== judged.answer
+
+        return (
+          <button
+            key={opt}
+            type="button"
+            role="radio"
+            name={name}
+            aria-checked={isSelected}
+            tabIndex={isSelected || (!selected && index === 0) ? 0 : -1}
+            ref={(node) => {
+              optionRefs.current[index] = node
+            }}
+            disabled={judged !== null}
+            className={[
+              'k-option',
+              'k-press',
+              isAnswer ? 'k-option--ok' : '',
+              isWrongPick ? 'k-option--err' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            data-selected={isSelected ? 'true' : undefined}
+            onClick={() => {
+              if (judged !== null) return
+              if (isSelected) onCommit()
+              else onChange(opt)
+            }}
+            onKeyDown={(event) => {
+              if (judged !== null) return
+              const last = options.length - 1
+              let next: number | null = null
+              if (event.key === 'ArrowDown' || event.key === 'ArrowRight')
+                next = Math.min(last, index + 1)
+              if (event.key === 'ArrowUp' || event.key === 'ArrowLeft')
+                next = Math.max(0, index - 1)
+              if (event.key === 'Home') next = 0
+              if (event.key === 'End') next = last
+              if (next !== null) {
+                event.preventDefault()
+                onChange(options[next])
+                optionRefs.current[next]?.focus()
+              }
+              if (event.key === 'Enter') {
+                event.preventDefault()
+                if (isSelected) onCommit()
+                else onChange(opt)
+              }
+            }}
+          >
+            <span className={glyphs ? 'k-glyph-option' : undefined} lang={item.lang}>
+              {opt}
+            </span>
+            {/* §3.3: the verdict is never colour alone. */}
+            {isAnswer ? <span className="k-meta">correct</span> : null}
+            {isWrongPick ? <span className="k-meta">your answer</span> : null}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+/* ── Text ────────────────────────────────────────────────────────────
+ * One field, sized to what is being asked for. A prose answer in a
+ * single-line input is the mistake the last pass made: `grammar_production`
+ * asks for a sentence and got a box one line tall with the start of the
+ * answer scrolled out of sight. Tolerance decides the shape — `tolerant`
+ * means the answer is meaning in prose, which is multiline. */
+
+function TextResponse({ item, spec, value, onChange, judged, onCommit }: ResponseProps) {
+  const id = useId()
+  const text = typeof value === 'string' ? value : ''
+  const japanese = item.lang === 'ja' && spec.tolerance === 'exact'
+  const prose = spec.tolerance === 'tolerant'
+
+  return (
+    <div className="k-field">
+      <label className="k-field__label" htmlFor={id}>
+        Your answer
+      </label>
+
+      {japanese ? (
+        <RomajiInput
+          id={id}
+          value={text}
+          onChange={onChange}
+          onCommit={onCommit}
+          disabled={judged !== null}
+          multiline={prose}
+          describedBy={`${id}-hint`}
+        />
+      ) : prose ? (
+        <textarea
+          id={id}
+          className="k-textarea"
+          rows={3}
+          value={text}
+          disabled={judged !== null}
+          aria-describedby={`${id}-hint`}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      ) : (
+        <input
+          id={id}
+          className="k-input"
+          value={text}
+          disabled={judged !== null}
+          autoComplete="off"
+          autoCorrect="off"
+          spellCheck={false}
+          aria-describedby={`${id}-hint`}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              onCommit()
+            }
+          }}
+        />
+      )}
+
+      {/* §6.12: tolerance is declared, and declared BEFORE the attempt.
+          A learner who knows spelling counts here types differently. */}
+      <p className="k-field__hint" id={`${id}-hint`}>
+        {spec.tolerance === 'exact' ? 'Exact spelling' : 'Near matches accepted'}
+      </p>
+    </div>
+  )
+}
+
+/* ── Cloze ───────────────────────────────────────────────────────────
+ * The sentence stays whole and the gap sits in it, because a cloze whose
+ * sentence is above and whose input is below is not a cloze, it is a
+ * question with context. Typed, with an optional hint bank; taking a hint
+ * raises `assisted`, which caps the grade at Hard rather than voiding it. */
+
+function ClozeResponse({ item, value, onChange, judged, onAssisted, onCommit }: ResponseProps) {
+  const id = useId()
+  const text = typeof value === 'string' ? value : ''
+  const [bankOpen, setBankOpen] = useState(false)
+  const bank = item.bank ?? []
+
+  return (
+    <div className="k-cloze">
+      {/* A div, not a p: RomajiInput renders its "reads as" line as a
+          paragraph, and a <p> inside a <p> is invalid — the browser closes
+          the outer one and the sentence breaks in half mid-gap. */}
+      <div className={item.lang === 'ja' ? 'k-ja' : undefined} lang={item.lang}>
+        <span>{item.clozeBefore}</span>
+        <label className="k-cloze__gap">
+          <span className="k-sr">Missing word</span>
+          {item.lang === 'ja' ? (
+            <RomajiInput
+              id={id}
+              value={text}
+              onChange={onChange}
+              onCommit={onCommit}
+              disabled={judged !== null}
+            />
+          ) : (
+            <input
+              id={id}
+              className="k-input"
+              value={text}
+              disabled={judged !== null}
+              autoComplete="off"
+              spellCheck={false}
+              onChange={(e) => onChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  onCommit()
+                }
+              }}
+            />
+          )}
+        </label>
+        <span>{item.clozeAfter}</span>
+      </div>
+
+      {bank.length > 0 && judged === null ? (
+        <div className="k-bank">
+          <button
+            type="button"
+            className="k-btn k-btn--quiet k-press"
+            aria-expanded={bankOpen}
+            onClick={() => setBankOpen((o) => !o)}
+          >
+            {bankOpen ? 'Hide the options' : 'Show the options'}
+          </button>
+          {/* Stated at the control, before it is pressed — the same rule the
+              Reveal control follows (§6.10). */}
+          <span className="k-meta">Hint used · maximum Hard</span>
+          {bankOpen ? (
+            <ul>
+              {bank.map((word) => (
+                <li key={word}>
+                  <button
+                    type="button"
+                    className="k-token k-press"
+                    lang={item.lang}
+                    onClick={() => {
+                      onAssisted()
+                      onChange(word)
+                    }}
+                  >
+                    {word}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+/* ── Ordering ────────────────────────────────────────────────────────
+ * Two module types share this: `sentence_scramble` (tap chunks into place)
+ * and `timeline_drag_exercise` (drag events between Earlier and Later).
+ *
+ * Drag is the primary gesture and it is NOT the only one. Every row carries
+ * explicit Move up / Move down buttons — SC 2.5.7 wants a non-drag path, and
+ * the catalogue names those buttons directly. Tapping a token in the bank
+ * appends it; tapping a placed token removes it.
+ */
+
+function OrderingResponse({ item, spec, value, onChange, judged }: ResponseProps) {
+  const tokens = useMemo(() => item.tokens ?? [], [item.tokens])
+  const timeline = spec.id === 'timeline_drag_exercise'
+
+  /* The timeline variant starts fully placed — its exercise is reordering,
+   * not selecting. That was an effect that ran on mount, which meant the
+   * MEASURING pass (which renders with an empty value and never commits an
+   * effect's result) sized the band for an empty list and the real card
+   * overflowed it. Deriving it makes both passes see the same thing. */
+  const raw = Array.isArray(value) ? value : []
+  const placed = timeline && raw.length === 0 ? tokens : raw
+  const remaining = useMemo(() => {
+    const left = [...tokens]
+    for (const p of placed) {
+      const at = left.indexOf(p)
+      if (at !== -1) left.splice(at, 1)
+    }
+    return left
+  }, [tokens, placed])
+
+  const dragIndex = useRef<number | null>(null)
+  const correct = item.answer.split('|')
+
+  const move = (from: number, to: number) => {
+    if (to < 0 || to >= placed.length) return
+    const next = [...placed]
+    const [moved] = next.splice(from, 1)
+    next.splice(to, 0, moved)
+    onChange(next)
+  }
+
+  return (
+    <div className="k-order">
+      {timeline ? <p className="k-meta">Earlier</p> : null}
+
+      <ol aria-label="Your order">
+        {placed.map((token, i) => {
+          // Post-judgement, each position says whether it is where it belongs.
+          const right = judged !== null && correct[i] === token
+          return (
+            <motion.li
+              key={occurrenceKey(placed, i)}
+              layout
+              transition={spring.drag}
+              className={[
+                'k-order__row',
+                judged !== null ? (right ? 'k-option--ok' : 'k-option--err') : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              draggable={judged === null}
+              onDragStart={() => (dragIndex.current = i)}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault()
+                if (dragIndex.current !== null) move(dragIndex.current, i)
+                dragIndex.current = null
+              }}
+            >
+              <span lang={item.lang}>{token}</span>
+
+              {judged === null ? (
+                <span className="k-order__grip">
+                  <button
+                    type="button"
+                    className="k-btn k-btn--quiet k-press"
+                    disabled={i === 0}
+                    onClick={() => move(i, i - 1)}
+                  >
+                    <span aria-hidden="true">↑</span>
+                    <span className="k-sr">{`Move "${token}" up`}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="k-btn k-btn--quiet k-press"
+                    disabled={i === placed.length - 1}
+                    onClick={() => move(i, i + 1)}
+                  >
+                    <span aria-hidden="true">↓</span>
+                    <span className="k-sr">{`Move "${token}" down`}</span>
+                  </button>
+                  {!timeline ? (
+                    <button
+                      type="button"
+                      className="k-btn k-btn--quiet k-press"
+                      onClick={() => onChange(placed.filter((_, j) => j !== i))}
+                    >
+                      <span aria-hidden="true">×</span>
+                      <span className="k-sr">{`Remove "${token}"`}</span>
+                    </button>
+                  ) : null}
+                </span>
+              ) : (
+                <span className="k-meta">{right ? 'in place' : 'out of place'}</span>
+              )}
+            </motion.li>
+          )
+        })}
+      </ol>
+
+      {timeline ? <p className="k-meta">Later</p> : null}
+
+      {/* The bank. Empty for the timeline variant, which never has one. */}
+      {!timeline && judged === null ? (
+        <ul className="k-bank" aria-label="Chunks to place">
+          {remaining.map((token, i) => (
+            <li key={`${token}-${i}`}>
+              <button
+                type="button"
+                className="k-token k-press"
+                lang={item.lang}
+                onClick={() => onChange([...placed, token])}
+              >
+                {item.lang === 'ja' ? <span className="k-ja">{token}</span> : token}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      {/* Shuffle is a response-local control, not a band slot: the band's
+          four slots are spoken for, and shuffling is part of composing an
+          answer rather than submitting one. */}
+      {timeline && judged === null ? (
+        <button
+          type="button"
+          className="k-btn k-btn--quiet k-press"
+          onClick={() => onChange(shuffle(placed))}
+        >
+          Shuffle
+        </button>
+      ) : null}
+    </div>
+  )
+}
+
+function shuffle<T>(items: T[]): T[] {
+  const out = [...items]
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[out[i], out[j]] = [out[j], out[i]]
+  }
+  return out
+}
+
+function occurrenceKey(items: string[], index: number): string {
+  const token = items[index]
+  const occurrence = items.slice(0, index).filter((item) => item === token).length
+  return `${token}-${occurrence}`
+}
+
+/** Ruby-aware prompt text, shared by the frame and the measurer. */
+export function PromptText({ item }: { item: ModuleItem }) {
+  if (item.promptRuby) return <Ruby segments={item.promptRuby} />
+  return (
+    <span lang={item.lang} className={item.lang === 'ja' ? 'k-ja' : undefined}>
+      {item.prompt}
+    </span>
+  )
 }

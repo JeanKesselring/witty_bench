@@ -95,6 +95,12 @@ export const TOPICS: Topic[] = [
   { id: 't-10', courseId: 'japanese-n5', parentId: null, title: 'Hiragana', blurb: 'The 46 basic syllabary characters.', mastery: 'mastered', childIds: [], moduleCount: 12, span: 2 },
   { id: 't-11', courseId: 'japanese-n5', parentId: null, title: 'Katakana', blurb: 'The syllabary used for loanwords.', mastery: 'in_progress', childIds: [], moduleCount: 10, span: 2 },
   { id: 't-12', courseId: 'japanese-n5', parentId: null, title: 'The particle に', blurb: 'Direction, time, and indirect objects.', mastery: 'unstarted', childIds: [], moduleCount: 8, span: 1 },
+  { id: 't-13', courseId: 'japanese-n5', parentId: null, title: 'Kanji: nature', blurb: 'The characters for mountain, river, field and rain.', mastery: 'unstarted', childIds: [], moduleCount: 9, span: 2 },
+  { id: 't-14', courseId: 'japanese-n5', parentId: null, title: 'Everyday vocabulary', blurb: 'Words you need before you need grammar.', mastery: 'in_progress', childIds: [], moduleCount: 14, span: 2 },
+  { id: 't-15', courseId: 'japanese-n5', parentId: null, title: 'Verb forms', blurb: 'Polite, plain, past and negative.', mastery: 'unstarted', childIds: [], moduleCount: 11, span: 3 },
+  { id: 't-20', courseId: 'geomorphology', parentId: null, title: 'Mountain ranges', blurb: 'How plates build relief, and where.', mastery: 'in_progress', childIds: [], moduleCount: 7, span: 2 },
+  { id: 't-21', courseId: 'geomorphology', parentId: null, title: 'Glacial landforms', blurb: 'What ice leaves behind when it retreats.', mastery: 'unstarted', childIds: [], moduleCount: 6, span: 2 },
+  { id: 't-30', courseId: 'thermodynamics', parentId: null, title: 'Energy balance', blurb: 'In, out, and what is left stored.', mastery: 'unstarted', childIds: [], moduleCount: 5, span: 1 },
 ]
 
 /* A session queue mixing graded and ungraded types, so the deck exercises
@@ -185,10 +191,15 @@ export const QUEUE: ModuleItem[] = [
     moduleType: 'stat_boxes',
     contentType: 'text',
     prompt: 'Independence at a glance',
-    body:
-      'Two events are independent when P(A∩B) = P(A)·P(B).\n\n' +
-      'Independence is **not** the same as being mutually exclusive — in fact two events with ' +
-      'non-zero probability can never be both.',
+    figure: {
+      kind: 'stats',
+      items: [
+        { label: 'Mean', value: '3.5' },
+        { label: 'Variance', value: '2.92' },
+        { label: 'Outcomes', value: '6' },
+        { label: 'P(even)', value: '0.5' },
+      ],
+    },
     answer: '',
   },
 ]

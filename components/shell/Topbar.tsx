@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import type { Route } from 'next'
 import { usePathname } from 'next/navigation'
 import { Suspense, type ReactNode } from 'react'
 import { ThemeToggle } from './ThemeToggle'
@@ -13,9 +14,11 @@ import { CourseSearch } from './CourseSearch'
 const NAV = [
   { href: '/me', label: 'Home' },
   { href: '/courses', label: 'Courses' },
+  { href: '/japanese/lesson', label: 'Japanese' },
+  { href: '/chat', label: 'Tutor' },
   { href: '/me/progress', label: 'Progress' },
   { href: '/me/notes', label: 'Notes' },
-] as const
+] as const satisfies ReadonlyArray<{ href: Route; label: string }>
 
 export function Topbar({ account }: { account?: ReactNode }) {
   const pathname = usePathname()
@@ -42,15 +45,11 @@ export function Topbar({ account }: { account?: ReactNode }) {
               // §6.5: this changes the path, so it is a nav link and
               // claims aria-current — not a tab.
               aria-current={current ? 'page' : undefined}
-              style={
-                current
-                  ? {
-                      textDecoration: 'underline',
-                      textUnderlineOffset: 'var(--optical)',
-                      color: 'var(--ink)',
-                    }
-                  : undefined
-              }
+              // Current page is marked by a filled cell and full-strength
+              // ink, not an underline — the underline read as link
+              // decoration rather than as state, and nothing else in the
+              // system underlines at rest.
+              data-current={current ? 'true' : undefined}
             >
               {item.label}
             </Link>

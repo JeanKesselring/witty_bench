@@ -1,0 +1,13 @@
+.next
+dist
+node_modules
+public
+package-lock.json
+
+# The dead Vite SPA (design_system.md §13.1 — the Next migration is done).
+src
+
+# 18KB of Natural Earth coordinate strings on deliberately long lines.
+# Prettier reflows this into a ~2000-line file and makes every future diff
+# against it unreadable. The data is generated, not authored.
+lib/modules/world.ts

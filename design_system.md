@@ -8,15 +8,16 @@ A new interface for **Common Sage** — the educator-authored, knowledge-graph-b
 
 **Surface scope:** all four roles — student, educator, admin, and the service account's visible artefacts. Learner deck, course catalogue, knowledge graph, topic and lecture views, the authoring wizard, and the admin tables.
 
-**Brand:** a full break from the current Common Sage *visual* identity — Miriam Libre, Geologica, and the cyan/ice palette are retired ([§12.3](#123-what-we-deliberately-break)). The break is visual, not nominal: **Common Sage remains the product name and the wordmark** (§13.5). Kite is the name of this system, not of the product.
+**Brand:** a full break from the current Common Sage _visual_ identity — Miriam Libre, Geologica, and the cyan/ice palette are retired ([§12.3](#123-what-we-deliberately-break)). The break is visual, not nominal: **Common Sage remains the product name and the wordmark** (§13.5). Kite is the name of this system, not of the product.
 
 **Accessibility:** WCAG 2.2 Level AA, binding. The WebGL gradient, the raster map, and the 3D model carry named exceptions with mandatory mitigations ([§9.3](#93-canvas-carve-outs)).
 
 **Explicit non-goals for v1** — deferred to a follow-up document, deliberately, not by oversight:
+
 - The streaming AI chat surface (`ChatBubble`, `ChatPanel`, inline module rendering)
 - Long-running generation job UX (queued → worker → published, failure and dead-letter states)
 - Notifications of any kind — in-app, email, or push. There is no due-work indicator and no reminder in v1, and `/me/settings` accordingly carries no notification preferences (§11.12)
-- Recall scheduling mechanics — intervals, due-queue composition, how a grade maps to a next-review date — an engine concern. **The rating *input* is not deferred**: for a self-graded module the engine cannot know how it went, so collecting the grade is an interface act and is specified in §6.10.
+- Recall scheduling mechanics — intervals, due-queue composition, how a grade maps to a next-review date — an engine concern. **The rating _input_ is not deferred**: for a self-graded module the engine cannot know how it went, so collecting the grade is an interface act and is specified in §6.10.
 
 ---
 
@@ -28,7 +29,7 @@ Kite is a study instrument, not a website. Four laws.
 
 **2. Ink on paper, over light.** The interface is opaque paper with hairline rules, held above a slow gradient. The gradient is atmosphere and never information. Anything a learner must read or click sits on paper, not on light.
 
-**3. Rigid surface, physical behaviour.** The visual language is square, hairline, and zero-radius; the motion is sprung, weighted, and interruptible. The interface *looks* like a precision instrument and *moves* like an object. Every animation still answers "what just changed?" — if it would look fine not happening at all, delete it — but the answer is delivered with mass, not with a fade.
+**3. Rigid surface, physical behaviour.** The visual language is square, hairline, and zero-radius; the motion is sprung, weighted, and interruptible. The interface _looks_ like a precision instrument and _moves_ like an object. Every animation still answers "what just changed?" — if it would look fine not happening at all, delete it — but the answer is delivered with mass, not with a fade.
 
 **4. The same object looks the same everywhere.** A topic is one component whether it appears in the graph, the deck, a lecture, or an admin table. Three roles share one vocabulary; only permissions and **disclosure** change — and disclosure is governed by how often a surface is encountered, not by who is looking at it ([§2.7](#27-disclosure)).
 
@@ -40,37 +41,37 @@ Kite is a study instrument, not a website. Four laws.
 
 ### 2.1 The lattice
 
-| Token | Value | Role |
-|---|---|---|
-| `--u` | `8px` | Base unit. Every spacing value is a multiple. |
-| `--cell` | `64px` (`8u`) | The square. Structural module of the product. |
-| `--shell` | `1152px` (`18 cells`) | Max content width. |
-| `--bar` | `64px` (`1 cell`) | Topbar height. |
+| Token     | Value                 | Role                                          |
+| --------- | --------------------- | --------------------------------------------- |
+| `--u`     | `8px`                 | Base unit. Every spacing value is a multiple. |
+| `--cell`  | `64px` (`8u`)         | The square. Structural module of the product. |
+| `--shell` | `1152px` (`18 cells`) | Max content width.                            |
+| `--bar`   | `64px` (`1 cell`)     | Topbar height.                                |
 
 All spacing is **px, never `em`**. This is not a style preference — see [§12.3](#123-what-we-deliberately-break) for the shipped bug that `em` padding caused in Common Sage.
 
 The cell contracts with viewport:
 
-| Breakpoint | Range | `--cell` | Shell columns | Gutter |
-|---|---|---|---|---|
-| `sm` | 0–599 | 48px | 6 | 16px |
-| `md` | 600–1023 | 56px | 12 | 24px |
-| `lg` | 1024–1439 | 64px | 18 | 32px |
-| `xl` | 1440+ | 64px | 18 | `max(32px, (100vw - var(--shell)) / 2)` |
+| Breakpoint | Range     | `--cell` | Shell columns | Gutter                                  |
+| ---------- | --------- | -------- | ------------- | --------------------------------------- |
+| `sm`       | 0–599     | 48px     | 6             | 16px                                    |
+| `md`       | 600–1023  | 56px     | 12            | 24px                                    |
+| `lg`       | 1024–1439 | 64px     | 18            | 32px                                    |
+| `xl`       | 1440+     | 64px     | 18            | `max(32px, (100vw - var(--shell)) / 2)` |
 
 These four are the only breakpoints. A component needing a fifth should reflow fluidly instead.
 
 **Each of the four is composed individually** — this is not one layout stretched. What changes, and where:
 
-| | `sm` | `md` | `lg` | `xl` |
-|---|---|---|---|---|
-| Inspector rail | Block, after work region | Block, after work region | Right rail, 5 cells | Right rail, 5 cells |
-| Asymmetric splits | Stacked | Stacked | Side by side | Side by side |
-| Display scale | Two steps down | One step down | Full | Full |
-| Topbar | Brand + menu | Brand + nav + tools | Full | Full |
-| Primary nav | In menu sheet | Inline, condensed | Inline | Inline |
-| Deck card | Full width less gutter | Fixed geometry | Fixed geometry | Fixed geometry |
-| Admin table | Stacked definition rows | Stacked definition rows | Table | Table |
+|                   | `sm`                     | `md`                     | `lg`                | `xl`                |
+| ----------------- | ------------------------ | ------------------------ | ------------------- | ------------------- |
+| Inspector rail    | Block, after work region | Block, after work region | Right rail, 5 cells | Right rail, 5 cells |
+| Asymmetric splits | Stacked                  | Stacked                  | Side by side        | Side by side        |
+| Display scale     | Two steps down           | One step down            | Full                | Full                |
+| Topbar            | Brand + menu             | Brand + nav + tools      | Full                | Full                |
+| Primary nav       | In menu sheet            | Inline, condensed        | Inline              | Inline              |
+| Deck card         | Full width less gutter   | Fixed geometry           | Fixed geometry      | Fixed geometry      |
+| Admin table       | Stacked definition rows  | Stacked definition rows  | Table               | Table               |
 
 The cost of designing four is four times the QA surface. The mitigation is that only these seven things change — everything else is the same composition at a different cell size, and any component introducing an eighth variation needs justifying.
 
@@ -81,6 +82,8 @@ The cost of designing four is four times the QA surface. The mitigation is that 
 `--space-1: 8px` · `-2: 16px` · `-3: 24px` · `-4: 32px` · `-6: 48px` · `-8: 64px` · `-12: 96px` · `-16: 128px`
 
 Nothing between these exists. Values like `28px 15px 13px` and `7px 9px` — both present in the current prototypes — are the exact thing this rule forbids.
+
+**Card inset is directional, not symmetric.** Reading surfaces use `32px` block padding and `48px` inline padding: more room at the sides protects the reading measure, while the smaller top/bottom inset keeps adjacent regions connected. These are the shared `--card-pad-block` and `--card-pad-inline` tokens. A card may reduce them only at a narrow viewport; it may not invent local padding.
 
 **One exception, narrowly drawn.** `--optical: 4px` exists for optical corrections only: icon-to-label gaps, rule offsets, focus-ring insets. It is not a spacing value and never appears in `margin` or `gap` between components. If you reach for it to make a layout fit, the layout is wrong.
 
@@ -108,14 +111,14 @@ Every surface, every role, same four regions in the same DOM order:
 
 ### 2.4 Work-region grids
 
-| Surface | Work region | Grid |
-|---|---|---|
-| Course catalogue | Course cards | `repeat(auto-fill, minmax(5 cells, 1fr))` |
+| Surface                 | Work region          | Grid                                                                                                                                                   |
+| ----------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Course catalogue        | Course cards         | `repeat(auto-fill, minmax(5 cells, 1fr))`                                                                                                              |
 | Learner deck (`/start`) | One module at a time | A single fixed-geometry card, horizontally centred as the sole focal object; its **interior** composition is left-weighted like everything else (§2.5) |
-| Knowledge graph | Topic field | SVG; cell-snapped tile packing, 1×1 to 3×3 |
-| Lecture / topic detail | Content list | Single column, module frames full width |
-| Authoring wizard | Stepped form | Single column, max `9 cells`, stepper in `.k-context` |
-| Admin | Data table | Full shell width, horizontal scroll in its own container |
+| Knowledge graph         | Topic field          | SVG; cell-snapped tile packing, 1×1 to 3×3                                                                                                             |
+| Lecture / topic detail  | Content list         | Single column, module frames full width                                                                                                                |
+| Authoring wizard        | Stepped form         | Single column, max `9 cells`, stepper in `.k-context`                                                                                                  |
+| Admin                   | Data table           | Full shell width, horizontal scroll in its own container                                                                                               |
 
 The faint background lattice is drawn at the current `--cell` on every surface, so all surfaces read as one continuous plane.
 
@@ -127,7 +130,7 @@ Layout says where things go. Composition says how they relate. This section is t
 
 #### Quantised growth
 
-Components size to their content — nothing truncates, which §4.4 forbids outright — but they grow **in whole increments**. Content determines *how many* cells; the lattice determines that it is a whole number of them. A card whose content needs 143px of height is 192px tall (3 cells), not 143px.
+Components size to their content — nothing truncates, which §4.4 forbids outright — but they grow **in whole increments**. Content determines _how many_ cells; the lattice determines that it is a whole number of them. A card whose content needs 143px of height is 192px tall (3 cells), not 143px.
 
 This is what makes "content-first" and "everything is a cell multiple" compatible rather than contradictory. Growth is stepped, never continuous.
 
@@ -174,14 +177,14 @@ Mass top-left, action bottom-right. One diagonal, no competing centres, and the 
 
 **Content is opaque paper. Chrome is veiled glass.**
 
-| Region | Material |
-|---|---|
-| Deck card, module frame, table, form, card, tile | Opaque `--paper-*` |
-| Dialog, popover, menu, toast (§6.11) | Opaque `--paper-0` |
-| Dialog scrim | `--ink-0` at α 0.5, flat |
-| Topbar, footer, inspector rail | Veiled glass at `--veil` |
-| Background lattice, notes workspace | Frost |
-| Behind everything | Shader gradient |
+| Region                                           | Material                 |
+| ------------------------------------------------ | ------------------------ |
+| Deck card, module frame, table, form, card, tile | Opaque `--paper-*`       |
+| Dialog, popover, menu, toast (§6.11)             | Opaque `--paper-0`       |
+| Dialog scrim                                     | `--ink-0` at α 0.5, flat |
+| Topbar, footer, inspector rail                   | Veiled glass at `--veil` |
+| Background lattice, notes workspace              | Frost                    |
+| Behind everything                                | Shader gradient          |
 
 Everything a learner reads or acts on is opaque. This keeps the veil law (§3.5) applying to a small, auditable set of surfaces rather than to the whole product, and it means legibility never depends on what the gradient happens to be doing.
 
@@ -197,17 +200,17 @@ Everything a learner reads or acts on is opaque. This keeps the veil law (§3.5)
 
 Nine layers, ordinal, one custom property each. **No literal `z-index` anywhere** — enforced by stylelint (§13.3), because ad-hoc `z-index: 9999` is how every layered interface eventually breaks.
 
-| Layer | Token | Contents |
-|---|---|---|
-| 0 | `--layer-substrate` | The shader gradient. Fixed, `aria-hidden` (§3.5). |
-| 1 | `--layer-lattice` | Background lattice, frost, the notes workspace (§11.15). Document flow. |
-| 2 | `--layer-content` | Everything on paper. The default; most components declare nothing. |
-| 3 | `--layer-chrome` | Sticky topbar, footer, inspector rail. |
-| 4 | `--layer-popover` | Popovers, menus, tooltips (§6.11). |
-| 5 | `--layer-scrim` | The dialog scrim. |
-| 6 | `--layer-dialog` | Dialogs (§6.11). |
-| 7 | `--layer-toast` | Toasts. Above dialogs, because a rollback error (§7.4) must be visible over whatever caused it. |
-| 8 | `--layer-skip` | Skip links when focused (§8.2). Above everything, so focus is never obscured (SC 2.4.11). |
+| Layer | Token               | Contents                                                                                        |
+| ----- | ------------------- | ----------------------------------------------------------------------------------------------- |
+| 0     | `--layer-substrate` | The shader gradient. Fixed, `aria-hidden` (§3.5).                                               |
+| 1     | `--layer-lattice`   | Background lattice, frost, the notes workspace (§11.15). Document flow.                         |
+| 2     | `--layer-content`   | Everything on paper. The default; most components declare nothing.                              |
+| 3     | `--layer-chrome`    | Sticky topbar, footer, inspector rail.                                                          |
+| 4     | `--layer-popover`   | Popovers, menus, tooltips (§6.11).                                                              |
+| 5     | `--layer-scrim`     | The dialog scrim.                                                                               |
+| 6     | `--layer-dialog`    | Dialogs (§6.11).                                                                                |
+| 7     | `--layer-toast`     | Toasts. Above dialogs, because a rollback error (§7.4) must be visible over whatever caused it. |
+| 8     | `--layer-skip`      | Skip links when focused (§8.2). Above everything, so focus is never obscured (SC 2.4.11).       |
 
 **`backdrop-filter` creates a stacking context and a containing block for fixed descendants.** The topbar and inspector rail are backdrop-filtered (§5), which means an overlay rendered as their DOM child is trapped inside them and cannot reach its layer. **Every overlay renders through a portal at the document root** — React Aria does this by default (§13.2), and hand-built overlays must match it.
 
@@ -217,7 +220,7 @@ Two consequences worth stating rather than rediscovering: a sticky element canno
 
 Layout says where things go. Composition says how they relate. Disclosure says **what is there at all** — and it is the decision most often made by accident, by putting a field on a card because the field happened to be in the response.
 
-Note first what this section is *not* about. Visual density is already settled by construction: total cell discipline (§2.2) and 48×48 targets (§6.2) mean a row cannot be compressed, a label cannot drop below 12px (§4.2), and there is no comfortable/compact toggle to offer. The only real variable is what appears, and where.
+Note first what this section is _not_ about. Visual density is already settled by construction: total cell discipline (§2.2) and 48×48 targets (§6.2) mean a row cannot be compressed, a label cannot drop below 12px (§4.2), and there is no comfortable/compact toggle to offer. The only real variable is what appears, and where.
 
 #### The threshold
 
@@ -227,7 +230,7 @@ Three tests, in order. **Importance is not one of them** — importance is a sca
 
 **2. Trust.** Does it let someone judge whether to rely on what they are looking at? This is the only test that readmits something the action test rejected — and only in its bad state (below).
 
-**3. Cost per encounter.** The cost of a field is paid every time the surface is met, and encounter counts vary by three orders of magnitude across this product. A row in an admin table is scanned once. The module frame header (§6.10) is read on **every card, hundreds of times a session** — and read *aloud, before the prompt* for a screen-reader user, who cannot skip it the way a sighted reader skips it for free.
+**3. Cost per encounter.** The cost of a field is paid every time the surface is met, and encounter counts vary by three orders of magnitude across this product. A row in an admin table is scanned once. The module frame header (§6.10) is read on **every card, hundreds of times a session** — and read _aloud, before the prompt_ for a screen-reader user, who cannot skip it the way a sighted reader skips it for free.
 
 So the bar **scales with repetition, not with role**. The same field, at the same importance, is correct on the catalogue and wrong on the deck. This is what principle 4 means by disclosure rather than density: an admin table is dense because a row is met once, not because admins are experts.
 
@@ -237,25 +240,25 @@ When two tests disagree, drop one tier. Same instinct as §1's rule for animatio
 
 A `Published` badge on every published object is noise that makes the one `Draft` badge harder to find. **Metadata earns its place by being anomalous, not by existing.**
 
-| Never marked | Marked, and only then |
-|---|---|
-| Published | **Draft** (§3.3) |
-| Reviewed accessibility metadata | **Unreviewed** (§13.6) |
-| Current material | **Stale** — educators only (§13.6) |
-| Saved | **Unsaved**, **failed** (§7.4) |
-| Enrolled, permitted | **Blocked**, **expired**, **denied** (§11.13) |
+| Never marked                    | Marked, and only then                         |
+| ------------------------------- | --------------------------------------------- |
+| Published                       | **Draft** (§3.3)                              |
+| Reviewed accessibility metadata | **Unreviewed** (§13.6)                        |
+| Current material                | **Stale** — educators only (§13.6)            |
+| Saved                           | **Unsaved**, **failed** (§7.4)                |
+| Enrolled, permitted             | **Blocked**, **expired**, **denied** (§11.13) |
 
 The consequence is that **absence carries meaning, so absence must be reliable**. A surface that sometimes omits the draft marker is worse than one that never had it — it teaches learners that unmarked means nothing.
 
 #### The four tiers
 
-| Tier | Lives on | Contents | Reached by |
-|---|---|---|---|
-| **0** | The object itself | What it is, and the one action on it | Present |
-| **1** | The object, conditionally | The exception markers above | Present only when true |
-| **2** | The inspector rail | Provenance, relations, counts, position in the structure | **Select** (§7.1) |
-| **3** | The object's own surface | The full record | **Open** (§7.1) |
-| **4** | Not in the interface at all | `module_type` (§3.2), the practice rung (§11.6), the dwell threshold and a learner's dwell time (§6.10), scheduling internals, database IDs | — |
+| Tier  | Lives on                    | Contents                                                                                                                                    | Reached by             |
+| ----- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| **0** | The object itself           | What it is, and the one action on it                                                                                                        | Present                |
+| **1** | The object, conditionally   | The exception markers above                                                                                                                 | Present only when true |
+| **2** | The inspector rail          | Provenance, relations, counts, position in the structure                                                                                    | **Select** (§7.1)      |
+| **3** | The object's own surface    | The full record                                                                                                                             | **Open** (§7.1)        |
+| **4** | Not in the interface at all | `module_type` (§3.2), the practice rung (§11.6), the dwell threshold and a learner's dwell time (§6.10), scheduling internals, database IDs | —                      |
 
 **§7.1's verbs already are this ladder.** Select is defined as non-destructive preview that does not navigate — that is the tier-2 reveal. Open is the move to tier 3. Nothing else may promote information between tiers: no hover reveal (§7.3 forbids hover-only affordances outright), no expand-in-place, no "show more" that reflows the grid around it.
 
@@ -265,13 +268,13 @@ The consequence is that **absence carries meaning, so absence must be reliable**
 
 One consistent behaviour, so that Select means the same thing everywhere:
 
-| Surface | Select fills the rail with |
-|---|---|
-| Course catalogue | Educator, topic count, standing, when last studied |
-| Knowledge graph | Topic mastery, child count, parent chain, the learner's notes on it (§11.15) |
+| Surface                | Select fills the rail with                                                       |
+| ---------------------- | -------------------------------------------------------------------------------- |
+| Course catalogue       | Educator, topic count, standing, when last studied                               |
+| Knowledge graph        | Topic mastery, child count, parent chain, the learner's notes on it (§11.15)     |
 | Topic / lecture detail | The selected module's content type, source, and — for educators — its provenance |
-| Admin table | The full row record, so a table stays scannable at tier 0 |
-| Deck | Quiet during answering; see §6.10 |
+| Admin table            | The full row record, so a table stays scannable at tier 0                        |
+| Deck                   | Quiet during answering; see §6.10                                                |
 
 - It fills on Select and **never navigates**. Never a modal, never a drawer, never hover-triggered.
 - Selecting a second object **replaces** the contents. It does not stack, and there is never a second rail.
@@ -292,33 +295,34 @@ A visible number invites optimising the number — the reason §11.7 refuses a m
 Two ramps: **paper** (surfaces) and **ink** (marks).
 
 ```css
-:root { /* light */
-  --paper-0: #ffffff;  /* lifted: active cards, inputs, popovers */
-  --paper-1: #f9f6ed;  /* default paper: tiles, frames, cards */
-  --paper-2: #efeade;  /* sunken: wells, disabled fills, table stripes */
+:root {
+  /* light */
+  --paper-0: #ffffff; /* lifted: active cards, inputs, popovers */
+  --paper-1: #f9f6ed; /* default paper: tiles, frames, cards */
+  --paper-2: #efeade; /* sunken: wells, disabled fills, table stripes */
 
-  --ink-0:   #171719;  /* primary text, structural rules */
-  --ink-1:   #45444a;  /* secondary text */
-  --ink-2:   #636269;  /* tertiary / meta text */
+  --ink-0: #171719; /* primary text, structural rules */
+  --ink-1: #45444a; /* secondary text */
+  --ink-2: #636269; /* tertiary / meta text */
 }
 :root[data-theme='dark'] {
   --paper-0: #0d0d10;
   --paper-1: #19181c;
   --paper-2: #232228;
 
-  --ink-0:   #f4f0e7;
-  --ink-1:   #b5b1a8;
-  --ink-2:   #96939d;
+  --ink-0: #f4f0e7;
+  --ink-1: #b5b1a8;
+  --ink-2: #96939d;
 }
 ```
 
 Measured contrast:
 
-| Ink | on `paper-0` | on `paper-1` | on `paper-2` |
-|---|---|---|---|
+| Ink                  | on `paper-0`  | on `paper-1`  | on `paper-2`  |
+| -------------------- | ------------- | ------------- | ------------- |
 | `ink-0` light / dark | 17.90 / 17.06 | 16.57 / 15.53 | 14.91 / 13.87 |
-| `ink-1` light / dark | 9.64 / 9.07 | 8.92 / 8.26 | 8.03 / 7.38 |
-| `ink-2` light / dark | 6.03 / 6.43 | 5.58 / 5.85 | 5.02 / 5.23 |
+| `ink-1` light / dark | 9.64 / 9.07   | 8.92 / 8.26   | 8.03 / 7.38   |
+| `ink-2` light / dark | 6.03 / 6.43   | 5.58 / 5.85   | 5.02 / 5.23   |
 
 Every ink passes AA body text on every paper in both themes. The ramp is closed: there is no illegal combination, which is the point.
 
@@ -330,16 +334,30 @@ Theme switching uses `data-theme` on `<html>` plus `color-scheme`, carried over 
 
 Six hues, one per `ContentType`. **Identity, not decoration** — a learner should recognise the kind of material before reading the label.
 
-| Content type | Light | Dark | Light on `paper-1` | Dark on `paper-1` |
-|---|---|---|---|---|
-| `summary` | `#0f6b62` | `#5fc6b6` | 5.89 | 8.61 |
-| `text` | `#3d4bb0` | `#9aa6f0` | 6.86 | 7.64 |
-| `video` | `#8a4a12` | `#f0a868` | 6.33 | 8.84 |
-| `audio` | `#a8347a` | `#f09ac8` | 5.65 | 8.55 |
-| `flashcard` | `#5b3fc4` | `#b9a4ff` | 6.58 | 8.26 |
-| `quiz` | `#1d5fa8` | `#7fb6f2` | 5.97 | 8.31 |
+| Content type | Light                                      | Dark      | Light, worst paper | Dark, worst paper |
+| ------------ | ------------------------------------------ | --------- | ------------------ | ----------------- |
+| `summary`    | `#354dad`                                  | `#5ba7ff` | 6.68               | 7.16              |
+| `text`       | `#3d4d62`                                  | `#6b83e6` | 7.72               | 5.11              |
+| `video`      | `color-mix(in srgb, #8b6ed4 80%, #070707)` | `#8d71d5` | 5.00               | 4.64              |
+| `audio`      | `color-mix(in srgb, #3d8fcc 76%, #070707)` | `#3d8fcc` | 4.90               | 5.10              |
+| `flashcard`  | `color-mix(in srgb, #6b83e6 76%, #070707)` | `#87d3ff` | 4.88               | 10.88             |
+| `quiz`       | `color-mix(in srgb, #38b6fe 60%, #070707)` | `#d0acff` | 4.99               | 9.38              |
 
-All six pass AA on all three papers in both themes (light 5.09–7.42, dark 6.83–9.71). Filled chips: light accents take **white** text (5.58–7.42); dark accents take **`#0d0d10`** (8.40–9.71).
+All six clear AA body text (4.5:1) on all four surfaces in both themes. "Worst paper" is the
+lowest of `--bg`, `--bg-raised`, `--panel` and `--glass`, each composited through its alpha
+before measuring — `--panel` is `rgb(var(--bg-rgb) / 0.85)`, not an opaque colour, and comparing
+against the uncomposited value overstates every ratio in this table. The floor binds because
+`.k-frame__type` paints the accent as 12px text (`--size-label`), which is not large text.
+
+**Provenance of these values.** This table previously carried a teal/orange/magenta set that
+appeared nowhere in the code; `tokens.css` had always shipped the Common Sage blue/violet
+lineage. §13.3's governance makes that a bug in one of the two places, and it was resolved in
+the code's favour — the shipped palette is the real one, and §12.3's claim that the lineage
+"ends here" was aspirational rather than executed. Three values moved to clear the floor:
+`video` dark `#8b6ed4 → #8d71d5` (was 4.49), `flashcard` light `80% → 76%` (was 4.46),
+`audio` light `80% → 76%` (was 4.50). Everything else is unchanged from what shipped.
+
+Filled chips invert to `--on-accent` (`#0a0a0a`).
 
 Accents may tint a surface at `≤12%` alpha. Above that, treat as a filled chip and invert the text colour.
 
@@ -349,19 +367,19 @@ The three pairs are deliberately hue-adjacent by family — reading (`summary`/`
 
 ### 3.3 Semantic colors
 
-| Role | Light | Dark | Use |
-|---|---|---|---|
-| `--ok` | `#1a6b3c` | `#5fd18d` | Correct, published, verified, healthy |
-| `--warn` | `#8a5a00` | `#e0b453` | Partial, draft, degraded, unverified |
-| `--err` | `#b32020` | `#ff8a80` | Incorrect, failed, destructive |
+| Role     | Light     | Dark      | Use                                   |
+| -------- | --------- | --------- | ------------------------------------- |
+| `--ok`   | `#1a6b3c` | `#5fd18d` | Correct, published, verified, healthy |
+| `--warn` | `#8a5a00` | `#e0b453` | Partial, draft, degraded, unverified  |
+| `--err`  | `#b32020` | `#ff8a80` | Incorrect, failed, destructive        |
 
 **Colour is never the sole channel** (SC 1.4.1). Every state carries a second:
 
-| State | Colour | Glyph | Rule | Text |
-|---|---|---|---|---|
-| Correct / success | `--ok` | `✓` | 2px left | "Correct" |
-| Incorrect / error | `--err` | `✕` | 2px left | "Not quite — <answer>" |
-| Partial / pending | `--warn` | `~` | 2px dashed left | "Partly right" / "Draft" |
+| State             | Colour   | Glyph | Rule            | Text                     |
+| ----------------- | -------- | ----- | --------------- | ------------------------ |
+| Correct / success | `--ok`   | `✓`   | 2px left        | "Correct"                |
+| Incorrect / error | `--err`  | `✕`   | 2px left        | "Not quite — <answer>"   |
+| Partial / pending | `--warn` | `~`   | 2px dashed left | "Partly right" / "Draft" |
 
 ### 3.4 Rules and hairlines
 
@@ -391,7 +409,7 @@ Derivation, using the worst-case gradient stops in the shipped palettes with `in
 
 **The gradient is ambient, never reactive.** It drifts on its own clock and responds to exactly one thing: the active item's content-type accent (§3.2), morphed over `spring.ambient`. It never responds to correctness, streak, progress, depth, pointer, or hover. Because it is `aria-hidden`, anything it encoded would be information available to sighted users only — so it encodes nothing.
 
-**Scroll behaviour.** The gradient layer is `position: fixed`, viewport-pinned. Content and the lattice scroll over it, so the page reads as frosted glass sliding across light — this is the one scroll effect the system keeps, and it costs nothing because nothing is animating on scroll. The **lattice and notes layer is in document flow**: it runs the full scroll length of the page rather than being pinned to the viewport, so a note stays beside the content it was written against. A note's *arrangement* on that lattice is a session-only workspace; its durable anchor is a topic, not a coordinate (§11.15). Scroll progress may drive the shader camera, quantised to ~120 buckets before reaching React state. There is no parallax on content and no scroll-triggered entrance animation.
+**Scroll behaviour.** The gradient layer is `position: fixed`, viewport-pinned. Content and the lattice scroll over it, so the page reads as frosted glass sliding across light — this is the one scroll effect the system keeps, and it costs nothing because nothing is animating on scroll. The **lattice and notes layer is in document flow**: it runs the full scroll length of the page rather than being pinned to the viewport, so a note stays beside the content it was written against. A note's _arrangement_ on that lattice is a session-only workspace; its durable anchor is a topic, not a coordinate (§11.15). Scroll progress may drive the shader camera, quantised to ~120 buckets before reaching React state. There is no parallax on content and no scroll-triggered entrance animation.
 
 ### 3.6 Elevation
 
@@ -413,38 +431,51 @@ The system commits to **system faces only**. No webfonts, no `next/font`, no loa
 
 ```css
 --font-sans:
-  Helvetica, "Helvetica Neue", Arial,
-  "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic Medium", "Yu Gothic",
-  "Noto Sans JP", Meiryo,
-  sans-serif;
+  Helvetica, 'Helvetica Neue', Arial, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN',
+  'Yu Gothic Medium', 'Yu Gothic', 'Noto Sans JP', Meiryo, sans-serif;
 
---font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+--font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 ```
 
 One stack, **Latin first, CJK appended**. Latin codepoints resolve to Helvetica; kana and kanji fall through to the platform's Japanese face. Mixed sentences work without markup gymnastics.
 
 ### 4.2 Latin scale
 
-| Role | Size | Line | Tracking | Weight |
-|---|---|---|---|---|
-| `display` | `clamp(3.5rem, 7vw, 6.3rem)` | 0.82 | -0.075em | 500 |
-| `h1` | `clamp(2.25rem, 5vw, 4rem)` | 0.88 | -0.055em | 500 |
-| `h2` | `1.75rem` | 1.05 | -0.03em | 500 |
-| `h3` | `1.125rem` | 1.2 | -0.02em | 600 |
-| `body` | `1rem` | 1.45 | 0 | 400 |
-| `body-sm` | `0.875rem` | 1.45 | 0 | 400 |
-| `label` | `0.75rem` (12px) | 1.2 | +0.07em | 700, uppercase |
-| `meta` | `0.6875rem` (11px) | 1.2 | +0.07em | 700, uppercase |
+| Role      | Size                         | Line | Tracking | Weight         |
+| --------- | ---------------------------- | ---- | -------- | -------------- |
+| `display` | `clamp(3.5rem, 7vw, 6.3rem)` | 0.82 | -0.075em | 500            |
+| `h1`      | `clamp(2.25rem, 5vw, 4rem)`  | 0.88 | -0.055em | 500            |
+| `h2`      | `1.75rem`                    | 1.05 | -0.03em  | 500            |
+| `h3`      | `1.125rem`                   | 1.2  | -0.02em  | 600            |
+| `body`    | `1rem`                       | 1.45 | 0        | 400            |
+| `body-sm` | `0.875rem`                   | 1.45 | 0        | 400            |
+| `label`   | `0.75rem` (12px)             | 1.2  | +0.07em  | 700, uppercase |
+| `meta`    | `0.6875rem` (11px)           | 1.2  | +0.07em  | 700, uppercase |
 
 **12px is the floor for any label a user must act on.** `meta` (11px) is permitted only for non-essential annotation duplicated in an accessible name. Nothing below 11px exists.
+
+**Roles outside the scale.** Three sizes are used by exactly one component each and were
+literals in `kite.css` until they were tokenised. They are named here rather than rounded to
+the nearest step, because rounding is a design change and tokenising is a mechanical one:
+
+| Token                                  | Value           | Sole consumer                                                                                 |
+| -------------------------------------- | --------------- | --------------------------------------------------------------------------------------------- |
+| `--size-prompt`                        | `1.25rem`       | §6.10's module-frame prompt, and the cloze run                                                |
+| `--size-monogram`                      | `0.8rem`        | §13.5's brand monogram, inside its fixed 32px box                                             |
+| `--size-fig-node` / `--size-fig-label` | `13px` / `12px` | SVG figure text, sized against the viewBox rather than the page — so not on this scale at all |
+
+Note the `tokens.css` values for `h2` (`1.6rem`), `body-sm` (`0.9rem`) and the `display`/`h1`
+clamps differ from the table above. That divergence is unresolved and is **not** what this
+block fixes.
 
 Rules: body line-height is 1.45 — study text is read, not scanned. Measure caps at `62ch` for prose, `48ch` inside module frames. Negative tracking applies to `display`/`h1`/`h2`/`h3` only. Timers, scores, counts, and intervals use `font-variant-numeric: tabular-nums`. Text survives 200% zoom and 320px width with no horizontal scroll (SC 1.4.4, 1.4.10) and the SC 1.4.12 spacing overrides.
 
 ### 4.3 Japanese and CJK
 
-The language modules are the hardest typography in the product: a *Discrimination* module exists specifically to test whether a learner can tell confusable glyphs apart. Type that blurs the distinction breaks the exercise. These rules are functional requirements, not taste.
+The language modules are the hardest typography in the product: a _Discrimination_ module exists specifically to test whether a learner can tell confusable glyphs apart. Type that blurs the distinction breaks the exercise. These rules are functional requirements, not taste.
 
 **`lang` is mandatory on every Japanese string.** It is already applied correctly in [LanguageModules.tsx](src/components/modules/LanguageModules.tsx) — keep that discipline. `lang` does two things beyond font selection:
+
 - It selects the correct **Han glyph variants**. Unified Han renders differently by locale — `直`, `骨`, `令`, `steps` in stroke form differ between `ja` and `zh`. Without `lang="ja"`, a browser may show a learner the Chinese stroke form of a kanji they are being taught to write. That is a correctness bug, not a polish issue.
 - It drives speech synthesis (`utterance.lang = 'ja-JP'`) and screen-reader voice switching.
 
@@ -453,19 +484,28 @@ The language modules are the hardest typography in the product: a *Discriminatio
 **Never apply negative tracking to CJK.** The `display`/`h1` styles carry up to `-0.075em`, which crushes kanji into each other. Reset under `:lang(ja)`:
 
 ```css
-:lang(ja) { letter-spacing: 0; line-height: 1.75; }
-:lang(ja) h1, :lang(ja) h2, :lang(ja) h3 { letter-spacing: 0; }
-.language-glyph:lang(ja) { letter-spacing: 0.02em; }
+:lang(ja) {
+  letter-spacing: 0;
+  line-height: 1.75;
+}
+:lang(ja) h1,
+:lang(ja) h2,
+:lang(ja) h3 {
+  letter-spacing: 0;
+}
+.language-glyph:lang(ja) {
+  letter-spacing: 0.02em;
+}
 ```
 
-**Size floors** (below these, stroke-dense kanji become unreadable at typical viewing distance):
+**Size floors** (below these, stroke-dense kanji become unreadable at typical viewing distance). These are accessibility floors rather than type choices, which is why they are absolute and sit outside §4.2's relative scale. Tokenised as `--size-glyph-inline`, `--size-glyph`, `--size-glyph-pair`, plus `--size-glyph-option` (`40px`) for a glyph on a choice tile, which sits between the inline and isolated cases:
 
-| Context | Minimum |
-|---|---|
-| Running Japanese text | 16px |
-| Inline glyph inside an exercise sentence | 20px |
-| Isolated prompt glyph (kana/kanji recognition) | 64px |
-| Discrimination module — confusable pair | 96px |
+| Context                                        | Minimum |
+| ---------------------------------------------- | ------- |
+| Running Japanese text                          | 16px    |
+| Inline glyph inside an exercise sentence       | 20px    |
+| Isolated prompt glyph (kana/kanji recognition) | 64px    |
+| Discrimination module — confusable pair        | 96px    |
 
 **Line breaking.** `line-break: strict; word-break: normal; overflow-wrap: normal;` for Japanese. Never `word-break: break-all` — it violates kinsoku shori and breaks lines mid-word in ways that change parsing. Latin fallback rules do not apply.
 
@@ -485,7 +525,7 @@ The language modules are the hardest typography in the product: a *Discriminatio
 
 #### Japanese input
 
-Rendering Japanese is half the problem; six module types require the learner to *produce* it, and how they type it is a design decision, not a platform detail.
+Rendering Japanese is half the problem; six module types require the learner to _produce_ it, and how they type it is a design decision, not a platform detail.
 
 **In-app romaji → kana conversion.** The response field accepts Latin keystrokes and converts to kana live: `t-o` → と, `s-h-o` → しょ. No OS-level IME, no platform setup, and it works identically on a school Chromebook and a phone — which matters, because requiring a beginner to install and switch a Japanese input method before their first card is a barrier at exactly the wrong moment.
 
@@ -499,9 +539,9 @@ Rendering Japanese is half the problem; six module types require the learner to 
 
 ### 4.4 Interface localisation
 
-The **interface** ships in German and English. (Learning *content* is separately multilingual — §4.3.) There is no i18n layer in Common Sage today, so this is built rather than migrated.
+The **interface** ships in German and English. (Learning _content_ is separately multilingual — §4.3.) There is no i18n layer in Common Sage today, so this is built rather than migrated.
 
-German is the constraint that matters. Compound nouns run 30–40% longer than their English equivalents — *Wissensgraph* is kind, *Lernfortschrittsübersicht* is not — and long unbreakable words are exactly what a rigid lattice handles worst.
+German is the constraint that matters. Compound nouns run 30–40% longer than their English equivalents — _Wissensgraph_ is kind, _Lernfortschrittsübersicht_ is not — and long unbreakable words are exactly what a rigid lattice handles worst.
 
 **Rules, all binding:**
 
@@ -517,7 +557,7 @@ German is the constraint that matters. Compound nouns run 30–40% longer than t
 **Register is `du`, for every role.** The German interface addresses students, educators, and admins alike in the informal second person. An educator switching from teaching to studying does not switch register mid-product, and a single consistent `du` is better than a mixed system that reads as a bug the first time the two vocabularies meet on one screen. Consequences, because register leaks into more than pronouns:
 
 - **Lowercase `du`, `dich`, `dein`** in running text, per current Duden guidance. Capitalised `Du` is defensible in direct address, but inconsistent capitalisation is worse than either choice, so the system picks one.
-- **Buttons are bare imperatives** — *Prüfen*, *Überspringen*, *Aufdecken* — never `Sie`-forms (*Prüfen Sie*), which are longer and formal in the one place §6.4 wants a short verb.
+- **Buttons are bare imperatives** — _Prüfen_, _Überspringen_, _Aufdecken_ — never `Sie`-forms (_Prüfen Sie_), which are longer and formal in the one place §6.4 wants a short verb.
 - **Never `Sie` in error or judgement copy.** Formality in a correction reads as institutional blame, which is the opposite of §11.6's "never shame a short session".
 - Register is a **translation rule, not a runtime setting**. There is no formality toggle; adding one doubles the string set for no learning benefit.
 
@@ -527,12 +567,12 @@ RTL is not a v1 target, but the logical-properties rule means it does not become
 
 ## 5. Material
 
-| Material | Composition | Where |
-|---|---|---|
-| **Paper** | Opaque `--paper-*` + `--rule-structural` | All content: cards, frames, inputs, chips, tables |
-| **Veiled paper** | `--paper-1` at `--veil` + 28px backdrop blur + grain | Topbar, inspector, anything over the canvas |
-| **Frost** | Backdrop blur + fractional mask alpha + grain | Decorative lattice only; never carries text |
-| **Light** | The shader gradient | Fixed backdrop, `aria-hidden`, always behind |
+| Material         | Composition                                          | Where                                             |
+| ---------------- | ---------------------------------------------------- | ------------------------------------------------- |
+| **Paper**        | Opaque `--paper-*` + `--rule-structural`             | All content: cards, frames, inputs, chips, tables |
+| **Veiled paper** | `--paper-1` at `--veil` + 28px backdrop blur + grain | Topbar, inspector, anything over the canvas       |
+| **Frost**        | Backdrop blur + fractional mask alpha + grain        | Decorative lattice only; never carries text       |
+| **Light**        | The shader gradient                                  | Fixed backdrop, `aria-hidden`, always behind      |
 
 Grain (`feTurbulence`, `soft-light`, α 0.58, 180px tile) is applied once per surface at the material layer, never per component. It exists so frost has something to blur — a blur over a smooth gradient is invisible without texture.
 
@@ -555,7 +595,7 @@ Grain (`feTurbulence`, `soft-light`, α 0.58, 180px tile) is applied once per su
 ### 6.2 Universal anatomy
 
 ```
-[ 1px structural rule ] [ paper fill ] [ 12–16px padding ] [ 0 radius ]
+[ 1px structural rule ] [ paper fill ] [ 32px block / 48px inline padding ] [ 0 radius ]
 ```
 
 Minimum hit area **48×48px** (`6u`). This is set by the grid, not by the guideline — it happens to clear SC 2.5.8's 44px recommendation and its 24×24 floor comfortably, which is the convenient case where total cell discipline and accessibility agree. The visible box may be smaller than the hit area — extend with padding or a pseudo-element, never by shrinking the target.
@@ -566,34 +606,34 @@ Every control declares an explicit `font-size` from the scale. Never inherit the
 
 Fixed system-wide:
 
-| State | Encoding |
-|---|---|
-| `rest` | `paper-1`, structural rule |
-| `hover` | `paper-0`, rule → `ink-0` at 70% |
-| `focus-visible` | Focus ring ([§8.6](#86-focus-appearance)). Independent of hover. |
-| `active` | `paper-2`, 1px inset translate |
-| `selected` | 2px accent left rule + ≤12% accent fill + `aria-pressed`/`aria-selected` |
-| `current` | Accent underline at 4px offset + `aria-current` |
-| `disabled` | `paper-2`, `ink-2` text, decorative rule, `aria-disabled` — not the `disabled` attribute where the control must stay discoverable and explainable |
-| `loading` | Shimmer skeleton at `paper-2`, `aria-busy="true"` |
-| `invalid` | `--err` 2px left rule + `✕` + message, `aria-invalid`, `aria-describedby` |
-| `pending` | Committed locally, awaiting the server. **Looks exactly like committed** — no spinner, no dimming (§7.4) |
-| `reverted` | Server rejected an optimistic commit. Springs back to the prior state + assertive toast naming the failure and offering retry |
+| State           | Encoding                                                                                                                                          |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rest`          | `paper-1`, structural rule                                                                                                                        |
+| `hover`         | `paper-0`, rule → `ink-0` at 70%                                                                                                                  |
+| `focus-visible` | Focus ring ([§8.6](#86-focus-appearance)). Independent of hover.                                                                                  |
+| `active`        | `paper-2`, 1px inset translate                                                                                                                    |
+| `selected`      | 2px accent left rule + ≤12% accent fill + `aria-pressed`/`aria-selected`                                                                          |
+| `current`       | Accent underline at 4px offset + `aria-current`                                                                                                   |
+| `disabled`      | `paper-2`, `ink-2` text, decorative rule, `aria-disabled` — not the `disabled` attribute where the control must stay discoverable and explainable |
+| `loading`       | Shimmer skeleton at `paper-2`, `aria-busy="true"`                                                                                                 |
+| `invalid`       | `--err` 2px left rule + `✕` + message, `aria-invalid`, `aria-describedby`                                                                         |
+| `pending`       | Committed locally, awaiting the server. **Looks exactly like committed** — no spinner, no dimming (§7.4)                                          |
+| `reverted`      | Server rejected an optimistic commit. Springs back to the prior state + assertive toast naming the failure and offering retry                     |
 
 Radius never changes with state. Size never changes with state. Only fill, rule, and offset — plus the shared press response in [§10.3](#103-the-shared-control-response).
 
 ### 6.4 Buttons
 
-| Variant | Fill | Rule | Text | Use |
-|---|---|---|---|---|
-| `primary` | `--ink-0` | none | `--paper-0` | One per view. The next step. |
-| `secondary` | `--paper-1` | structural | `--ink-0` | Everything else. |
-| `quiet` | transparent | none | `--ink-1` | Tertiary, in-frame actions. |
-| `destructive` | `--paper-1` | `--err` | `--err` | Delete, reset, discard. Always confirms. |
+| Variant       | Fill        | Rule       | Text        | Use                                      |
+| ------------- | ----------- | ---------- | ----------- | ---------------------------------------- |
+| `primary`     | `--ink-0`   | none       | `--paper-0` | One per view. The next step.             |
+| `secondary`   | `--paper-1` | structural | `--ink-0`   | Everything else.                         |
+| `quiet`       | transparent | none       | `--ink-1`   | Tertiary, in-frame actions.              |
+| `destructive` | `--paper-1` | `--err`    | `--err`     | Delete, reset, discard. Always confirms. |
 
 Height `48px` (`6u`); `64px` (`1 cell`) for `primary` inside a study module, where it is hit under time pressure hundreds of times a session. Square. The label is a verb.
 
-There is no `disabled` *variant*. Disabled is a state of any variant (§6.3).
+There is no `disabled` _variant_. Disabled is a state of any variant (§6.3).
 
 ### 6.5 Tabs
 
@@ -604,10 +644,10 @@ Both existing Common Sage implementations are defective, and **axe passes both**
 
 **The correct pattern, and the decision rule for which to use:**
 
-| If selecting a tab… | Use | Semantics |
-|---|---|---|
+| If selecting a tab…                       | Use                     | Semantics                                                                                    |
+| ----------------------------------------- | ----------------------- | -------------------------------------------------------------------------------------------- |
 | changes the URL path / is a distinct page | **Nav links**, not tabs | `<nav>` + `<a>` + `aria-current="page"`. Style like tabs if you like; do not claim the role. |
-| swaps content within one page | **Real tabs** | Full ARIA tabs pattern below |
+| swaps content within one page             | **Real tabs**           | Full ARIA tabs pattern below                                                                 |
 
 Real tabs contract:
 
@@ -631,7 +671,7 @@ The `ContentTypeTabs` case is a third thing again: a tablist living in the globa
 - `<table>` with real `<th scope="col">` / `<th scope="row">` and a `<caption>` (visually hidden if the heading above already says it).
 - Sortable columns are `<button>` inside `<th>`, with `aria-sort="ascending|descending|none"` on the `<th>`.
 - The scroll container carries `tabindex="0"` and an accessible name, so keyboard users can scroll it (this is the one real axe finding recorded against `/admin/users` — don't reintroduce it).
-- Row actions are never hover-only. Destructive row actions confirm and name the object: "Delete *Probability Theory*?"
+- Row actions are never hover-only. Destructive row actions confirm and name the object: "Delete _Probability Theory_?"
 - Below `md`, tables become stacked definition rows — not a horizontally scrolling table of a dozen columns.
 - Row selection uses real checkboxes with an accessible name per row, and a live region reporting "N selected".
 
@@ -648,12 +688,14 @@ The authoring flow (course creation, source upload, review) is a stepper in `.k-
 ### 6.8 Forms and authentication
 
 - Every field has a **visible persistent label**. Placeholder is never the label.
+- **No titled field boxes.** A label never cuts through a border and a `fieldset` never renders as a rectangle with its `legend` embedded in the rule. Related compact options use a label beside a single-line control row; longer forms use ordinary stacked labels. Grouping remains semantic in the DOM without becoming a decorative box.
+- Selector sets that control one list or graph sit in one horizontal toolbar above that display. A selector label and value stay on one line; the toolbar scrolls horizontally before an option such as “Vocabulary” is allowed to wrap.
 - Required fields are marked in text (`Required`), not by asterisk alone.
 - Errors: inline, adjacent, `aria-describedby`-linked, in plain language that says how to fix it (SC 3.3.1, 3.3.3). An error summary at the top of the form links to each failing field.
 - Validation fires on blur and on submit, never on every keystroke.
 - Character counters are `aria-live="polite"` and only announce near the limit.
 
-**Authentication** (`/login`, `/register`, `/verify`) is bound by SC 3.3.8, *Accessible Authentication (Minimum)* — AA in WCAG 2.2:
+**Authentication** (`/login`, `/register`, `/verify`) is bound by SC 3.3.8, _Accessible Authentication (Minimum)_ — AA in WCAG 2.2:
 
 - **Paste must work** in every field, including password and verification code. Never block it.
 - Password managers must work: correct `autocomplete` tokens (`username`, `current-password`, `new-password`, `one-time-code`), a real `<form>`, stable field names.
@@ -669,13 +711,13 @@ The authoring flow (course creation, source upload, review) is a stepper in `.k-
 
 **Obligations (Level AA, non-negotiable):**
 
-| Requirement | SC | Applies to |
-|---|---|---|
-| Captions, synchronised and accurate | 1.2.2 | All prerecorded video with audio |
-| Audio description, or a full media alternative | 1.2.5 | All prerecorded video |
-| Transcript | 1.2.1 (and best practice for audio) | All video and all audio |
-| Controls keyboard-operable and labelled | 2.1.1, 4.1.2 | All players |
-| No audio auto-playing over 3s, or a pause control | 1.4.2 | All players |
+| Requirement                                       | SC                                  | Applies to                       |
+| ------------------------------------------------- | ----------------------------------- | -------------------------------- |
+| Captions, synchronised and accurate               | 1.2.2                               | All prerecorded video with audio |
+| Audio description, or a full media alternative    | 1.2.5                               | All prerecorded video            |
+| Transcript                                        | 1.2.1 (and best practice for audio) | All video and all audio          |
+| Controls keyboard-operable and labelled           | 2.1.1, 4.1.2                        | All players                      |
+| No audio auto-playing over 3s, or a pause control | 1.4.2                               | All players                      |
 
 Captions are a **publishing gate**: an educator cannot publish a video without a caption track. Enforced in the authoring flow rather than audited afterwards, because retrofitting captions across a published course never happens.
 
@@ -698,11 +740,11 @@ The single most repeated composition in the product, and the one specified most 
 
 **The frame applies to graded modules only.** The split is not a Kite invention — `graded` is already a field on every type in the backend's `module_registry.py`, meaning "answering this emits a recall signal that advances scheduling." The frontend reads that flag and never re-derives it (§3.2).
 
-| | Graded | Ungraded |
-|---|---|---|
+|                           | Graded                                                                                          | Ungraded                                                                                                                                                                                                                                  |
+| ------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Registered academic types | **6** — `flashcard`, `quiz`, `mcq`, `flashcard_set`, `timeline_drag_exercise`, `map_click_quiz` | **14** — `text`, `summary`, `topic_card`, `diagram_schematic`, `input_output_balance`, `stat_boxes`, `key_value_pairs`, `timeline`, `common_mistakes`, `comparison_vs_similar`, `formula_equation`, `hero_image`, `globe_pin`, `model_3d` |
-| Behaviour | This frame: fixed bands, fixed controls | **Scrolls** — see below |
-| Signal emitted | A grade | Engagement only |
+| Behaviour                 | This frame: fixed bands, fixed controls                                                         | **Scrolls** — see below                                                                                                                                                                                                                   |
+| Signal emitted            | A grade                                                                                         | Engagement only                                                                                                                                                                                                                           |
 
 The **15 language types** — `kana_recognition`, `kana_production`, `discrimination`, `kanji_meaning`, `kanji_reading`, `vocab_recognition`, `vocab_production`, `vocab_guess`, `conjugation`, `particle_cloze`, `sentence_scramble`, `grammar_recognition`, `grammar_production`, `transcription`, `language_flashcard` — exist as prototypes in [LanguageModules.tsx](src/components/modules/LanguageModules.tsx) and are **in neither registry**, so `mode` and `graded` are undefined for all of them. They are graded on their face, but until they are registered the scheduler cannot see them at all (§12.1). Every count in this document is measured from the registries rather than asserted; the previously stated "31 types" reconciled with nothing.
 
@@ -730,20 +772,20 @@ The **15 language types** — `kana_recognition`, `kana_production`, `discrimina
 - **Revealing an answer never resizes anything.** The response band already reserved the space; the answer fills it. This is why the bands are fixed rather than fluid — the reveal is the moment a fluid layout would jump, and it is also the moment the learner is looking hardest.
 - **The judgement banner renders inside the response band**, not appended below it. It cannot push the controls.
 - Overflow inside `PROMPT` or `RESPONSE` scrolls internally, with the scroll container named and focusable (§6.6). The frame never grows.
-- On `sm`, the frame is full width less gutter and the bands scale with `--cell`; the *proportions* and the control position are unchanged.
+- On `sm`, the frame is full width less gutter and the bands scale with `--cell`; the _proportions_ and the control position are unchanged.
 
 **What the header band contains.** This is the most repeated square centimetre in the product, so it is settled here rather than per module. Run against §2.7's tests, most of it falls out:
 
-| Element | Verdict |
-|---|---|
-| **Content type** — accent, icon, label | **Always.** Tier 0, and required regardless: it is §3.2's second channel, so it is an accessibility obligation and not a decoration. |
-| **Topic name** | **Per module type** — see below. |
-| **Overflow `⋯`** | **Always.** Report a problem, and the note control (§11.15). |
-| Session counter | **Never.** Sessions are open-ended (§11.6), so there is no honest denominator, and a bare ascending count is a number to optimise (§2.7). Counts belong to the stop summary (§11.8). |
-| Generation date | **Never** for a learner. Educators see staleness, and only when stale (§13.6). |
-| `module_type`, difficulty, the practice rung | **Never, for anyone.** Tier 4 (§3.2, §11.6). |
+| Element                                      | Verdict                                                                                                                                                                              |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Content type** — accent, icon, label       | **Always.** Tier 0, and required regardless: it is §3.2's second channel, so it is an accessibility obligation and not a decoration.                                                 |
+| **Topic name**                               | **Per module type** — see below.                                                                                                                                                     |
+| **Overflow `⋯`**                             | **Always.** Report a problem, and the note control (§11.15).                                                                                                                         |
+| Session counter                              | **Never.** Sessions are open-ended (§11.6), so there is no honest denominator, and a bare ascending count is a number to optimise (§2.7). Counts belong to the stop summary (§11.8). |
+| Generation date                              | **Never** for a learner. Educators see staleness, and only when stale (§13.6).                                                                                                       |
+| `module_type`, difficulty, the practice rung | **Never, for anyone.** Tier 4 (§3.2, §11.6).                                                                                                                                         |
 
-**The topic name is decided per module type, and fixed for that type.** For a vocabulary card, "Chapter 3" is harmless orientation; for a quiz asking *which rule applies*, "Chain Rule" is the answer printed above the question. That is a learning decision, and §1's corollary says the learning decision wins — so each graded type declares, once, whether its topic is shown.
+**The topic name is decided per module type, and fixed for that type.** For a vocabulary card, "Chapter 3" is harmless orientation; for a quiz asking _which rule applies_, "Chain Rule" is the answer printed above the question. That is a learning decision, and §1's corollary says the learning decision wins — so each graded type declares, once, whether its topic is shown.
 
 This is the one place a module type is permitted to vary its header, and it is bounded so it cannot erode §6.10's whole purpose:
 
@@ -771,7 +813,7 @@ The fourth slot is the primary action and is always the rightmost, where §2.5's
 
 **Self-graded types** — `flashcard`, `flashcard_set`, `language_flashcard`, and the recognition modules where the learner produces nothing the system can mark. There is nothing to check, so **Reveal is the normal path, not a failure**: reveal, then rate. The grade is **Again / Hard / Good / Easy** and comes entirely from the learner.
 
-**Objectively graded types** — `quiz`, `mcq`, `timeline_drag_exercise`, `map_click_quiz`, and the language production modules. Check marks the attempt. Here **Reveal means giving up, and counts as `Again`** — which the control states in plain language *before* it is pressed. A control that silently damages a schedule is a trap; one that says what it costs is a choice.
+**Objectively graded types** — `quiz`, `mcq`, `timeline_drag_exercise`, `map_click_quiz`, and the language production modules. Check marks the attempt. Here **Reveal means giving up, and counts as `Again`** — which the control states in plain language _before_ it is pressed. A control that silently damages a schedule is a trap; one that says what it costs is a choice.
 
 **Skip is never graded, on any type.** It emits nothing and the item leaves the session entirely, returning at its next natural due date. It is the escape hatch for a broken video, a bad moment, or a card the learner isn't ready for, and it must stay cheap enough to use honestly — a Skip that costs something is a Skip nobody presses.
 
@@ -807,12 +849,12 @@ Four kinds, one set of shared laws. §3.6 ends by saying that anything needing a
 
 **Shared laws.** Overlays are **opaque paper**, never veiled — they carry text and controls, so §2.5's material map applies without exception. Zero radius, structural rule, the 8px hard offset from §3.6, no drop shadow. Geometry in cell multiples. Each renders at its §2.6 layer through a root portal. Each enters under `spring.settle` and exits faster (§10.5).
 
-| Overlay | Trigger | Dismiss | Focus |
-|---|---|---|---|
-| **Dialog** | Destructive or irreversible action (§7.4), first-run steps (§11.4), re-authentication (§11.13) | `Escape`, cancel control, scrim click | Trapped; returns to the opener (§8.7) |
-| **Popover / menu** | An explicit control, never hover | `Escape`, outside click, blur | Moves inside; not trapped; returns to the trigger |
-| **Tooltip** | Focus, or hover after 300ms | Blur, pointer leave, `Escape` | Never focusable, never the sole source of an accessible name |
-| **Toast** | A system event | Timeout, or an explicit close | Never takes focus |
+| Overlay            | Trigger                                                                                        | Dismiss                               | Focus                                                        |
+| ------------------ | ---------------------------------------------------------------------------------------------- | ------------------------------------- | ------------------------------------------------------------ |
+| **Dialog**         | Destructive or irreversible action (§7.4), first-run steps (§11.4), re-authentication (§11.13) | `Escape`, cancel control, scrim click | Trapped; returns to the opener (§8.7)                        |
+| **Popover / menu** | An explicit control, never hover                                                               | `Escape`, outside click, blur         | Moves inside; not trapped; returns to the trigger            |
+| **Tooltip**        | Focus, or hover after 300ms                                                                    | Blur, pointer leave, `Escape`         | Never focusable, never the sole source of an accessible name |
+| **Toast**          | A system event                                                                                 | Timeout, or an explicit close         | Never takes focus                                            |
 
 **Dialog.**
 
@@ -822,7 +864,7 @@ Four kinds, one set of shared laws. §3.6 ends by saying that anything needing a
 - **Scrim:** `--ink-0` at α 0.5, flat, **no blur**. Blur here would cost a `backdrop-filter` against the §5 budget and contribute nothing to legibility (§3.5). The scrim is the one place the shader is deliberately occluded.
 - `Escape` always closes, and a dialog is never the only route to something a learner needs.
 - **No nested dialogs.** A dialog that needs a dialog is a wizard (§6.7).
-- Confirmations name their object — "Delete *Probability Theory*?" — and the destructive control is a `destructive` button (§6.4), never the primary.
+- Confirmations name their object — "Delete _Probability Theory_?" — and the destructive control is a `destructive` button (§6.4), never the primary.
 
 **Popover and menu.** Positioned against the trigger, flipping to stay in the viewport, never repositioning while open. Arrow keys move within a menu, `Escape` closes and restores focus to the trigger. A popover never contains a form that can't be completed in a dialog instead.
 
@@ -840,15 +882,15 @@ Four kinds, one set of shared laws. §3.6 ends by saying that anything needing a
 
 What lives in the module frame's RESPONSE band (§6.10). Enumerated against all 36 module types, the set collapses to **six**, plus the handwriting canvas — which is listed here for completeness but is a carve-out (§9.3D) rather than a standard control. The point of a closed set is that a new module type must reuse one of the six or argue for a seventh.
 
-| Control | Types |
-|---|---|
-| **None** — reveal and self-rate | `flashcard`, `flashcard_set`, `language_flashcard` |
-| **Single choice** | `quiz`, `mcq`, `kana_recognition`, `discrimination`, `vocab_recognition`, `grammar_recognition`, `kanji_meaning` |
-| **Text entry** | `kana_production`, `vocab_production`, `kanji_reading`, `conjugation`, `grammar_production`, `transcription` |
-| **Cloze** | `particle_cloze` |
-| **Ordering** | `sentence_scramble`, `timeline_drag_exercise` |
-| **Map click** | `map_click_quiz` |
-| **Handwriting** | `kanji_writing` — canvas, §9.3D |
+| Control                         | Types                                                                                                            |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| **None** — reveal and self-rate | `flashcard`, `flashcard_set`, `language_flashcard`                                                               |
+| **Single choice**               | `quiz`, `mcq`, `kana_recognition`, `discrimination`, `vocab_recognition`, `grammar_recognition`, `kanji_meaning` |
+| **Text entry**                  | `kana_production`, `vocab_production`, `kanji_reading`, `conjugation`, `grammar_production`, `transcription`     |
+| **Cloze**                       | `particle_cloze`                                                                                                 |
+| **Ordering**                    | `sentence_scramble`, `timeline_drag_exercise`                                                                    |
+| **Map click**                   | `map_click_quiz`                                                                                                 |
+| **Handwriting**                 | `kanji_writing` — canvas, §9.3D                                                                                  |
 
 `globe_pin` uses the same raster map and carries the same carve-out (§9.3B), but it is **ungraded** — it is a map to explore, not a question to answer, so it scrolls with the other ungraded types and has no response control at all.
 
@@ -873,7 +915,7 @@ One field, an explicit visible label, `--font-mono` never (it is prose, not code
 A gap inside a sentence, **typed**, with a candidate bank available on request.
 
 - The default is production: the learner types into the gap. The bank is a **hint**, reached by an explicit control, not shown by default.
-- **Using the bank caps the grade at `Hard`** (§6.10). You got there, with help, so the item returns sooner than a clean success. The interface collects this as an *assisted* flag alongside the grade — a new value the engine must accept (§12.1).
+- **Using the bank caps the grade at `Hard`** (§6.10). You got there, with help, so the item returns sooner than a clean success. The interface collects this as an _assisted_ flag alongside the grade — a new value the engine must accept (§12.1).
 - The gap has a minimum width of `2 cells` and does not resize as the learner types, so the sentence around it never reflows mid-answer (§2.5).
 
 #### Ordering
@@ -890,17 +932,17 @@ Per §9.3B, the non-map path is **mandatory, not a fallback**: every map questio
 
 Every piece of generated prose renders through one component, so generated content cannot invent its own appearance. The full CommonMark set is styled — the worker will emit all of it whether or not this document acknowledges it, and an unstyled `<blockquote>` arriving in production is how a lattice gets broken.
 
-| Element | Treatment |
-|---|---|
-| Paragraph | `body`, measure capped at `62ch` prose / `48ch` in a module frame (§4.2) |
-| Headings | `h2`–`h4` from the scale; a markdown block never emits an `h1` (§9.2) |
-| **Links** | `--ink-0`, **1px underline**, no colour change. The underline is the channel, so SC 1.4.1 is satisfied without a second one and forced colours (§9.5) change nothing. Underline thickens to 2px on hover and focus. |
-| Lists | Markers at `--ink-2`, items on the 8px grid, nesting capped at 3 |
-| Code | `--font-mono` on `--paper-2`, no radius; blocks scroll horizontally in their own named container (§9.2) |
-| Blockquote | 2px `--rule-structural` inline-start rule, `--ink-1` text, no italics — italic is never applied to CJK (§4.3) |
-| Table | Real `<table>` with §6.6's semantics, including the focusable scroll container |
-| Image | `alt` from the worker, reviewed at publish (§13.6); never a name-based fallback |
-| Horizontal rule | Full-bleed within the block's measure, `--rule-decorative` |
+| Element         | Treatment                                                                                                                                                                                                           |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Paragraph       | `body`, measure capped at `62ch` prose / `48ch` in a module frame (§4.2)                                                                                                                                            |
+| Headings        | `h2`–`h4` from the scale; a markdown block never emits an `h1` (§9.2)                                                                                                                                               |
+| **Links**       | `--ink-0`, **1px underline**, no colour change. The underline is the channel, so SC 1.4.1 is satisfied without a second one and forced colours (§9.5) change nothing. Underline thickens to 2px on hover and focus. |
+| Lists           | Markers at `--ink-2`, items on the 8px grid, nesting capped at 3                                                                                                                                                    |
+| Code            | `--font-mono` on `--paper-2`, no radius; blocks scroll horizontally in their own named container (§9.2)                                                                                                             |
+| Blockquote      | 2px `--rule-structural` inline-start rule, `--ink-1` text, no italics — italic is never applied to CJK (§4.3)                                                                                                       |
+| Table           | Real `<table>` with §6.6's semantics, including the focusable scroll container                                                                                                                                      |
+| Image           | `alt` from the worker, reviewed at publish (§13.6); never a name-based fallback                                                                                                                                     |
+| Horizontal rule | Full-bleed within the block's measure, `--rule-decorative`                                                                                                                                                          |
 
 ### 6.14 The type table
 
@@ -908,45 +950,45 @@ Every module type against the five things a builder needs to know. `graded` and 
 
 Two rules generate almost all of it, which is the point — these are not 36 independent judgements:
 
-> **Topic rule.** The topic name is hidden exactly where **the topic names the thing being recalled**. "Chain rule" above *which rule applies here?* is the answer printed above the question; "Rivers of Europe" above *where is the Rhine?* is not. Where hidden, it reappears with the judgement and in the inspector rail (§7.2).
+> **Topic rule.** The topic name is hidden exactly where **the topic names the thing being recalled**. "Chain rule" above _which rule applies here?_ is the answer printed above the question; "Rivers of Europe" above _where is the Rhine?_ is not. Where hidden, it reappears with the judgement and in the inspector rail (§7.2).
 
-> **Tolerance rule.** **Exact** wherever the written form *is* the objective — kana production, readings, transcription. **Tolerant** wherever the answer is meaning expressed in prose, where a typo tests typing rather than the material. **n/a** for every non-text control.
+> **Tolerance rule.** **Exact** wherever the written form _is_ the objective — kana production, readings, transcription. **Tolerant** wherever the answer is meaning expressed in prose, where a typo tests typing rather than the material. **n/a** for every non-text control.
 
 Marked ⚠ where the call is genuinely arguable rather than generated by the rules.
 
 #### Graded — academic (6)
 
-| Type | Mode | Topic | Tolerance | Response |
-|---|---|---|---|---|
-| `flashcard` | recognition | hidden | n/a | none — reveal + rate |
-| `flashcard_set` | recognition | hidden | n/a | none — reveal + rate |
-| `quiz` | recognition | hidden | n/a | single choice |
-| `mcq` | recognition | hidden | n/a | single choice |
-| `timeline_drag_exercise` | production | shown | n/a | ordering |
-| `map_click_quiz` | production | shown | n/a | map click |
+| Type                     | Mode        | Topic  | Tolerance | Response             |
+| ------------------------ | ----------- | ------ | --------- | -------------------- |
+| `flashcard`              | recognition | hidden | n/a       | none — reveal + rate |
+| `flashcard_set`          | recognition | hidden | n/a       | none — reveal + rate |
+| `quiz`                   | recognition | hidden | n/a       | single choice        |
+| `mcq`                    | recognition | hidden | n/a       | single choice        |
+| `timeline_drag_exercise` | production  | shown  | n/a       | ordering             |
+| `map_click_quiz`         | production  | shown  | n/a       | map click            |
 
 #### Graded — language (15 + 1)
 
-| Type | Mode | Topic | Tolerance | Response |
-|---|---|---|---|---|
-| `language_flashcard` | recognition | hidden | n/a | none — reveal + rate |
-| `kana_recognition` | recognition | shown | n/a | single choice |
-| `kana_production` | production | shown | exact | text entry |
-| `discrimination` | recognition | shown | n/a | single choice — 96px glyphs (§4.3) |
-| `kanji_meaning` | recognition | hidden ⚠ | n/a | single choice |
-| `kanji_reading` | production | hidden ⚠ | exact | text entry |
-| `vocab_recognition` | recognition | shown | n/a | single choice |
-| `vocab_production` | production | shown | exact | text entry |
-| `vocab_guess` | recognition | shown | n/a | single choice — audio prompt |
-| `conjugation` | production | **hidden** | exact | text entry |
-| `particle_cloze` | in-context | **hidden** | exact | cloze |
-| `sentence_scramble` | in-context | shown | n/a | ordering |
-| `grammar_recognition` | recognition | **hidden** | n/a | single choice |
-| `grammar_production` | production | **hidden** | tolerant | text entry |
-| `transcription` | in-context | shown | exact | text entry |
-| `kanji_writing` | production | hidden ⚠ | n/a | handwriting (§9.3D) |
+| Type                  | Mode        | Topic      | Tolerance | Response                           |
+| --------------------- | ----------- | ---------- | --------- | ---------------------------------- |
+| `language_flashcard`  | recognition | hidden     | n/a       | none — reveal + rate               |
+| `kana_recognition`    | recognition | shown      | n/a       | single choice                      |
+| `kana_production`     | production  | shown      | exact     | text entry                         |
+| `discrimination`      | recognition | shown      | n/a       | single choice — 96px glyphs (§4.3) |
+| `kanji_meaning`       | recognition | hidden ⚠   | n/a       | single choice                      |
+| `kanji_reading`       | production  | hidden ⚠   | exact     | text entry                         |
+| `vocab_recognition`   | recognition | shown      | n/a       | single choice                      |
+| `vocab_production`    | production  | shown      | exact     | text entry                         |
+| `vocab_guess`         | recognition | shown      | n/a       | single choice — audio prompt       |
+| `conjugation`         | production  | **hidden** | exact     | text entry                         |
+| `particle_cloze`      | in-context  | **hidden** | exact     | cloze                              |
+| `sentence_scramble`   | in-context  | shown      | n/a       | ordering                           |
+| `grammar_recognition` | recognition | **hidden** | n/a       | single choice                      |
+| `grammar_production`  | production  | **hidden** | tolerant  | text entry                         |
+| `transcription`       | in-context  | shown      | exact     | text entry                         |
+| `kanji_writing`       | production  | hidden ⚠   | n/a       | handwriting (§9.3D)                |
 
-The bolded rows are where the topic rule bites hardest: a `particle_cloze` under the topic *"The particle に"* has already been answered, and the same is true of every grammar and conjugation type, whose topics are named after the exact form being tested. This is the single most common way a language deck leaks its answers.
+The bolded rows are where the topic rule bites hardest: a `particle_cloze` under the topic _"The particle に"_ has already been answered, and the same is true of every grammar and conjugation type, whose topics are named after the exact form being tested. This is the single most common way a language deck leaks its answers.
 
 #### Ungraded — academic (14)
 
@@ -962,13 +1004,13 @@ All `in_context`. All scroll rather than using the frame, all show the topic —
 
 The whole product is five verbs. One pointer gesture and one keyboard equivalent each ([§8.5](#85-keyboard-equivalents-for-pointer-gestures)).
 
-| Verb | Pointer | Keyboard | Result |
-|---|---|---|---|
-| **Select** | Click | `Enter` | Focus + inspector preview — the tier-2 reveal (§2.7). Non-destructive, no navigation. |
-| **Open** | Double-click, or the explicit open control | `Enter` on that control | Navigates: descends the graph, opens a course, activates a module. |
-| **Toggle** | Click | `Space` | Flips a binary: filter, frost a cell, theme, furigana. Inside a module frame `Space` also advances — resolved by focus, §6.10. |
-| **Place** | Drag across empty cells | `Enter` → arrows → `Enter` | Creates an object sized to the drag rectangle. |
-| **Move** | Drag by handle | `Space` → arrows → `Space` | Repositions or reorders an existing object. |
+| Verb       | Pointer                                    | Keyboard                   | Result                                                                                                                         |
+| ---------- | ------------------------------------------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| **Select** | Click                                      | `Enter`                    | Focus + inspector preview — the tier-2 reveal (§2.7). Non-destructive, no navigation.                                          |
+| **Open**   | Double-click, or the explicit open control | `Enter` on that control    | Navigates: descends the graph, opens a course, activates a module.                                                             |
+| **Toggle** | Click                                      | `Space`                    | Flips a binary: filter, frost a cell, theme, furigana. Inside a module frame `Space` also advances — resolved by focus, §6.10. |
+| **Place**  | Drag across empty cells                    | `Enter` → arrows → `Enter` | Creates an object sized to the drag rectangle.                                                                                 |
+| **Move**   | Drag by handle                             | `Space` → arrows → `Space` | Repositions or reorders an existing object.                                                                                    |
 
 Select and Open are deliberately distinct. In a knowledge graph, previewing must not cost a navigation — a learner exploring should never lose their place by looking.
 
@@ -978,9 +1020,9 @@ Select and Open are deliberately distinct. In a knowledge graph, previewing must
 
 **Course catalogue.** Cards show title, educator, topic count, and the learner's standing. One primary action per card ("Continue" / "Start"). Filters live above the grid and write to the URL.
 
-**Learner deck (`/courses/[id]/start`).** A card stack: the current module centred, the next two visible behind it so session depth is tangible ([§10.4D](#104-signature-motions)). Every **graded** module exposes the same four-slot control band in the same position (§6.10), with swipe as an optional accelerator on touch (§7.3); ungraded modules scroll to a single **Continue** in that same primary position. The prompt stays visible while answering. Judgement is immediate, optimistic (§7.4), and unambiguous. The correct answer is *always* shown after an incorrect response — never just "wrong". Advancing is explicit; nothing auto-advances, because auto-advance steals the reflection moment and breaks screen-reader pacing. The content-type filter (currently stranded in the global navbar) lives here, as chips in `.k-context`. The inspector rail stays quiet while the learner is answering — §2.4 makes the card the sole focal object — and fills **after judgement** with the item's topic and the learner's notes on it (§2.7, §11.15). This is where a withheld topic name reappears (§6.10), so nothing is hidden, only deferred past the moment it would have cued the answer.
+**Learner deck (`/courses/[id]/start`).** A card stack: the current module centred, the next two visible behind it so session depth is tangible ([§10.4D](#104-signature-motions)). Every **graded** module exposes the same four-slot control band in the same position (§6.10), with swipe as an optional accelerator on touch (§7.3); ungraded modules scroll to a single **Continue** in that same primary position. The prompt stays visible while answering. Judgement is immediate, optimistic (§7.4), and unambiguous. The correct answer is _always_ shown after an incorrect response — never just "wrong". Advancing is explicit; nothing auto-advances, because auto-advance steals the reflection moment and breaks screen-reader pacing. The content-type filter (currently stranded in the global navbar) lives here, as chips in `.k-context`. The inspector rail stays quiet while the learner is answering — §2.4 makes the card the sole focal object — and fills **after judgement** with the item's topic and the learner's notes on it (§2.7, §11.15). This is where a withheld topic name reappears (§6.10), so nothing is hidden, only deferred past the moment it would have cued the answer.
 
-**Knowledge graph.** Topics contain topics — **and the graph is also the progress map** (§11.7). Every tile carries its mastery state, so the surface answers "where am I weak?" alongside "what exists?" Hover or select previews in the inspector; only the explicit open control descends. Descent is a **spatial zoom** — the tile scales up until it becomes the field, its children resolving inside it ([§10.4B](#104-signature-motions)) — then the new field's first tile takes focus. The animation is the explanation: containment is asserted by the breadcrumb and demonstrated by the zoom. Breadcrumbs are the sole ascent path; every crumb is a button. Depth is announced. An atomic topic shows an empty-state tile rather than an empty grid. The graph is **SVG, not canvas** — it is fully accessible and is *not* a carve-out.
+**Knowledge graph.** Topics contain topics — **and the graph is also the progress map** (§11.7). Every tile carries its mastery state, so the surface answers "where am I weak?" alongside "what exists?" Hover or select previews in the inspector; only the explicit open control descends. Descent is a **spatial zoom** — the tile scales up until it becomes the field, its children resolving inside it ([§10.4B](#104-signature-motions)) — then the new field's first tile takes focus. The animation is the explanation: containment is asserted by the breadcrumb and demonstrated by the zoom. Breadcrumbs are the sole ascent path; every crumb is a button. Depth is announced. An atomic topic shows an empty-state tile rather than an empty grid. The graph is **SVG, not canvas** — it is fully accessible and is _not_ a carve-out.
 
 **Topic / lecture detail.** A topic is the same component here as in the graph and the deck. Content lists group by `ContentType` (§3.2), with counts. Educators see an edit affordance in place; students see the same layout without it — never a different layout.
 
@@ -998,16 +1040,16 @@ Select and Open are deliberately distinct. In a knowledge graph, previewing must
 
 **Swipe is an accelerator, never a requirement.** In the deck, swipe left/right advances or rates. Every swipe has a visible button doing the same thing in the same place, and the button is the single-pointer path that satisfies SC 2.5.7 — the gesture is never the only way to do anything. Swipe and button converge on one exit animation (§10.4), so the two paths are indistinguishable once the action commits. Swipe is not taught, not prompted, and not required for discoverability.
 
-**Drag feel: eased follow with settle.** While held, the object trails the pointer under `--spring-drag` — a small critically-damped lag, no overshoot. The *snap preview* (dashed rule, §3.4) jumps hard cell to cell so the commitment stays unambiguous while the object itself moves smoothly. On release the object springs into the snapped cell under `--spring-lift`. A grabbed object carries the lift affordance: `rotate(-6deg) scale(1.08)` plus the 4px hard offset from §3.6.
+**Drag feel: eased follow with settle.** While held, the object trails the pointer under `--spring-drag` — a small critically-damped lag, no overshoot. The _snap preview_ (dashed rule, §3.4) jumps hard cell to cell so the commitment stays unambiguous while the object itself moves smoothly. On release the object springs into the snapped cell under `--spring-lift`. A grabbed object carries the lift affordance: `rotate(-6deg) scale(1.08)` plus the 4px hard offset from §3.6.
 
 **The background lattice stays click-only.** No hover response, no pointer trail. It is a small toy for whoever finds it; a learner who never notices loses nothing, and an interactive background must not compete with study content for attention.
 
 **Haptics** (mobile, off by default, one setting):
 
-| Event | Pattern |
-|---|---|
-| Correct | One short pulse |
-| Incorrect | Two short pulses |
+| Event                 | Pattern              |
+| --------------------- | -------------------- |
+| Correct               | One short pulse      |
+| Incorrect             | Two short pulses     |
 | Drag snap / card exit | One very short pulse |
 
 Delivered via the Vibration API; absent silently where unsupported. Never on scroll, never on hover-equivalent, never repeated within 200ms. Haptics are a **redundant** channel — never the only signal — but they are genuinely valuable under reduced motion, where they survive unchanged (§10.6).
@@ -1048,6 +1090,7 @@ DOM order equals visual order equals tab order, on every surface. **No positive 
 ### 8.2 Skip links
 
 Every surface provides, in order:
+
 1. "Skip to main content" → `#k-main`
 2. "Skip to <the instrument>" → the work region
 
@@ -1061,24 +1104,25 @@ Per SC 3.2.6, the help affordance sits in the same position in the topbar on eve
 
 Any grid of more than ~10 similar controls is **one tab stop**, navigated by arrows: the background lattice, the graph's topic field, filter chip groups, in-module option grids, tablists.
 
-| Key | Behaviour |
-|---|---|
-| `Tab` / `Shift+Tab` | Enters at the last-focused (or first/selected) item; exits the whole widget |
-| `←` `→` | Previous / next in row order |
-| `↑` `↓` | Same column, previous / next row (2D grids only) |
-| `Home` / `End` | First / last in row |
-| `Ctrl+Home` / `Ctrl+End` | First / last in grid |
-| `Enter` | Select (or Open where the grid has one action) |
-| `Space` | Toggle |
-| `Escape` | Move focus to the widget container |
+| Key                      | Behaviour                                                                   |
+| ------------------------ | --------------------------------------------------------------------------- |
+| `Tab` / `Shift+Tab`      | Enters at the last-focused (or first/selected) item; exits the whole widget |
+| `←` `→`                  | Previous / next in row order                                                |
+| `↑` `↓`                  | Same column, previous / next row (2D grids only)                            |
+| `Home` / `End`           | First / last in row                                                         |
+| `Ctrl+Home` / `Ctrl+End` | First / last in grid                                                        |
+| `Enter`                  | Select (or Open where the grid has one action)                              |
+| `Space`                  | Toggle                                                                      |
+| `Escape`                 | Move focus to the widget container                                          |
 
 Arrow navigation does **not** wrap. Wrapping in a spatial grid disorients; a hard stop teaches the boundary. The container carries `role="grid"` (or `role="group"` for non-tabular sets) and an `aria-label`.
 
 ### 8.5 Keyboard equivalents for pointer gestures
 
-SC 2.5.7 *Dragging Movements* is AA in WCAG 2.2 and applies to note placement, note moving, timeline ordering, sentence scramble, and map selection. Every drag has a single-pointer *and* a keyboard path.
+SC 2.5.7 _Dragging Movements_ is AA in WCAG 2.2 and applies to note placement, note moving, timeline ordering, sentence scramble, and map selection. Every drag has a single-pointer _and_ a keyboard path.
 
 **Place** (drag-to-create):
+
 1. Focus an empty cell → `Enter` enters placement mode
 2. Arrows extend the rectangle from the anchor; the system snaps to the nearest legal size
 3. `Enter` commits · `Escape` cancels and restores focus to the anchor
@@ -1086,6 +1130,7 @@ SC 2.5.7 *Dragging Movements* is AA in WCAG 2.2 and applies to note placement, n
 5. Illegal placements announce `"Blocked by <what>"` and do not commit
 
 **Move** (drag-by-handle):
+
 1. Focus the handle → `Space` grabs. Announce `"Grabbed. Arrows to move, Space to drop, Escape to cancel."`
 2. Arrows translate by one cell
 3. `Space` drops · `Escape` reverts to the original position
@@ -1108,27 +1153,27 @@ SC 2.5.7 *Dragging Movements* is AA in WCAG 2.2 and applies to note placement, n
 
 The two-ring construction is required: a single ink ring vanishes over a dark gradient stop, a single paper ring vanishes over a light one. Together they survive every state the shader can produce.
 
-We adopt SC 2.4.13 *Focus Appearance* as an internal rule despite it being AAA: ≥2px thick, fully enclosing, ≥3:1 against both focused and unfocused states. Focus indication is never removed. `:focus-visible` spares pointer users rings they didn't ask for — but keyboard focus is always drawn.
+We adopt SC 2.4.13 _Focus Appearance_ as an internal rule despite it being AAA: ≥2px thick, fully enclosing, ≥3:1 against both focused and unfocused states. Focus indication is never removed. `:focus-visible` spares pointer users rings they didn't ask for — but keyboard focus is always drawn.
 
-SC 2.4.11 *Focus Not Obscured* is satisfied structurally by the scroll-padding rule in §2.3. Any new sticky or overlay element must re-verify it.
+SC 2.4.11 _Focus Not Obscured_ is satisfied structurally by the scroll-padding rule in §2.3. Any new sticky or overlay element must re-verify it.
 
 ### 8.7 Focus management on state change
 
-| Event | Focus goes to | Announcement |
-|---|---|---|
-| Route change | The new `<h1>` (`tabindex="-1"`) | Polite: page name; `document.title` updated |
-| Graph descend / ascend | First tile of the new field | Polite: `"<Topic>, level N, M topics"` |
-| Module activate | The module's first control | Polite: `"<Module> open"` |
-| Module close | The module's header button | — |
-| Wizard step change | The step's `<h2>` | Polite: `"Step 2 of 5, <name>"` |
-| Dialog open | First focusable inside; trapped; `Escape` closes | `role="dialog"` + `aria-modal` + labelled |
-| Dialog close | The element that opened it | — |
-| Filter / search change | Stays put | Polite: `"N results"`, debounced 250ms |
-| Judgement rendered | Stays put | Assertive: `"Correct"` / `"Not quite. The answer is X."` |
-| Milestone reached | Stays put — never interrupts input | Polite: `"<Topic> mastered"` |
-| First-run step advances | Into the new step's dialog | Step heading; `Escape` exits and restores prior focus |
-| Toast appears | Stays put | Polite; assertive only for errors |
-| Item deleted | Nearest sibling, else the container | Polite: `"<Object> removed"` |
+| Event                   | Focus goes to                                    | Announcement                                             |
+| ----------------------- | ------------------------------------------------ | -------------------------------------------------------- |
+| Route change            | The new `<h1>` (`tabindex="-1"`)                 | Polite: page name; `document.title` updated              |
+| Graph descend / ascend  | First tile of the new field                      | Polite: `"<Topic>, level N, M topics"`                   |
+| Module activate         | The module's first control                       | Polite: `"<Module> open"`                                |
+| Module close            | The module's header button                       | —                                                        |
+| Wizard step change      | The step's `<h2>`                                | Polite: `"Step 2 of 5, <name>"`                          |
+| Dialog open             | First focusable inside; trapped; `Escape` closes | `role="dialog"` + `aria-modal` + labelled                |
+| Dialog close            | The element that opened it                       | —                                                        |
+| Filter / search change  | Stays put                                        | Polite: `"N results"`, debounced 250ms                   |
+| Judgement rendered      | Stays put                                        | Assertive: `"Correct"` / `"Not quite. The answer is X."` |
+| Milestone reached       | Stays put — never interrupts input               | Polite: `"<Topic> mastered"`                             |
+| First-run step advances | Into the new step's dialog                       | Step heading; `Escape` exits and restores prior focus    |
+| Toast appears           | Stays put                                        | Polite; assertive only for errors                        |
+| Item deleted            | Nearest sibling, else the container              | Polite: `"<Object> removed"`                             |
 
 Focus is never moved on a keystroke the user didn't intend as navigation, and never trapped outside a dialog.
 
@@ -1170,36 +1215,36 @@ WCAG 2.2 Level AA across all surfaces and all four roles. Common Sage today repo
 Exactly three components cannot be made fully conformant as canvas alone. The knowledge graph is **not** among them — it is SVG and fully accessible; keep it that way.
 
 **A. The shader gradient.**
-*Exception:* the WebGL canvas is not exposed to assistive technology.
-*Mitigations, all required:* `aria-hidden`, not focusable, not in tab order · carries **zero** information · a CSS-gradient underlay from the same palette renders before WebGL is up and instead of it when WebGL is absent · `prefers-reduced-motion` pins it to a still frame, not a blank box · everything above it obeys the veil law · a user-facing "reduce background motion" control exists independent of the OS setting.
+_Exception:_ the WebGL canvas is not exposed to assistive technology.
+_Mitigations, all required:_ `aria-hidden`, not focusable, not in tab order · carries **zero** information · a CSS-gradient underlay from the same palette renders before WebGL is up and instead of it when WebGL is absent · `prefers-reduced-motion` pins it to a still frame, not a blank box · everything above it obeys the veil law · a user-facing "reduce background motion" control exists independent of the OS setting.
 
 **B. The raster map** (`map_click_quiz`, `globe_pin`).
-*Exception:* the Leaflet map is `role="application"` and its pan/zoom is not fully expressible in ARIA.
-*Mitigations, all required:* entering is explicit and `Escape` always exits to the container — no keyboard trap under any circumstance · **a non-map answer path is mandatory**: every map question also presents candidates as a labelled list of buttons, and a learner who cannot use the map completes the module at full credit · arrows move selection one cell with announced coordinates and any known label · the accessible name states the interaction model, not just the content · correct/selected/hovered differ in outline weight and pattern, not only colour.
+_Exception:_ the Leaflet map is `role="application"` and its pan/zoom is not fully expressible in ARIA.
+_Mitigations, all required:_ entering is explicit and `Escape` always exits to the container — no keyboard trap under any circumstance · **a non-map answer path is mandatory**: every map question also presents candidates as a labelled list of buttons, and a learner who cannot use the map completes the module at full credit · arrows move selection one cell with announced coordinates and any known label · the accessible name states the interaction model, not just the content · correct/selected/hovered differ in outline weight and pattern, not only colour.
 
 **C. The 3D model** (`model_3d`).
-*Exception:* the rotatable WebGL object is not describable in ARIA.
-*Mitigations:* a static representative image with real `alt`, a text description of what rotation reveals, and keyboard rotation with announced orientation. The learning objective must be satisfiable from the text alone.
+_Exception:_ the rotatable WebGL object is not describable in ARIA.
+_Mitigations:_ a static representative image with real `alt`, a text description of what rotation reveals, and keyboard rotation with announced orientation. The learning objective must be satisfiable from the text alone.
 
 **D. Handwriting** (`kanji_writing`).
-*Exception:* a drawing surface cannot be expressed in ARIA, and stroke capture has no keyboard equivalent — you cannot write a character with arrow keys in any meaningful sense.
-*Mitigations, all required:* the canvas is `aria-hidden` with the module's prompt and state carried in real text beside it · **the module type is optional and never blocking** — a learner turns handwriting off in `/me/settings` and those items are simply not served · undo per stroke, and clear, both as real buttons · the judgement states in words which of shape, order, or direction was wrong, never only by redrawing the character.
+_Exception:_ a drawing surface cannot be expressed in ARIA, and stroke capture has no keyboard equivalent — you cannot write a character with arrow keys in any meaningful sense.
+_Mitigations, all required:_ the canvas is `aria-hidden` with the module's prompt and state carried in real text beside it · **the module type is optional and never blocking** — a learner turns handwriting off in `/me/settings` and those items are simply not served · undo per stroke, and clear, both as real buttons · the judgement states in words which of shape, order, or direction was wrong, never only by redrawing the character.
 
-*How the discipline is met, honestly.* The other three carve-outs supply an equivalent path to the same item. This one does not — instead it relies on `kanji_writing` being **one practice rung on a concept that other types also cover**. The same kanji is served by `kanji_reading`, `kanji_meaning`, and `vocab_production`, so opting out makes no material unreachable and no topic unmasterable. The residual cost is real and stated rather than hidden: **a learner who opts out never practises writing.** That is a skill they have chosen not to train, not a barrier the interface imposed — which is the distinction that makes this acceptable where a blocking canvas would not be.
+_How the discipline is met, honestly._ The other three carve-outs supply an equivalent path to the same item. This one does not — instead it relies on `kanji_writing` being **one practice rung on a concept that other types also cover**. The same kanji is served by `kanji_reading`, `kanji_meaning`, and `vocab_production`, so opting out makes no material unreachable and no topic unmasterable. The residual cost is real and stated rather than hidden: **a learner who opts out never practises writing.** That is a skill they have chosen not to train, not a barrier the interface imposed — which is the distinction that makes this acceptable where a blocking canvas would not be.
 
-*Grading:* shape **plus stroke order and direction**, which is the reason to build it at all — a learner who draws the right shape in the wrong order has learned the habit the exercise exists to prevent. "Right character, wrong stroke order" needs no new judgement state: it is §3.3's `--warn` partial case, with the dashed rule and "Partly right".
+_Grading:_ shape **plus stroke order and direction**, which is the reason to build it at all — a learner who draws the right shape in the wrong order has learned the habit the exercise exists to prevent. "Right character, wrong stroke order" needs no new judgement state: it is §3.3's `--warn` partial case, with the dashed rule and "Partly right".
 
 **Discipline:** this is the complete list. A fifth requires the same treatment — a written exception, either an equivalent non-canvas path or a demonstration that the objective is covered elsewhere, and proof no material becomes unreachable.
 
 ### 9.4 Live regions
 
-| Region | Politeness | Content |
-|---|---|---|
-| Context status | `polite` | Active module, step, session state |
-| Result counts | `polite` | Filter/search totals, debounced |
-| Judgement | `assertive` | Correct / incorrect + the correct answer |
-| Gesture coach | `polite` | Placement, move, reorder feedback (§8.5) |
-| Toasts | `polite` (errors `assertive`) | Transient confirmations |
+| Region         | Politeness                    | Content                                  |
+| -------------- | ----------------------------- | ---------------------------------------- |
+| Context status | `polite`                      | Active module, step, session state       |
+| Result counts  | `polite`                      | Filter/search totals, debounced          |
+| Judgement      | `assertive`                   | Correct / incorrect + the correct answer |
+| Gesture coach  | `polite`                      | Placement, move, reorder feedback (§8.5) |
+| Toasts         | `polite` (errors `assertive`) | Transient confirmations                  |
 
 One assertive region per surface, maximum.
 
@@ -1211,30 +1256,30 @@ Three OS-level preferences change how this system renders. Each is a **contract 
 
 **Transparency.** `prefers-reduced-transparency: reduce`:
 
-| Element | Substitute |
-|---|---|
-| Veiled paper (§5) | `--veil` goes to `1.0`. Opaque `--paper-1`. |
-| Frost | Flat `--paper-1` fill; no `backdrop-filter`. |
+| Element              | Substitute                                                  |
+| -------------------- | ----------------------------------------------------------- |
+| Veiled paper (§5)    | `--veil` goes to `1.0`. Opaque `--paper-1`.                 |
+| Frost                | Flat `--paper-1` fill; no `backdrop-filter`.                |
 | Dialog scrim (§6.11) | Unchanged — it is already flat, and occlusion is the point. |
-| Shader gradient | Unchanged. It is behind everything and carries nothing. |
+| Shader gradient      | Unchanged. It is behind everything and carries nothing.     |
 
-Nothing is lost, because the veil never carried information — it was always atmosphere (§1, law 2). This preference makes the product *more* legible, and it is the cheapest of the three to honour.
+Nothing is lost, because the veil never carried information — it was always atmosphere (§1, law 2). This preference makes the product _more_ legible, and it is the cheapest of the three to honour.
 
 **Contrast.** `prefers-contrast: more`:
 
-| Element | Substitute |
-|---|---|
-| `--rule-structural` | Floors rise to `0.75` light / `0.65` dark |
-| `--rule-decorative` | Background lattice hidden entirely |
-| `--ink-2` | Resolves to `--ink-1` — the tertiary tier collapses |
+| Element                           | Substitute                                                  |
+| --------------------------------- | ----------------------------------------------------------- |
+| `--rule-structural`               | Floors rise to `0.75` light / `0.65` dark                   |
+| `--rule-decorative`               | Background lattice hidden entirely                          |
+| `--ink-2`                         | Resolves to `--ink-1` — the tertiary tier collapses         |
 | Accent surface tints (≤12%, §3.2) | Drop to 0. Content type is carried by icon and label alone. |
-| `--veil` | `1.0`, as with reduced transparency |
+| `--veil`                          | `1.0`, as with reduced transparency                         |
 
 **Forced colours.** `forced-colors: active` (Windows High Contrast and equivalents) is the hardest case, because the system's entire visual vocabulary — a closed custom-property ramp, hairline rules, and a hard offset — is exactly what forced-colors overrides. The design survives it only if the following hold, and they are design constraints, not CSS afterthoughts:
 
 - **Boundaries are real `border`s.** §3.4 already specifies `1px solid` from `currentColor` rather than `box-shadow` or a background sliver — borders map to `CanvasText` and survive; the alternatives vanish. Any component that draws an edge some other way is broken here.
 - **The 8px hard offset disappears** (`box-shadow` is dropped). The "currently manipulating" state (§3.6, level 3) must therefore also carry a `Highlight` outline, which is its forced-colors substitute.
-- **The six content-type accents collapse to one colour.** §3.2's identity channel is gone, and the icon and text label — already required as the second channel — become the *only* channel. This is the concrete reason accents may never be the sole encoding.
+- **The six content-type accents collapse to one colour.** §3.2's identity channel is gone, and the icon and text label — already required as the second channel — become the _only_ channel. This is the concrete reason accents may never be the sole encoding.
 - **`--ok` / `--warn` / `--err` collapse likewise.** The glyph, the rule, and the text from §3.3's table carry the state unaided.
 - **Focus uses `outline`, which is preserved.** §8.6's two-ring construction relies on `box-shadow` for its outer ring; under forced colours the outline alone must satisfy the requirement, at `outline-color: Highlight`. Verify this specifically — a focus ring that exists only as a shadow is invisible here.
 - `forced-color-adjust: none` is permitted in exactly one place: the shader gradient's CSS fallback, which is decorative. Nowhere else — opting out of forced colours to preserve a brand is the failure this mode exists to prevent.
@@ -1251,7 +1296,7 @@ Automated tooling is a floor, never the standard. Common Sage's tabs pass axe wi
 4. **Contrast audit** of any colour pair added since the last release.
 5. **Reflow** at 320×256 and 200% zoom, **in German** — the locale that actually breaks layouts (§4.4).
 6. **Media pass** — captions present and synchronised, transcript in the DOM, controls keyboard-operable, nothing autoplays.
-7. **Reduced-motion** pass with the OS setting on — verify every signature motion uses its §10.6 *substitute*, not a deletion.
+7. **Reduced-motion** pass with the OS setting on — verify every signature motion uses its §10.6 _substitute_, not a deletion.
 8. **Forced-colours pass** (Windows High Contrast, and `prefers-contrast`/`prefers-reduced-transparency` alongside it) — every boundary still visible, focus ring drawn, and no state legible by colour alone (§9.5).
 9. **Interruption pass** — reverse each signature motion mid-flight (flip back at 50%, swipe and release below threshold, descend then immediately ascend). Nothing may restart, jump, or queue.
 10. **axe** last, as a regression net.
@@ -1268,7 +1313,7 @@ The existing `Refactor report/UX_report.md` (2026-07-23) is **not** a reliable i
 
 Two consequences that govern everything below:
 
-**Motion is interruptible, always.** A spring redirected mid-flight continues from its current position *and velocity*. An animation that restarts, jumps, or must finish before accepting new input is a bug, not a timing choice. This is the whole reason the system is spring-based rather than duration-based — a half-flipped card that reverses must reverse from where it is, at the speed it's moving.
+**Motion is interruptible, always.** A spring redirected mid-flight continues from its current position _and velocity_. An animation that restarts, jumps, or must finish before accepting new input is a bug, not a timing choice. This is the whole reason the system is spring-based rather than duration-based — a half-flipped card that reverses must reverse from where it is, at the speed it's moving.
 
 **Springs govern space; durations govern colour.** Position, scale, and rotation are sprung. Colour, opacity, and border transitions are not — a colour has no momentum, and a sprung colour just looks like a slow colour. Non-spatial changes run at a flat **90ms**.
 
@@ -1278,12 +1323,12 @@ Two consequences that govern everything below:
 
 ```ts
 export const spring = {
-  snap:    { type: 'spring', visualDuration: 0.15, bounce: 0    }, // press, toggle, chip
-  settle:  { type: 'spring', visualDuration: 0.30, bounce: 0.15 }, // default: panels, tiles, arrival
-  lift:    { type: 'spring', visualDuration: 0.45, bounce: 0.25 }, // cards, drag release, deck advance
-  stage:   { type: 'spring', visualDuration: 0.60, bounce: 0.10 }, // route transitions, graph descent
-  drag:    { type: 'spring', visualDuration: 0.12, bounce: 0    }, // follow-lag while held
-  ambient: { type: 'spring', visualDuration: 0.80, bounce: 0    }, // palette morph
+  snap: { type: 'spring', visualDuration: 0.15, bounce: 0 }, // press, toggle, chip
+  settle: { type: 'spring', visualDuration: 0.3, bounce: 0.15 }, // default: panels, tiles, arrival
+  lift: { type: 'spring', visualDuration: 0.45, bounce: 0.25 }, // cards, drag release, deck advance
+  stage: { type: 'spring', visualDuration: 0.6, bounce: 0.1 }, // route transitions, graph descent
+  drag: { type: 'spring', visualDuration: 0.12, bounce: 0 }, // follow-lag while held
+  ambient: { type: 'spring', visualDuration: 0.8, bounce: 0 }, // palette morph
 } as const
 ```
 
@@ -1310,13 +1355,13 @@ Six motions carry the product's character. Everything else uses `spring.settle` 
 
 **A. Card lift-and-flip** — the flashcard reveal.
 
-Not a flat spin. The card *lifts off the plane, turns, and settles back down*, the way a hand picks a card up to look at it.
+Not a flat spin. The card _lifts off the plane, turns, and settles back down_, the way a hand picks a card up to look at it.
 
-| Axis | From → to | Spring | Notes |
-|---|---|---|---|
-| `rotateY` | 0 → 180deg | `lift` | The turn |
-| `translateY` | 0 → -24px → 0 | `lift`, ~40ms lead | Begins *before* the rotation |
-| `scale` | 1 → 1.04 → 1 | `settle` | Tracks the lift; suggests approach |
+| Axis         | From → to     | Spring             | Notes                              |
+| ------------ | ------------- | ------------------ | ---------------------------------- |
+| `rotateY`    | 0 → 180deg    | `lift`             | The turn                           |
+| `translateY` | 0 → -24px → 0 | `lift`, ~40ms lead | Begins _before_ the rotation       |
+| `scale`      | 1 → 1.04 → 1  | `settle`           | Tracks the lift; suggests approach |
 
 The axes run on **separate springs with different damping**, so they do not move in lockstep. That desynchronisation is the entire physical tell — matched axes read as a mechanical rotation, offset axes read as a hand.
 
@@ -1326,7 +1371,7 @@ Container gets `perspective: 1200px`; faces get `backface-visibility: hidden` in
 
 The selected tile scales from its measured cell rect until it fills the field; its children resolve inside it; siblings fade and drop away. `spring.stage`, driven by a FLIP measurement of the tile's rect. Ascent is the exact inverse — the field contracts back into its tile in the parent.
 
-This is the only place where the animation *is* the explanation. "Topics contain topics" is asserted by the breadcrumb and demonstrated by the zoom. Focus moves to the first child tile after settle (§8.7).
+This is the only place where the animation _is_ the explanation. "Topics contain topics" is asserted by the breadcrumb and demonstrated by the zoom. Focus moves to the first child tile after settle (§8.7).
 
 **C. Directional route transitions.**
 
@@ -1342,9 +1387,9 @@ Swipe drags the top card 1:1 horizontally. Past the commit threshold it exits in
 
 **E. Judgement — restrained but felt.**
 
-| Outcome | Motion |
-|---|---|
-| Correct | A brief accent wash across the module frame + the 2px rule drawing in. `spring.settle`. No scale, no bounce, no celebration. |
+| Outcome   | Motion                                                                                                                                                       |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Correct   | A brief accent wash across the module frame + the 2px rule drawing in. `spring.settle`. No scale, no bounce, no celebration.                                 |
 | Incorrect | A **brief shake**: damped oscillation on X, 3 cycles, ±6px, ~320ms, high bounce decaying fast. Then the correction springs in beneath under `spring.settle`. |
 
 The shake fires **once per item, never repeated**, and only on the module frame — never the page. Correct is quieter than incorrect on purpose: momentum through what's known, attention on what isn't.
@@ -1353,14 +1398,14 @@ The shake fires **once per item, never repeated**, and only on the module frame 
 
 Sessions are open-ended (§11.6), so there is no queue exhaustion to celebrate. Expressiveness attaches to two events of deliberately unequal weight.
 
-*Milestone — short form.* A topic reaches mastery:
+_Milestone — short form._ A topic reaches mastery:
 
 - A brief settle on the card, the mastery mark drawing in under `spring.lift`
 - Resolves inside `spring.settle`; **never blocks or delays the next card**
 - Polite announcement — the learner did not ask a question
 - **At most one per session** (§11.8). Later milestones are recorded and reported at stopping, not celebrated in place.
 
-*Stopping — full form.* The learner ends the session:
+_Stopping — full form._ The learner ends the session:
 
 - The deck's motion stops entirely — the register change is itself the signal
 - Summary sections assemble on a stagger under `spring.lift`
@@ -1384,24 +1429,24 @@ Neither form scales with quantity. Four cards and forty cards get the same summa
 
 `prefers-reduced-motion: reduce` is a contract, not a kill switch. `<MotionConfig reducedMotion="user">` enforces the spatial half automatically; the substitutions below are deliberate and must be written per component.
 
-| Signature motion | Reduced-motion substitute |
-|---|---|
-| Card lift-and-flip | Cross-fade between faces. No rotation, no lift. |
-| Graph spatial zoom | Cross-dissolve between fields. |
-| Directional route transition | Instant swap. |
-| Card-stack advance | Replace in place. |
-| Incorrect shake | **Hold and settle** — the frame settles firmly, the correction appears beneath. |
-| Milestone (short form) | Mastery mark appears at full opacity; no settle. Announcement unchanged. |
-| Stopping summary (full form) | Everything arrives at once; numbers land final. |
-| Skeleton shimmer | Static skeleton. |
-| Idle breathe | Suppressed entirely. |
-| Shader drift, palette morph, frost decay, stagger | Stopped; still frame, instant swap. |
+| Signature motion                                  | Reduced-motion substitute                                                       |
+| ------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Card lift-and-flip                                | Cross-fade between faces. No rotation, no lift.                                 |
+| Graph spatial zoom                                | Cross-dissolve between fields.                                                  |
+| Directional route transition                      | Instant swap.                                                                   |
+| Card-stack advance                                | Replace in place.                                                               |
+| Incorrect shake                                   | **Hold and settle** — the frame settles firmly, the correction appears beneath. |
+| Milestone (short form)                            | Mastery mark appears at full opacity; no settle. Announcement unchanged.        |
+| Stopping summary (full form)                      | Everything arrives at once; numbers land final.                                 |
+| Skeleton shimmer                                  | Static skeleton.                                                                |
+| Idle breathe                                      | Suppressed entirely.                                                            |
+| Shader drift, palette morph, frost decay, stagger | Stopped; still frame, instant swap.                                             |
 
 **Survives unchanged** — focus ring rendering · the 90ms colour feedback on press and toggle · judgement appearance as an opacity fade · progress and counter updates · toast appearance · **haptics**.
 
-Haptics deserve emphasis: under reduced motion they become *more* valuable, not less, because they replace a channel the user has switched off. They are not motion.
+Haptics deserve emphasis: under reduced motion they become _more_ valuable, not less, because they replace a channel the user has switched off. They are not motion.
 
-A blanket `animation: none !important` removes the feedback that tells a learner their answer registered. Reduced motion means *less movement*, not *less information*.
+A blanket `animation: none !important` removes the feedback that tells a learner their answer registered. Reduced motion means _less movement_, not _less information_.
 
 The transparency, contrast, and forced-colours contracts are the same principle applied to the other three preferences — §9.5.
 
@@ -1421,14 +1466,14 @@ The transparency, contrast, and forced-colours contracts are the same principle 
 
 ### 11.1 Roles
 
-| Role | Home | Can |
-|---|---|---|
-| **Student** | `/me` | Study, explore the graph, read topics, see their own progress |
+| Role         | Home          | Can                                                                                     |
+| ------------ | ------------- | --------------------------------------------------------------------------------------- |
+| **Student**  | `/me`         | Study, explore the graph, read topics, see their own progress                           |
 | **Educator** | Owned courses | Everything a student can, plus author courses, lectures, topics; publish; see analytics |
-| **Admin** | Admin tables | Manage courses, lectures, users, roles |
-| **Service** | *(no UI)* | Writes generated content; its output appears as authored objects |
+| **Admin**    | Admin tables  | Manage courses, lectures, users, roles                                                  |
+| **Service**  | _(no UI)_     | Writes generated content; its output appears as authored objects                        |
 
-One vocabulary across all three human roles. An educator viewing a topic sees the *same* topic component a student sees, plus an edit affordance — never a different layout.
+One vocabulary across all three human roles. An educator viewing a topic sees the _same_ topic component a student sees, plus an edit affordance — never a different layout.
 
 ### 11.2 Route map
 
@@ -1486,7 +1531,7 @@ Rules, because guided passes are usually done badly:
 - Each step is a `role="dialog"` with a real heading, focus moved into it, focus returned on exit.
 - **Maximum three steps per surface.** A fourth means the surface needs redesigning, not more explaining.
 - Shown once per surface per account, tracked server-side — not in `localStorage`, or it re-fires on every new device.
-- The pass explains *what the surface is for*, not *which button does what*. If a control needs explaining, §6 has failed.
+- The pass explains _what the surface is for_, not _which button does what_. If a control needs explaining, §6 has failed.
 
 Swipe (§7.3) is deliberately **not** taught. It is an accelerator; discovering it is a bonus, and prompting for it would imply the buttons are the slow path.
 
@@ -1514,10 +1559,10 @@ Arrive → Orient → [ prompt → respond → judge → grade → advance ] →
 1. **Arrive** — the deck renders at rest. Nothing auto-plays.
 2. **Orient** — the context status states the current state in words.
 3. **Respond** — prompt visible, response control focused, four fixed slots in fixed positions (§6.10). On an ungraded module this step is reading or manipulating rather than answering, and the loop skips straight to advance.
-4. **Judge** — immediate, optimistic (§7.4), unambiguous. The correct answer is *always* shown after an incorrect response. Assertive announcement.
+4. **Judge** — immediate, optimistic (§7.4), unambiguous. The correct answer is _always_ shown after an incorrect response. Assertive announcement.
 5. **Grade** — the step that used not to be here. On an objectively graded module the system supplies it and the learner does nothing; on a self-graded one the learner supplies it as **Again / Hard / Good / Easy**, and it is the same keystroke that advances (§6.10). The engine consumes the grade; how it turns into an interval is out of scope (§0).
 6. **Advance** — explicit, never automatic.
-6. **Stop** — whenever the learner chooses. The summary reflects whatever was actually done, without implying a target was missed.
+7. **Stop** — whenever the learner chooses. The summary reflects whatever was actually done, without implying a target was missed.
 
 **Never shame a short session.** A learner who does four cards gets a summary that reports four cards, not a progress bar showing 4/20. There is no target to fall short of.
 
@@ -1531,7 +1576,7 @@ Two surfaces, deliberately different in kind.
 
 - Mastery is encoded on the tile by fill weight **and** a text label — never colour alone (§3.3).
 - Unstarted, in progress, and mastered are three states, not a percentage. A percentage invites optimising the number.
-- **Ungraded modules move a topic to *in progress*, never to *mastered*** — and only when actually engaged with, per §6.10's dwell threshold. Reading a diagram is real study and should show; it is not evidence of recall, which only a graded module can supply. A topic whose material is entirely ungraded therefore tops out at *in progress*, which is honest rather than a gap to fix.
+- **Ungraded modules move a topic to _in progress_, never to _mastered_** — and only when actually engaged with, per §6.10's dwell threshold. Reading a diagram is real study and should show; it is not evidence of recall, which only a graded module can supply. A topic whose material is entirely ungraded therefore tops out at _in progress_, which is honest rather than a gap to fix.
 - An educator sees the same graph with an aggregate overlay (§11.10), never a student's individual state by default.
 
 **`/me/progress` is the full picture** across courses: topic mastery, and the pillar breakdown from `/courses/{id}/pillar-proficiency` — "strong on Facts, weak on Processes." That breakdown is the most actionable thing the system knows about a learner and currently renders nowhere.
@@ -1542,12 +1587,12 @@ One caveat carried from the backend: a pillar with zero reviews is **not begun**
 
 Two registers, deliberately unequal.
 
-| | Milestone | Stopping |
-|---|---|---|
-| Trigger | A topic reaches mastery | Learner ends the session |
-| Register | Brief, in-place, on the card | Full summary surface |
-| Motion | §10.4F, short form | §10.4F, full form |
-| Frequency | Rare by nature | Every session |
+|           | Milestone                    | Stopping                 |
+| --------- | ---------------------------- | ------------------------ |
+| Trigger   | A topic reaches mastery      | Learner ends the session |
+| Register  | Brief, in-place, on the card | Full summary surface     |
+| Motion    | §10.4F, short form           | §10.4F, full form        |
+| Frequency | Rare by nature               | Every session            |
 
 **The guardrail matters more than the celebration.** Two reward registers is the configuration that becomes a slot machine if unbounded, so:
 
@@ -1579,11 +1624,11 @@ Generation pipeline states — queued, running, failed, dead-lettered — are ou
 
 Three levels, at `/courses/[id]/progress`:
 
-| Level | Answers |
-|---|---|
-| **Course** | Is this course working? Enrolled count, average completion, distribution |
-| **Topic** | Which material is failing? Weakest topics, pillar breakdown across the cohort |
-| **Student** | Who needs help? Per-learner progress within this course |
+| Level       | Answers                                                                       |
+| ----------- | ----------------------------------------------------------------------------- |
+| **Course**  | Is this course working? Enrolled count, average completion, distribution      |
+| **Topic**   | Which material is failing? Weakest topics, pillar breakdown across the cohort |
+| **Student** | Who needs help? Per-learner progress within this course                       |
 
 **Tables first.** Analytics render as real tables (§6.6) by default — sortable, scannable, screen-reader native, and copyable into whatever an educator actually plans lessons in. A chart appears only where shape genuinely beats digits: a cohort distribution, or a weakest-topics ranking where the gaps between bars carry the point. Where a chart appears it is a **horizontal bar or a dot plot on the cell grid**, hairline and zero-radius like everything else, and the table it replaces remains available. No pie, no donut, no area, and no line without real time on the x-axis.
 
@@ -1604,10 +1649,10 @@ Tables (§6.6) over courses, lectures, and users. Every destructive action confi
 
 Split, so preferences are adjusted where they are felt:
 
-| Where | Preference |
-|---|---|
-| `/me/settings` | Locale (§4.4), theme, reduced background motion, haptics, handwriting on/off (§9.3D) |
-| In place, persisted | Furigana visibility, captions, playback rate, transcript visibility |
+| Where               | Preference                                                                           |
+| ------------------- | ------------------------------------------------------------------------------------ |
+| `/me/settings`      | Locale (§4.4), theme, reduced background motion, haptics, handwriting on/off (§9.3D) |
+| In place, persisted | Furigana visibility, captions, playback rate, transcript visibility                  |
 
 An in-place toggle writes the same stored preference a settings page would, and `/me/settings` lists every in-place preference read-only with a pointer to where it lives — so nothing set once becomes unfindable.
 
@@ -1615,17 +1660,17 @@ An in-place toggle writes the same stored preference a settings page would, and 
 
 Every surface specifies all of these. None is an afterthought.
 
-| State | Treatment |
-|---|---|
-| **Loading** | `paper-2` skeletons at final dimensions — no layout shift — with a slow 1.6s shimmer, plus `aria-busy`. Never a spinner over content. Resolves to an explanatory state after 10s (§10.5). |
-| **Empty** | A sentence naming what would be here, **plus the action that creates it**. Common Sage's current `ResourceState` empty case ends at "No X found."; that is the half of the pattern to fix. |
-| **No content in a populated course** | A real failure mode already seen in production: the recommender narrowed to topics that had no modules and reported "No content available" in a course with material. The interface must distinguish *nothing is due* from *nothing exists* and never conflate them. |
-| **No results** | Restates the query, offers one-click clear. |
-| **Error** | What failed, whether work was lost, one retry action. Plain language, no codes. |
-| **Permission denied** | Says which role is required and who to ask. Never a blank page or a silent redirect. |
-| **No WebGL / slow GPU** | CSS-gradient fallback from the same palette. Fully usable; only the atmosphere is missing. |
-| **Offline** | Optimistic commits (§7.4) queue locally behind a persistent banner and reconcile on reconnect. Conflicts surface explicitly — never last-write-wins in silence. |
-| **Session expired** | The one state where the optimistic loop can lose a learner's work, and therefore specified rather than left to the HTTP layer. On the first `401`, queued and in-flight commits are **held, not dropped**; a persistent banner states that the session ended; and re-authentication happens **in place, in a dialog** (§6.11) over the current surface. **Never a redirect to `/login`** — a redirect discards the card the learner is mid-way through and re-entry lands them somewhere else. On success the queue replays and the banner clears. On failure or cancel, the learner is told **by name** exactly what was not saved ("Your answer to *Chain rule, card 12* wasn't saved") and given one retry. Resumption (§11.14) covers the rest. |
+| State                                | Treatment                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Loading**                          | `paper-2` skeletons at final dimensions — no layout shift — with a slow 1.6s shimmer, plus `aria-busy`. Never a spinner over content. Resolves to an explanatory state after 10s (§10.5).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| **Empty**                            | A sentence naming what would be here, **plus the action that creates it**. Common Sage's current `ResourceState` empty case ends at "No X found."; that is the half of the pattern to fix.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| **No content in a populated course** | A real failure mode already seen in production: the recommender narrowed to topics that had no modules and reported "No content available" in a course with material. The interface must distinguish _nothing is due_ from _nothing exists_ and never conflate them.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| **No results**                       | Restates the query, offers one-click clear.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| **Error**                            | What failed, whether work was lost, one retry action. Plain language, no codes.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| **Permission denied**                | Says which role is required and who to ask. Never a blank page or a silent redirect.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| **No WebGL / slow GPU**              | CSS-gradient fallback from the same palette. Fully usable; only the atmosphere is missing.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| **Offline**                          | Optimistic commits (§7.4) queue locally behind a persistent banner and reconcile on reconnect. Conflicts surface explicitly — never last-write-wins in silence.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| **Session expired**                  | The one state where the optimistic loop can lose a learner's work, and therefore specified rather than left to the HTTP layer. On the first `401`, queued and in-flight commits are **held, not dropped**; a persistent banner states that the session ended; and re-authentication happens **in place, in a dialog** (§6.11) over the current surface. **Never a redirect to `/login`** — a redirect discards the card the learner is mid-way through and re-entry lands them somewhere else. On success the queue replays and the banner clears. On failure or cancel, the learner is told **by name** exactly what was not saved ("Your answer to _Chain rule, card 12_ wasn't saved") and given one retry. Resumption (§11.14) covers the rest. |
 
 ### 11.14 URL, persistence, and resumption
 
@@ -1647,12 +1692,12 @@ Theme, locale, and the in-place study preferences (§11.12) persist per account,
 
 #### The two kinds
 
-| | Learner note | Educator note |
-|---|---|---|
-| Author | Student | Educator, on a course they own |
+|            | Learner note                           | Educator note                                     |
+| ---------- | -------------------------------------- | ------------------------------------------------- |
+| Author     | Student                                | Educator, on a course they own                    |
 | Visibility | **Private to the author, permanently** | **Course content** — visible to everyone enrolled |
-| State | Saved on blur, no draft concept | Draft → published, per §7.2 |
-| Purpose | Study tool | Teaching annotation |
+| State      | Saved on blur, no draft concept        | Draft → published, per §7.2                       |
+| Purpose    | Study tool                             | Teaching annotation                               |
 
 **Learner notes are never read by anyone else.** Not their text, not their count, not "3 learners noted this topic", not in aggregate, not in educator analytics (§11.10). This is a hard line and it is the reason the feature works: a learner who suspects an educator is reading writes for the educator, and "I have no idea what any of this means" — the most useful thing a learner ever writes — stops being written. There is consequently **nothing to disclose at enrolment for notes**, unlike progress analytics.
 
@@ -1662,7 +1707,7 @@ Theme, locale, and the in-place study preferences (§11.12) persist per account,
 
 A note's **arrangement on the lattice is session-only.** During a session a learner can Place and Move notes across cells (§7.1) to lay out what they're thinking about; the moment they leave the surface, that arrangement is gone. The note itself, its text, and its topic anchor all persist.
 
-This is the deliberate shape of the feature, for three reasons: a coordinate is meaningless at a different breakpoint, where `--cell` is 48px instead of 64px and the content it sat beside has reflowed; a coordinate is wrong the moment an educator edits the material underneath it; and persisting layout would make the notes API a layout store rather than a knowledge store (§12.1). Spatial thinking is genuinely useful *while* thinking. It is not what you come back for.
+This is the deliberate shape of the feature, for three reasons: a coordinate is meaningless at a different breakpoint, where `--cell` is 48px instead of 64px and the content it sat beside has reflowed; a coordinate is wrong the moment an educator edits the material underneath it; and persisting layout would make the notes API a layout store rather than a knowledge store (§12.1). Spatial thinking is genuinely useful _while_ thinking. It is not what you come back for.
 
 **The interface says so, once, in place** — a workspace that silently discards an arrangement is a bug; one that states the arrangement is temporary and the notes are not is a feature. It is stated at the workspace, not in a first-run dialog nobody rereads.
 
@@ -1670,7 +1715,7 @@ This is the deliberate shape of the feature, for three reasons: a coordinate is 
 
 - A note is **text** — a markdown block (§6.1), plain by default. No drawing, no attachments, no images in v1.
 - Sized in cells like everything else, quantised (§2.5), 1×1 minimum. Content grows the note in whole increments; nothing truncates (§4.4).
-- Created from the topic's note control; saved on blur; deleting confirms and names the topic ("Delete your note on *Chain rule*?").
+- Created from the topic's note control; saved on blur; deleting confirms and names the topic ("Delete your note on _Chain rule_?").
 - A note **stores the language it was written in** and renders with `lang` set, defaulting to the interface locale. A note about a kanji will contain Japanese, and §4.3's Han-variant requirement applies to a learner's own writing exactly as it does to generated content.
 - The notes layer is a composite widget (§8.4): one tab stop, arrows between notes, `Enter` to edit, `Escape` back to the container. Place and Move carry the §8.5 keyboard equivalents and announcements.
 - Notes never overlap content they annotate at rest, and never intercept a click meant for the material underneath.
@@ -1689,9 +1734,9 @@ Educators see their own notes here too, marked with their published state, along
 
 **Access is a per-course setting**, chosen by the educator in the authoring wizard (§6.7) and visible on the course object thereafter:
 
-| Access | Behaviour |
-|---|---|
-| **Open** | Any signed-in learner enrols from the catalogue in one action. |
+| Access     | Behaviour                                                                                                                                                                                                                                        |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Open**   | Any signed-in learner enrols from the catalogue in one action.                                                                                                                                                                                   |
 | **Closed** | Enrolment requires a join code or a direct invitation from the educator. The course is still listed, with its access state visible, so a learner can see it exists and knows what to ask for — never a 404 for something that is merely private. |
 
 - **The disclosure obligation from §11.10 attaches to the enrolment action itself.** The confirmation states, in plain language, that the educator of this course can see individual progress within it. Disclosed at the moment of joining, not in terms of service, and repeated on the course overview.
@@ -1707,21 +1752,21 @@ Route parity per §11.2 across all four roles, against the same FastAPI backend.
 
 **Backend work this design depends on** — none of it exists today:
 
-| Need | Why | Blocks |
-|---|---|---|
-| A **notes** API | The API surface is `auth, courses, graph, health, lectures, me, progress, resources, summaries, topics, tree, users`. A note is an edge — `(author, topic, text, kind, lang, created_at)`, plus draft/published state for educator notes. **No coordinates**: arrangement is session-only (§11.15), so this is a knowledge store, not a layout store. | §11.15, §7.1 Place/Move, §8.5 keyboard equivalents, `/me/notes` |
-| **Password reset** endpoints | `/forgot` and `/reset` (§11.3) have no backing today, and the enumeration-safe response shape is a backend contract as much as a copy decision | Account recovery |
-| **Registry entries for the 15 language types** | They are in neither `module_registry.py`, so `mode` and `graded` are undefined for the entire Japanese half of the product. Laddering (`laddering.py`) and scheduling cannot see them. | §6.10, the whole language deck |
-| A **grade endpoint** taking Again / Hard / Good / Easy | Self-graded modules produce a learner-supplied grade (§6.10). The interface collects it; nothing accepts it. | The flashcard and recognition loop |
-| **Engagement events** on ungraded modules | Distinct from a recall grade: dwell past a threshold, feeding *in progress* only (§11.7). No endpoint takes this today. | §6.10 ungraded modules, graph mastery display |
-| **Removal of `conversion_calculator`** | Dropped from Kite's vocabulary (§6.10). Present in both the backend and worker registries and must be deleted from each. | Registry parity |
-| A **`kanji_writing`** registry entry | New module type (§9.3D), production rung, graded. In neither registry. | Handwriting |
-| An **assisted** flag on the grade | The cloze hint bank caps a grade at `Hard` (§6.12). The interface collects it; nothing accepts it. | `particle_cloze` |
-| **Course access state** — open / closed, plus join codes | §11.16. Courses have no access model today. | Enrolment |
-| **Course-scoped search** | §11.14 searches a course's topics, lectures, modules and notes. No search endpoint exists. | Search |
-| **Caption tracks** on video resources, and a publish-time check | Captions are a Level AA obligation and a publishing gate (§6.9) | Any video content |
-| **Transcripts** on video and audio resources | SC 1.2.1 | Any media content |
-| **UI locale** persistence on the user record | German/English interface (§4.4) | Localisation |
+| Need                                                            | Why                                                                                                                                                                                                                                                                                                                                                   | Blocks                                                          |
+| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| A **notes** API                                                 | The API surface is `auth, courses, graph, health, lectures, me, progress, resources, summaries, topics, tree, users`. A note is an edge — `(author, topic, text, kind, lang, created_at)`, plus draft/published state for educator notes. **No coordinates**: arrangement is session-only (§11.15), so this is a knowledge store, not a layout store. | §11.15, §7.1 Place/Move, §8.5 keyboard equivalents, `/me/notes` |
+| **Password reset** endpoints                                    | `/forgot` and `/reset` (§11.3) have no backing today, and the enumeration-safe response shape is a backend contract as much as a copy decision                                                                                                                                                                                                        | Account recovery                                                |
+| **Registry entries for the 15 language types**                  | They are in neither `module_registry.py`, so `mode` and `graded` are undefined for the entire Japanese half of the product. Laddering (`laddering.py`) and scheduling cannot see them.                                                                                                                                                                | §6.10, the whole language deck                                  |
+| A **grade endpoint** taking Again / Hard / Good / Easy          | Self-graded modules produce a learner-supplied grade (§6.10). The interface collects it; nothing accepts it.                                                                                                                                                                                                                                          | The flashcard and recognition loop                              |
+| **Engagement events** on ungraded modules                       | Distinct from a recall grade: dwell past a threshold, feeding _in progress_ only (§11.7). No endpoint takes this today.                                                                                                                                                                                                                               | §6.10 ungraded modules, graph mastery display                   |
+| **Removal of `conversion_calculator`**                          | Dropped from Kite's vocabulary (§6.10). Present in both the backend and worker registries and must be deleted from each.                                                                                                                                                                                                                              | Registry parity                                                 |
+| A **`kanji_writing`** registry entry                            | New module type (§9.3D), production rung, graded. In neither registry.                                                                                                                                                                                                                                                                                | Handwriting                                                     |
+| An **assisted** flag on the grade                               | The cloze hint bank caps a grade at `Hard` (§6.12). The interface collects it; nothing accepts it.                                                                                                                                                                                                                                                    | `particle_cloze`                                                |
+| **Course access state** — open / closed, plus join codes        | §11.16. Courses have no access model today.                                                                                                                                                                                                                                                                                                           | Enrolment                                                       |
+| **Course-scoped search**                                        | §11.14 searches a course's topics, lectures, modules and notes. No search endpoint exists.                                                                                                                                                                                                                                                            | Search                                                          |
+| **Caption tracks** on video resources, and a publish-time check | Captions are a Level AA obligation and a publishing gate (§6.9)                                                                                                                                                                                                                                                                                       | Any video content                                               |
+| **Transcripts** on video and audio resources                    | SC 1.2.1                                                                                                                                                                                                                                                                                                                                              | Any media content                                               |
+| **UI locale** persistence on the user record                    | German/English interface (§4.4)                                                                                                                                                                                                                                                                                                                       | Localisation                                                    |
 
 Notes are the largest of these: a real feature with real study value, and net-new backend surface. Until it lands, the lattice is decorative-only and §8.5's Place/Move equivalents have nothing to operate on.
 
@@ -1741,33 +1786,33 @@ These parts of Common Sage are right and carry over:
 
 ### 12.3 What we deliberately break
 
-| Common Sage | Kite | Why |
-|---|---|---|
-| Miriam Libre + Geologica via `next/font` | System stack (§4.1) | Zero webfont payload, no FOUT, no layout shift, no licensing. Full brand break. |
-| Cyan/ice palette (`#87d3ff`, `#38b6fe`, `#d0acff`) | Paper/ink ramp + six content-type accents (§3) | Closed ramp with no illegal combination; accents keyed to a taxonomy that already exists. `--catalog-blue`/`--catalog-violet` in this repo's prototypes inherited those hues; that lineage ends here. |
-| `$radius-sm/md/lg/pill` | Zero radius | The lattice is square. |
-| `em`-based spacing and font sizes | px scale (§2.2) | `em` padding produced a shipped bug: the same `Button` rendered at two sizes because `<button>` used the 13.3px UA default while `<a>` inherited 16px. A px scale makes that class of bug impossible. |
-| `ui/Tabs.tsx` — links styled as tabs | Nav links *or* real ARIA tabs, per §6.5 decision rule | The current component claims neither semantics correctly. |
-| `ContentTypeTabs` in the global navbar | Filter chips on the deck surface | A tablist in the navbar controlling another route's content is neither tabs nor nav. |
-| SCSS modules + `$theme-*` maps | CSS custom properties | Greenfield; tokens are runtime-themeable without a build step. |
-| Latin-only font handling | Full CJK system (§4.3) | The language modules are the product's hardest typography and currently have no specification at all. |
-| Duration + `easeInOut` in one component | Spring system throughout (§10.2) | Springs are interruptible: redirected mid-flight they continue from current position *and velocity*. A duration cannot, and the lift-and-flip and swipe-drag both depend on it. |
-| No gesture support | Swipe as accelerator (§7.3) | Card-based study on a phone needs it; SC 2.5.7 is satisfied because buttons remain the primary path. |
-| Pessimistic requests | Optimistic with visible rollback (§7.4) | The deck must run at the speed of thought; network latency per card breaks concentration. |
+| Common Sage                                        | Kite                                                  | Why                                                                                                                                                                                                   |
+| -------------------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Miriam Libre + Geologica via `next/font`           | System stack (§4.1)                                   | Zero webfont payload, no FOUT, no layout shift, no licensing. Full brand break.                                                                                                                       |
+| Cyan/ice palette (`#87d3ff`, `#38b6fe`, `#d0acff`) | Paper/ink ramp + six content-type accents (§3)        | Closed ramp with no illegal combination; accents keyed to a taxonomy that already exists. `--catalog-blue`/`--catalog-violet` in this repo's prototypes inherited those hues; that lineage ends here. |
+| `$radius-sm/md/lg/pill`                            | Zero radius                                           | The lattice is square.                                                                                                                                                                                |
+| `em`-based spacing and font sizes                  | px scale (§2.2)                                       | `em` padding produced a shipped bug: the same `Button` rendered at two sizes because `<button>` used the 13.3px UA default while `<a>` inherited 16px. A px scale makes that class of bug impossible. |
+| `ui/Tabs.tsx` — links styled as tabs               | Nav links _or_ real ARIA tabs, per §6.5 decision rule | The current component claims neither semantics correctly.                                                                                                                                             |
+| `ContentTypeTabs` in the global navbar             | Filter chips on the deck surface                      | A tablist in the navbar controlling another route's content is neither tabs nor nav.                                                                                                                  |
+| SCSS modules + `$theme-*` maps                     | CSS custom properties                                 | Greenfield; tokens are runtime-themeable without a build step.                                                                                                                                        |
+| Latin-only font handling                           | Full CJK system (§4.3)                                | The language modules are the product's hardest typography and currently have no specification at all.                                                                                                 |
+| Duration + `easeInOut` in one component            | Spring system throughout (§10.2)                      | Springs are interruptible: redirected mid-flight they continue from current position _and velocity_. A duration cannot, and the lift-and-flip and swipe-drag both depend on it.                       |
+| No gesture support                                 | Swipe as accelerator (§7.3)                           | Card-based study on a phone needs it; SC 2.5.7 is satisfied because buttons remain the primary path.                                                                                                  |
+| Pessimistic requests                               | Optimistic with visible rollback (§7.4)               | The deck must run at the speed of thought; network latency per card breaks concentration.                                                                                                             |
 
 ## 13. Frontend implementation
 
 ### 13.1 Stack
 
-| Concern | Choice | Why |
-|---|---|---|
-| Framework | **Next.js, App Router** | The API proxy (§12.2) is a server route handler; a static SPA cannot keep tokens server-adjacent. Also gives server rendering for the catalogue and course pages, where LCP matters. |
-| UI | React 19 | Required pairing with `@react-three/fiber` v9 for the shader surface. |
-| Components | **React Aria Components** | §13.2 |
-| Styling | **Plain CSS + custom properties** | §13.3 |
-| Data | TanStack Query + the typed API modules and query-key factory (§12.2) | Already correct in Common Sage; carried over. |
-| Animation | `motion/react`, springs only | §10.2 |
-| 3D | `@shadergradient/react` behind a lazy boundary | §10.7 |
+| Concern    | Choice                                                               | Why                                                                                                                                                                                  |
+| ---------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Framework  | **Next.js, App Router**                                              | The API proxy (§12.2) is a server route handler; a static SPA cannot keep tokens server-adjacent. Also gives server rendering for the catalogue and course pages, where LCP matters. |
+| UI         | React 19                                                             | Required pairing with `@react-three/fiber` v9 for the shader surface.                                                                                                                |
+| Components | **React Aria Components**                                            | §13.2                                                                                                                                                                                |
+| Styling    | **Plain CSS + custom properties**                                    | §13.3                                                                                                                                                                                |
+| Data       | TanStack Query + the typed API modules and query-key factory (§12.2) | Already correct in Common Sage; carried over.                                                                                                                                        |
+| Animation  | `motion/react`, springs only                                         | §10.2                                                                                                                                                                                |
+| 3D         | `@shadergradient/react` behind a lazy boundary                       | §10.7                                                                                                                                                                                |
 
 **witty_bench is currently a Vite SPA with hash routing** ([main.tsx](src/main.tsx)) and no data layer. Migrating it to Next.js is the first implementation task, not an incidental detail — hash routing cannot express §11.2's route map, and there is nowhere to put the proxy.
 
@@ -1794,20 +1839,24 @@ One `tokens.css` file. Plain custom properties, no preprocessor, no build step f
 
 The cost is no compile-time safety: a mistyped custom property silently resolves to nothing. **The design system's rules are mechanically checkable, so check them.** Stylelint config, treated as part of the system rather than as tooling hygiene:
 
-| Rule | Enforces |
-|---|---|
-| No literal colour outside `tokens.css` | §3 closed ramp |
-| No `border-radius` other than `0` | §1, §2.5 |
-| Length values must be multiples of 8px, or `--optical` | §2.2 total cell discipline |
-| No `px` font-sizes outside the scale | §4.2 |
-| No `transition` on `transform`/`scale` (springs only) | §10.1 |
-| No `!important` in `prefers-reduced-motion` blocks | §10.6 |
-| Logical properties only (`margin-inline`, not `margin-left`) | §4.4 |
-| No literal `z-index` — only `--layer-*` | §2.6 layer order |
-| No `outline: none` without a replacement in the same rule | §8.6, §9.5 forced colours |
-| Meaningful boundaries use `border`, never `box-shadow` alone | §9.5 forced colours |
+| Rule                                                         | Enforces                   |
+| ------------------------------------------------------------ | -------------------------- |
+| No literal colour outside `tokens.css`                       | §3 closed ramp             |
+| No `border-radius` other than `0`                            | §1, §2.5                   |
+| Length values must be multiples of 8px, or `--optical`       | §2.2 total cell discipline |
+| No `px` font-sizes outside the scale                         | §4.2                       |
+| No `transition` on `transform`/`scale` (springs only)        | §10.1                      |
+| No `!important` in `prefers-reduced-motion` blocks           | §10.6                      |
+| Logical properties only (`margin-inline`, not `margin-left`) | §4.4                       |
+| No literal `z-index` — only `--layer-*`                      | §2.6 layer order           |
+| No `outline: none` without a replacement in the same rule    | §8.6, §9.5 forced colours  |
+| Meaningful boundaries use `border`, never `box-shadow` alone | §9.5 forced colours        |
 
-The 8px rule is the highest-value one — it is exactly the discipline the prototypes lost (`28px 15px 13px`, `7px 9px`), and it cannot be maintained by review.
+The 8px rule is the highest-value one — it is exactly the discipline the prototypes lost (`28px 15px 13px`, `7px 9px`), and it cannot be maintained by review. It treats `1px` and `2px` as hairlines wherever they appear — as a border, as a `gap` drawing separators between grid cells, or as the inline-size of a divider element — because §3.4 makes `1px` the rule weight and §3.3 makes `2px` the judgement rule, and neither can be mistaken for the kind of value this rule exists to catch.
+
+**Implementation.** Eight of the ten are stock stylelint rules; they live in `stylelint.config.mjs`, which cites this section per rule. The three needing real logic — the 8px arithmetic, the outline-replacement check, and the boundary check — are in `stylelint-plugins/kite.mjs`, a local file rather than an npm package so that it versions with the code exactly as this document does.
+
+**The last rule is advisory.** "Meaningful boundary" is a human judgement, so `kite/boundary-is-border` reports at `severity: 'warning'` and is silenced with a `stylelint-disable-next-line` carrying a reason. That keeps it in the exceptions-are-written discipline below rather than making it un-shippable. Every other rule is an error.
 
 **Governance.** A design system decays by drifting from its document, so the relationship is stated rather than assumed:
 
@@ -1827,7 +1876,7 @@ The 8px rule is the highest-value one — it is exactly the discipline the proto
 **Voice and terminology.**
 
 - **Sentence case everywhere**, except `label` and `meta`, which §4.2 already fixes as uppercase. "Start studying", "Your progress", "Delete course". Title case forces a per-word rule that German ignores entirely — its nouns capitalise regardless — so the two locales would visibly stop matching.
-- **Interface words match the data model exactly.** A module is a *module* in the interface, the API, the database, and this document. `Course`, `Lecture`, `Topic`, `Module`, `ContentType`. No learner-facing synonyms, no "card" for a module even on the deck where it visibly is one — a second vocabulary is a translation layer that drifts, and §1's fourth law is about exactly this.
+- **Interface words match the data model exactly.** A module is a _module_ in the interface, the API, the database, and this document. `Course`, `Lecture`, `Topic`, `Module`, `ContentType`. No learner-facing synonyms, no "card" for a module even on the deck where it visibly is one — a second vocabulary is a translation layer that drifts, and §1's fourth law is about exactly this.
 - Buttons are verbs (§6.4). Errors say how to fix it (§6.8). Nothing is congratulated except a milestone (§11.8), and nothing is apologised for.
 
 **Icons.** One set, one weight, one grid, at **24px** — a grid multiple, and the same size everywhere, so there is no per-context optical decision to get wrong. `@tabler/icons-react` is already a Common Sage dependency and is a reasonable default; the hand-rolled SVG glyphs in the prototypes do not scale.
@@ -1836,7 +1885,7 @@ Icons exist for the **six `ContentType`s** and for interface actions, and **not 
 
 **Math.** The `formula_equation` module renders equations and nothing in either codebase handles math. Use **MathML** where support allows, with KaTeX as the renderer — never an image of an equation, which is unreadable, unselectable, and unsearchable. Every formula carries a text description for screen readers.
 
-**Images.** Generated images carry `alt_text` from the worker. Today `hero_image` falls back to `alt={img.alt_text || topic}` — the topic *name*, which is a label, not a description, and fails SC 1.1.1. Fix: **alt text is required at generation**, reviewed at publish (§13.6), and there is no name-based fallback. An image with no usable description is either decorative (`alt=""`) or is not published.
+**Images.** Generated images carry `alt_text` from the worker. Today `hero_image` falls back to `alt={img.alt_text || topic}` — the topic _name_, which is a label, not a description, and fails SC 1.1.1. Fix: **alt text is required at generation**, reviewed at publish (§13.6), and there is no name-based fallback. An image with no usable description is either decorative (`alt=""`) or is not published.
 
 **Error boundaries.** One per route and one per module frame. A single failing module must not take down a study session; it renders the §11.13 error state in its own frame and the deck advances past it.
 
@@ -1848,12 +1897,12 @@ Icons exist for the **six `ContentType`s** and for interface actions, and **not 
 
 Publishing is already gated on captions (§6.9). That gate generalises: the worker produces accessibility metadata, and the educator reviews it before publish.
 
-| Content | Generator produces | Educator reviews |
-|---|---|---|
-| Image | `alt_text` | Accuracy — a confidently wrong description is worse than none |
-| Video | Caption track, transcript | Sync and accuracy |
-| Audio | Transcript | Accuracy |
-| Formula | Text description | Correctness |
+| Content | Generator produces        | Educator reviews                                              |
+| ------- | ------------------------- | ------------------------------------------------------------- |
+| Image   | `alt_text`                | Accuracy — a confidently wrong description is worse than none |
+| Video   | Caption track, transcript | Sync and accuracy                                             |
+| Audio   | Transcript                | Accuracy                                                      |
+| Formula | Text description          | Correctness                                                   |
 
 The review step is a wizard stage (§6.7), not a checkbox. It shows the asset and its description side by side and requires an explicit accept or edit per item. Generated accessibility metadata is a **draft**, and the system says so — an unreviewed description is marked as such until a human accepts it.
 
@@ -1896,3 +1945,71 @@ A component ships when all of these hold. This is the checklist the whole docume
 - [ ] Passes the §13.3 stylelint rules — they encode this list mechanically
 - [ ] Uses React Aria where it covers the pattern; hand-built widgets carry component tests (§13.2)
 - [ ] Generated content has reviewed accessibility metadata, not draft (§13.6)
+
+## 15. Catalogue reconciliation (2026-07-28)
+
+`complete_modules.md` — the deduplicated catalogue measured across all six Common Sage repositories — was ruled the **authority on interaction**. Where it documents a behaviour that an earlier section of this document had removed or reduced, the catalogue wins and this section records the change. Sections are appended, never renumbered (§13.3), so the rows below amend rather than replace.
+
+### 15.1 Interactions restored
+
+| Type                                   | §6.10/§9.3 said                                                                      | The catalogue says                                                                                                | What shipped                                                                                                                                                                                                                                                                                                                                                                            |
+| -------------------------------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `globe_pin`                            | Static SVG locator, no pan/zoom, not a carve-out                                     | Drag to pan, scroll/pinch to zoom, click a pin for its description, OSM attribution                               | Leaflet + OSM tiles. **§9.3B's raster-map carve-out is now live** and its terms are met: `role="application"`, an instruction line read before the map, and a pin list beside it that carries every label and description and selects the same state.                                                                                                                                   |
+| `map_click_quiz`                       | Static SVG with `Reveal`/`Reset`                                                     | Click to place a point, distance error, partial credit                                                            | Leaflet, click-to-place, distance grading at 150 km (correct) and 600 km (partial), with a candidate list that writes the same value and is graded identically.                                                                                                                                                                                                                         |
+| `model_3d`                             | Poster plus "what rotation reveals"; viewer withheld until keyboard rotation existed | Automatic rotation, drag to rotate, scroll/pinch to zoom, thumbnail fallback                                      | `@react-three/fiber` viewer. **§9.3C's carve-out is now live**, and the keyboard rotation it demanded exists rather than being deferred: arrows turn, `+`/`−` zoom, `Home` resets, and orientation is announced as a named face on a 500 ms sample. The poster and `reveals` text remain, so the objective is reachable without the canvas. The viewer boots on request, not on scroll. |
+| `conversion_calculator`                | Removed from the vocabulary; to be deleted from both registries                      | A live tool with an input, immediate results, a clear control and `Enter a valid number`                          | Restored as an ungraded row. The original objection is answered in the composition — results are a table rather than a competing grid of boxes, and output is bounded to four significant figures.                                                                                                                                                                                      |
+| Ungraded cards                         | No control band; a single `Continue`                                                 | A reversible feed-level `Hard` / `Easy`                                                                           | Both. `Continue` stays the primary in the bottom-right corner; the two-point rating sits at the other end of the footer and clears when pressed again. Two points, not four: an ungraded card emits no recall signal, so a four-point scale would claim a precision the data has not got.                                                                                               |
+| `flashcard_set`, multi-question `quiz` | One card per module                                                                  | Prev/Next/go-to-card, wrapping, results with a percentage, four result messages, per-question review, `Try Again` | `SetModule` owns the sequence; each card is rendered by the ordinary frame with the ordinary controls. Set navigation renders **inside the prompt band**, never in the control band.                                                                                                                                                                                                    |
+
+### 15.2 The webfont exception
+
+§4.1 says system faces only. **KaTeX is the one exception**, bounded to elements inside `.k-formula__expression` and the formula legend.
+
+The reason it is worth an exception: mathematical layout is not typography with a different alphabet. The placement of a limit under a sigma, the size of a nested fraction and the reach of a radical are semantic, and no system face carries the metrics for them. `throwOnError: false` means malformed generated LaTeX degrades to its source rather than blanking the card, and `output: 'htmlAndMathml'` means the MathML half is what a screen reader reads.
+
+No other surface may use it. A second webfont needs its own row here.
+
+### 15.3 Geometry — what "nothing moves" was measured to mean
+
+§6.10 promised that the primary control occupies identical coordinates before and after an answer. Building it found three ways that promise leaks, all of them now closed and all of them found by measurement rather than by reading the code:
+
+- **Bands are snapped to `--u`, not ceiled to the pixel.** Fractional row heights make the grid's row boundaries round inconsistently between states; the control band drifted 1px on `particle_cloze`, `transcription` and `grammar_production`.
+- **The frame states its own height** — `max(8 cells + 2px, the bands' sum + 2px)` — rather than taking `min-block-size` and letting the rows total whatever they total. Every term is a multiple of 8, so the total is.
+- **The response row absorbs the slack** (`minmax(--response-block, 1fr)`). With fixed rows and nothing to stretch, a short card left a 70px dead strip _below_ the control band, so the primary action floated mid-card instead of terminating §2.5's diagonal.
+- **The measuring pass measures the revealed state**, control _and_ answer together. Measuring the answer only for `response: none` types let `kanji_writing` grow 48px at the moment of reveal.
+
+The check is mechanical and should stay that way: for each graded type, the frame's `offsetWidth`/`offsetHeight`, its computed `grid-template-rows`, and every band slot's `offsetLeft`/`offsetTop`/size must be identical before and after answering. Rendered rects are the wrong instrument — when the page sits on a fractional y, the frame's border-box origin and its children round independently and report a 1px shift that no layout made.
+
+### 15.4 The band on a settled attempt
+
+§6.10's diagram shows four ratings after a reveal. That is right for a self-graded card and wrong for one the machine has already marked: offering `Again / Hard / Good / Easy` with three of them disabled points the learner at a control the card will not accept, and promoting `Again` to primary puts the emphasis in slot 1, where the give-up control sat a second earlier — the exact collision the deliberately-empty third slot exists to prevent.
+
+So a **settled** attempt — objectively wrong, or revealed on an objectively graded type — shows the fixed verdict in slot 1 and a single `Continue` in slot 4, where every primary in the product lives. Self-graded cards and correct answers keep the four ratings with `Good` in slot 3.
+
+### 15.5 Part 1 — the full-page study functions
+
+Eight functions, each a route: `/japanese/lesson`, `/japanese/read`, `/japanese/listen`, `/japanese/karaoke`, `/japanese/placement`, `/japanese/explorer`, `/chat`, and `/courses/[id]/feed`. Three rules govern all of them.
+
+**They compose the deck's cards; they do not re-implement them.** The lesson runner, the placement runner and the chat's generated cards all serve ordinary modules through `ModuleFrame`. A drill inside a lesson is the same object as a drill in a session.
+
+**Paper, not glass.** These surfaces put controls and prose directly on the shader. Measured on the light gradient, every label on Read, Listen, Karaoke, Concepts and Tutor was pale ink on a pale wash and could not be read. The work region of a full-page function is `--panel` with a hairline; §5's material map has no exception for "it is a page rather than a card". The head's orientation line genuinely sits on the gradient and uses `--shader-ink`; it never gains a local grey fill or text-sized veil. The light Common Sage wave therefore uses a brighter warm-grey range with enough tonal movement to remain visible without becoming cold or decorative.
+
+**A denominator only where one exists.** The active lesson may show the position in its frozen card set. The feed and deck show nothing: both are open-ended experiences and any persistent count would become a number to optimise (§11.6).
+
+**Daily learning is mixed, not staged.** Review, new material, context, and recall remain pedagogical inputs to the daily selection, but they are not exposed as a six-step interface. The plan is one lattice-aligned card; quantity controls sit directly beside their numbers in one-cell squares; item exceptions use recognisable one-cell-high buttons.
+
+**Text generation is library disclosure.** Reading, Listening, and Read Aloud show the shared text library first. The last library action is `+ New Text`, which opens one dialog containing single-line generation settings and a text-upload path. Generation controls never occupy a permanent tab or compete with the selected text.
+
+**Language Tutor is chat-first.** The Japanese conversation is the work region. Translations have a visible on/off control; scenario, tutor voice, and the option to inherit today’s lesson topic live in one Settings callout at the card’s top right. Course Q&A is a different function and does not share this surface.
+
+Two counts differ from the JKG source deliberately: the feed discards a view shorter than **0.7 s** rather than recording it weakly, and placement reports a **working level with an explicit uncertainty** rather than a score, taking the lowest dimension rather than the mean — a learner whose grammar is N4 and whose kanji is N5 cannot read an N4 lesson.
+
+### 15.6 Still not built
+
+Named so that absence stays legible (§9.3's form):
+
+- **JKG is not wired.** Every Part 1 page runs on fixtures shaped to `server/*.py` responses. The service is a separate Flask app on port 8010; wiring it is an adapter, not a redesign.
+- **Generation is honest about itself.** `+ New Text` currently copies an existing text under the chosen dialog settings; uploads enter the same fixture path after stating that AI processing would follow. A generator that invented Japanese would put mistakes in front of a learner who cannot see them.
+- **Language Tutor uses a scripted Japanese reply** until the Japanese service is wired. It preserves the chat interaction and topic inheritance without presenting fixture output as a live tutor model.
+- **Speech recognition is Chrome and Edge only**, on `vocab_guess` and Karaoke. Acceptable because both are ungraded or have an always-present typed path — never because it is common.
+- **Stroke-order grading does not exist.** `kanji_writing` captures stroke count and direction and shows the model on reveal; the learner self-rates. A scorer that guessed would be worse than one that abstains.
