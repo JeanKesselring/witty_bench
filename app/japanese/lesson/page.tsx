@@ -5,10 +5,7 @@ export const metadata = { title: 'Today’s lesson — Common Sage' }
 
 export default function LessonPage() {
   return (
-    <Surface
-      title="Today’s lesson"
-      orientation="Choose today’s mix, then work through review, context, and recall as one coherent lesson."
-    >
+    <Surface title="Today’s lesson" orientation="Choose today’s mix, then start the lesson.">
       <DailyLesson />
     </Surface>
   )

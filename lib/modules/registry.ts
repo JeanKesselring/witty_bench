@@ -61,7 +61,11 @@ export interface ModuleTypeSpec {
 
 const t = (s: ModuleTypeSpec) => s
 
-/* ── Graded — academic (6) ───────────────────────────────────────── */
+/* ── Graded — academic (4) ─────────────────────────────────────────
+ *
+ * Sets are presentation data (`cards`), not a second flashcard type, and
+ * MCQ is simply the long name of the ordinary choice quiz. Legacy IDs are
+ * normalised at the bottom of this file so old stored sessions still open. */
 
 const GRADED_ACADEMIC: ModuleTypeSpec[] = [
   t({
@@ -74,25 +78,7 @@ const GRADED_ACADEMIC: ModuleTypeSpec[] = [
     contentType: 'flashcard',
   }),
   t({
-    id: 'flashcard_set',
-    mode: 'recognition',
-    graded: true,
-    showTopic: false,
-    tolerance: 'na',
-    response: 'none',
-    contentType: 'flashcard',
-  }),
-  t({
     id: 'quiz',
-    mode: 'recognition',
-    graded: true,
-    showTopic: false,
-    tolerance: 'na',
-    response: 'choice',
-    contentType: 'quiz',
-  }),
-  t({
-    id: 'mcq',
     mode: 'recognition',
     graded: true,
     showTopic: false,
@@ -120,38 +106,11 @@ const GRADED_ACADEMIC: ModuleTypeSpec[] = [
   }),
 ]
 
-/* ── Graded — language (16) ──────────────────────────────────────────
+/* ── Graded — language (13) ──────────────────────────────────────────
  * None of these exists in either registry yet (§12.1); mode and graded
  * here are this document's proposal until the rows land. */
 
 const GRADED_LANGUAGE: ModuleTypeSpec[] = [
-  t({
-    id: 'language_flashcard',
-    mode: 'recognition',
-    graded: true,
-    showTopic: false,
-    tolerance: 'na',
-    response: 'none',
-    contentType: 'flashcard',
-  }),
-  t({
-    id: 'kana_recognition',
-    mode: 'recognition',
-    graded: true,
-    showTopic: true,
-    tolerance: 'na',
-    response: 'choice',
-    contentType: 'quiz',
-  }),
-  t({
-    id: 'kana_production',
-    mode: 'production',
-    graded: true,
-    showTopic: true,
-    tolerance: 'exact',
-    response: 'text',
-    contentType: 'quiz',
-  }),
   t({
     id: 'discrimination',
     mode: 'recognition',
@@ -319,8 +278,19 @@ export const MODULE_TYPES: ModuleTypeSpec[] = [...GRADED_ACADEMIC, ...GRADED_LAN
 
 const BY_ID = new Map(MODULE_TYPES.map((m) => [m.id, m]))
 
+/** Historical names accepted at the data boundary, never shown as modules. */
+const ALIASES: Record<string, string> = {
+  flashcard_set: 'flashcard',
+  language_flashcard: 'flashcard',
+  mcq: 'quiz',
+  kana_recognition: 'quiz',
+  // Removed from the repertoire. Existing stored attempts retain a usable
+  // typed-production renderer until their content is migrated.
+  kana_production: 'vocab_production',
+}
+
 export function moduleType(id: string): ModuleTypeSpec | undefined {
-  return BY_ID.get(id)
+  return BY_ID.get(ALIASES[id] ?? id)
 }
 
 /* An unknown type must still render. The server can register a type this
@@ -339,7 +309,7 @@ const FALLBACK: ModuleTypeSpec = t({
 })
 
 export function moduleTypeOrDefault(id: string): ModuleTypeSpec {
-  return BY_ID.get(id) ?? FALLBACK
+  return BY_ID.get(ALIASES[id] ?? id) ?? FALLBACK
 }
 
 /** §3.2: the accent and its required second channel, keyed by ContentType. */

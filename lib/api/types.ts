@@ -110,15 +110,11 @@ export interface ModuleItem {
   figure?: Figure
   /** Optional line under the topic title. `topic_card` uses it for its type. */
   subtitle?: string
-  /** Shown with the judgement when supplied — the catalogue's "display an
-   *  explanation" on quizzes and drills. It rides in the judgement row, which
-   *  is a fixed height, so no wording can change the card. */
+  /** Optional supporting explanation for result review or an inspector. */
   explanation?: string
   /**
-   * Set presentation. `flashcard_set` and a multi-question `quiz`/`mcq` are
-   * the SAME retrieval cards as their single form — the catalogue is explicit
-   * that these are presentation modes, not separate modules — so they carry
-   * extra cards here rather than getting their own renderer.
+   * Set presentation. A canonical `flashcard` or `quiz` carries extra cards
+   * here; a set is presentation data, never a second module type or renderer.
    *
    * A single-card module leaves this undefined and the frame behaves exactly
    * as before; nothing about the one-card path is conditional on it.

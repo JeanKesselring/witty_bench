@@ -409,6 +409,8 @@ Derivation, using the worst-case gradient stops in the shipped palettes with `in
 
 **The gradient is ambient, never reactive.** It drifts on its own clock and responds to exactly one thing: the active item's content-type accent (§3.2), morphed over `spring.ambient`. It never responds to correctness, streak, progress, depth, pointer, or hover. Because it is `aria-hidden`, anything it encoded would be information available to sighted users only — so it encodes nothing.
 
+**Default field.** Common Sage uses one saturated blue family in both themes, not a warm/cool multicolour wash. Light runs from clear sky blue into pale blue-white; dark runs from vivid blue into blue-black. Presence comes from chroma and tonal range, while motion remains unusually slow (`uSpeed: 0.012`). Do not make the field feel more alive by making it move faster.
+
 **Scroll behaviour.** The gradient layer is `position: fixed`, viewport-pinned. Content and the lattice scroll over it, so the page reads as frosted glass sliding across light — this is the one scroll effect the system keeps, and it costs nothing because nothing is animating on scroll. The **lattice and notes layer is in document flow**: it runs the full scroll length of the page rather than being pinned to the viewport, so a note stays beside the content it was written against. A note's _arrangement_ on that lattice is a session-only workspace; its durable anchor is a topic, not a coordinate (§11.15). Scroll progress may drive the shader camera, quantised to ~120 buckets before reaching React state. There is no parallax on content and no scroll-triggered entrance animation.
 
 ### 3.6 Elevation
@@ -517,7 +519,7 @@ The language modules are the hardest typography in the product: a _Discriminatio
 <ruby>図書館<rp>(</rp><rt>としょかん</rt><rp>)</rp></ruby>
 ```
 
-`<rt>` at `0.5em`, `ruby-position: over`. Reserve line-box space so ruby never shifts the lines around it. Furigana is a **scaffold**: every module that shows it exposes a toggle, and the toggle state persists per learner. The `<rp>` fallback parentheses matter — assistive technology and non-supporting renderers read them.
+`<rt>` at `0.5em`, `ruby-position: over`. Reserve line-box space so ruby never shifts the lines around it. Furigana is a **scaffold**: every module that contains optional reading data exposes a toggle, and the toggle state persists per learner. Kana recognition, discrimination, kana production, kanji reading, and transcription never expose it: there it is meaningless or reveals the answer. A toggle with no ruby data is also forbidden. The `<rp>` fallback parentheses matter — assistive technology and non-supporting renderers read them.
 
 **Audio.** Speech is never the only channel. Every spoken prompt (Vocab guesser, Transcription) has a visible transcript toggle (SC 1.2.1) and a replay control, and the module is completable with audio muted.
 
@@ -740,13 +742,13 @@ The single most repeated composition in the product, and the one specified most 
 
 **The frame applies to graded modules only.** The split is not a Kite invention — `graded` is already a field on every type in the backend's `module_registry.py`, meaning "answering this emits a recall signal that advances scheduling." The frontend reads that flag and never re-derives it (§3.2).
 
-|                           | Graded                                                                                          | Ungraded                                                                                                                                                                                                                                  |
-| ------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Registered academic types | **6** — `flashcard`, `quiz`, `mcq`, `flashcard_set`, `timeline_drag_exercise`, `map_click_quiz` | **14** — `text`, `summary`, `topic_card`, `diagram_schematic`, `input_output_balance`, `stat_boxes`, `key_value_pairs`, `timeline`, `common_mistakes`, `comparison_vs_similar`, `formula_equation`, `hero_image`, `globe_pin`, `model_3d` |
-| Behaviour                 | This frame: fixed bands, fixed controls                                                         | **Scrolls** — see below                                                                                                                                                                                                                   |
-| Signal emitted            | A grade                                                                                         | Engagement only                                                                                                                                                                                                                           |
+|                           | Graded                                                                  | Ungraded                                                                                                                                                                                                                                                                             |
+| ------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Registered academic types | **4** — `flashcard`, `quiz`, `timeline_drag_exercise`, `map_click_quiz` | **17** — `text`, `summary`, `topic_card`, `diagram_schematic`, `input_output_balance`, `stat_boxes`, `key_value_pairs`, `timeline`, `common_mistakes`, `comparison_vs_similar`, `conversion_calculator`, `formula_equation`, `hero_image`, `globe_pin`, `model_3d`, `audio`, `video` |
+| Behaviour                 | This frame: fixed bands, fixed controls                                 | **Scrolls** — see below                                                                                                                                                                                                                                                              |
+| Signal emitted            | A grade                                                                 | Engagement only                                                                                                                                                                                                                                                                      |
 
-The **15 language types** — `kana_recognition`, `kana_production`, `discrimination`, `kanji_meaning`, `kanji_reading`, `vocab_recognition`, `vocab_production`, `vocab_guess`, `conjugation`, `particle_cloze`, `sentence_scramble`, `grammar_recognition`, `grammar_production`, `transcription`, `language_flashcard` — exist as prototypes in [LanguageModules.tsx](src/components/modules/LanguageModules.tsx) and are **in neither registry**, so `mode` and `graded` are undefined for all of them. They are graded on their face, but until they are registered the scheduler cannot see them at all (§12.1). Every count in this document is measured from the registries rather than asserted; the previously stated "31 types" reconciled with nothing.
+The frontend repertoire has **13 named language skill variants**. Japanese flashcards use canonical `flashcard`; kana recognition uses canonical `quiz`; `kana_production` is removed. Legacy stored IDs are accepted only at the data boundary and normalised before rendering. Pedagogical metadata may still say that a quiz tests kana, but that does not justify a duplicate interaction type.
 
 `conversion_calculator` is **removed** from the vocabulary and needs deleting from both registries (§12.1).
 
@@ -811,9 +813,9 @@ The fourth slot is the primary action and is always the rightmost, where §2.5's
 
 #### Grading
 
-**Self-graded types** — `flashcard`, `flashcard_set`, `language_flashcard`, and the recognition modules where the learner produces nothing the system can mark. There is nothing to check, so **Reveal is the normal path, not a failure**: reveal, then rate. The grade is **Again / Hard / Good / Easy** and comes entirely from the learner.
+**Self-graded type** — `flashcard`, including a flashcard carrying a `cards` sequence and a Japanese flashcard. There is nothing to check, so **Reveal is the normal path, not a failure**: reveal, then rate. The grade is **Again / Hard / Good / Easy** and comes entirely from the learner.
 
-**Objectively graded types** — `quiz`, `mcq`, `timeline_drag_exercise`, `map_click_quiz`, and the language production modules. Check marks the attempt. Here **Reveal means giving up, and counts as `Again`** — which the control states in plain language _before_ it is pressed. A control that silently damages a schedule is a trap; one that says what it costs is a choice.
+**Objectively graded types** — `quiz`, `timeline_drag_exercise`, `map_click_quiz`, and the language production modules. Check marks the attempt and the machine assigns the scheduling grade; the only following action is **Continue**. Difficulty ratings never appear after an objective test. Here **Reveal means giving up, and counts as `Again`** — which the control states in plain language _before_ it is pressed.
 
 **Skip is never graded, on any type.** It emits nothing and the item leaves the session entirely, returning at its next natural due date. It is the escape hatch for a broken video, a bad moment, or a card the learner isn't ready for, and it must stay cheap enough to use honestly — a Skip that costs something is a Skip nobody presses.
 
@@ -882,15 +884,15 @@ Four kinds, one set of shared laws. §3.6 ends by saying that anything needing a
 
 What lives in the module frame's RESPONSE band (§6.10). Enumerated against all 36 module types, the set collapses to **six**, plus the handwriting canvas — which is listed here for completeness but is a carve-out (§9.3D) rather than a standard control. The point of a closed set is that a new module type must reuse one of the six or argue for a seventh.
 
-| Control                         | Types                                                                                                            |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| **None** — reveal and self-rate | `flashcard`, `flashcard_set`, `language_flashcard`                                                               |
-| **Single choice**               | `quiz`, `mcq`, `kana_recognition`, `discrimination`, `vocab_recognition`, `grammar_recognition`, `kanji_meaning` |
-| **Text entry**                  | `kana_production`, `vocab_production`, `kanji_reading`, `conjugation`, `grammar_production`, `transcription`     |
-| **Cloze**                       | `particle_cloze`                                                                                                 |
-| **Ordering**                    | `sentence_scramble`, `timeline_drag_exercise`                                                                    |
-| **Map click**                   | `map_click_quiz`                                                                                                 |
-| **Handwriting**                 | `kanji_writing` — canvas, §9.3D                                                                                  |
+| Control                         | Types                                                                                                                             |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| **None** — reveal and self-rate | `flashcard` (single, set, generic, or Japanese)                                                                                   |
+| **Single choice**               | `quiz` (including kana recognition and legacy MCQ), `discrimination`, `vocab_recognition`, `grammar_recognition`, `kanji_meaning` |
+| **Text entry**                  | `vocab_production`, `kanji_reading`, `conjugation`, `grammar_production`, `transcription`                                         |
+| **Cloze**                       | `particle_cloze`                                                                                                                  |
+| **Ordering**                    | `sentence_scramble`, `timeline_drag_exercise`                                                                                     |
+| **Map click**                   | `map_click_quiz`                                                                                                                  |
+| **Handwriting**                 | `kanji_writing` — canvas, §9.3D                                                                                                   |
 
 `globe_pin` uses the same raster map and carries the same carve-out (§9.3B), but it is **ungraded** — it is a map to explore, not a question to answer, so it scrolls with the other ungraded types and has no response control at all.
 
@@ -926,7 +928,7 @@ A gap inside a sentence, **typed**, with a candidate bank available on request.
 
 #### Map click
 
-Per §9.3B, the non-map path is **mandatory, not a fallback**: every map question also presents its candidates as a labelled list of buttons, and a learner who never touches the map completes the module at full credit.
+Map click is one direct spatial task: no labelled candidate list and no labels baked into the basemap. Pointer users click; keyboard users pan and zoom, then press `Enter` to place the answer at the map centre. The response is drawn on the map. An incorrect distance appears as a small toast over the map, so judgement never adds a row or changes the card size.
 
 ### 6.13 Markdown block
 
@@ -952,28 +954,23 @@ Two rules generate almost all of it, which is the point — these are not 36 ind
 
 > **Topic rule.** The topic name is hidden exactly where **the topic names the thing being recalled**. "Chain rule" above _which rule applies here?_ is the answer printed above the question; "Rivers of Europe" above _where is the Rhine?_ is not. Where hidden, it reappears with the judgement and in the inspector rail (§7.2).
 
-> **Tolerance rule.** **Exact** wherever the written form _is_ the objective — kana production, readings, transcription. **Tolerant** wherever the answer is meaning expressed in prose, where a typo tests typing rather than the material. **n/a** for every non-text control.
+> **Tolerance rule.** **Exact** wherever the written form _is_ the objective — readings and transcription. **Tolerant** wherever the answer is meaning expressed in prose, where a typo tests typing rather than the material. **n/a** for every non-text control.
 
 Marked ⚠ where the call is genuinely arguable rather than generated by the rules.
 
-#### Graded — academic (6)
+#### Graded — academic (4)
 
 | Type                     | Mode        | Topic  | Tolerance | Response             |
 | ------------------------ | ----------- | ------ | --------- | -------------------- |
 | `flashcard`              | recognition | hidden | n/a       | none — reveal + rate |
-| `flashcard_set`          | recognition | hidden | n/a       | none — reveal + rate |
 | `quiz`                   | recognition | hidden | n/a       | single choice        |
-| `mcq`                    | recognition | hidden | n/a       | single choice        |
 | `timeline_drag_exercise` | production  | shown  | n/a       | ordering             |
 | `map_click_quiz`         | production  | shown  | n/a       | map click            |
 
-#### Graded — language (15 + 1)
+#### Graded — language (13)
 
 | Type                  | Mode        | Topic      | Tolerance | Response                           |
 | --------------------- | ----------- | ---------- | --------- | ---------------------------------- |
-| `language_flashcard`  | recognition | hidden     | n/a       | none — reveal + rate               |
-| `kana_recognition`    | recognition | shown      | n/a       | single choice                      |
-| `kana_production`     | production  | shown      | exact     | text entry                         |
 | `discrimination`      | recognition | shown      | n/a       | single choice — 96px glyphs (§4.3) |
 | `kanji_meaning`       | recognition | hidden ⚠   | n/a       | single choice                      |
 | `kanji_reading`       | production  | hidden ⚠   | exact     | text entry                         |
@@ -990,7 +987,7 @@ Marked ⚠ where the call is genuinely arguable rather than generated by the rul
 
 The bolded rows are where the topic rule bites hardest: a `particle_cloze` under the topic _"The particle に"_ has already been answered, and the same is true of every grammar and conjugation type, whose topics are named after the exact form being tested. This is the single most common way a language deck leaks its answers.
 
-#### Ungraded — academic (14)
+#### Ungraded — academic (17)
 
 `text` · `summary` · `topic_card` · `diagram_schematic` · `input_output_balance` · `stat_boxes` · `key_value_pairs` · `timeline` · `common_mistakes` · `comparison_vs_similar` · `formula_equation` · `hero_image` · `globe_pin` · `model_3d`
 
@@ -1138,7 +1135,7 @@ SC 2.5.7 _Dragging Movements_ is AA in WCAG 2.2 and applies to note placement, n
 
 **Reorder** (timeline drag, sentence scramble): focus an item, `Space` grabs, arrows reorder, `Space` drops, `Escape` reverts. Announce `"Moved to position 3 of 6."`
 
-**Map square:** see [§9.3](#93-canvas-carve-outs) — the map ships a list-based equivalent, not merely arrow-key panning.
+**Map square:** see [§9.3](#93-canvas-carve-outs) — arrows pan, `+`/`−` and the wheel zoom, and `Enter` places the map centre.
 
 ### 8.6 Focus appearance
 
@@ -1220,7 +1217,7 @@ _Mitigations, all required:_ `aria-hidden`, not focusable, not in tab order · c
 
 **B. The raster map** (`map_click_quiz`, `globe_pin`).
 _Exception:_ the Leaflet map is `role="application"` and its pan/zoom is not fully expressible in ARIA.
-_Mitigations, all required:_ entering is explicit and `Escape` always exits to the container — no keyboard trap under any circumstance · **a non-map answer path is mandatory**: every map question also presents candidates as a labelled list of buttons, and a learner who cannot use the map completes the module at full credit · arrows move selection one cell with announced coordinates and any known label · the accessible name states the interaction model, not just the content · correct/selected/hovered differ in outline weight and pattern, not only colour.
+_Mitigations, all required:_ entering is explicit and `Escape` always exits to the container — no keyboard trap under any circumstance · arrows pan and zoom controls remain operable · `Enter` places the current map centre, giving keyboard users the same unlabelled spatial task rather than a multiple-choice substitute · the accessible name and hidden instruction state the interaction model · correct and selected points differ in weight and pattern, not only colour.
 
 **C. The 3D model** (`model_3d`).
 _Exception:_ the rotatable WebGL object is not describable in ARIA.
@@ -1952,14 +1949,14 @@ A component ships when all of these hold. This is the checklist the whole docume
 
 ### 15.1 Interactions restored
 
-| Type                                   | §6.10/§9.3 said                                                                      | The catalogue says                                                                                                | What shipped                                                                                                                                                                                                                                                                                                                                                                            |
-| -------------------------------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `globe_pin`                            | Static SVG locator, no pan/zoom, not a carve-out                                     | Drag to pan, scroll/pinch to zoom, click a pin for its description, OSM attribution                               | Leaflet + OSM tiles. **§9.3B's raster-map carve-out is now live** and its terms are met: `role="application"`, an instruction line read before the map, and a pin list beside it that carries every label and description and selects the same state.                                                                                                                                   |
-| `map_click_quiz`                       | Static SVG with `Reveal`/`Reset`                                                     | Click to place a point, distance error, partial credit                                                            | Leaflet, click-to-place, distance grading at 150 km (correct) and 600 km (partial), with a candidate list that writes the same value and is graded identically.                                                                                                                                                                                                                         |
-| `model_3d`                             | Poster plus "what rotation reveals"; viewer withheld until keyboard rotation existed | Automatic rotation, drag to rotate, scroll/pinch to zoom, thumbnail fallback                                      | `@react-three/fiber` viewer. **§9.3C's carve-out is now live**, and the keyboard rotation it demanded exists rather than being deferred: arrows turn, `+`/`−` zoom, `Home` resets, and orientation is announced as a named face on a 500 ms sample. The poster and `reveals` text remain, so the objective is reachable without the canvas. The viewer boots on request, not on scroll. |
-| `conversion_calculator`                | Removed from the vocabulary; to be deleted from both registries                      | A live tool with an input, immediate results, a clear control and `Enter a valid number`                          | Restored as an ungraded row. The original objection is answered in the composition — results are a table rather than a competing grid of boxes, and output is bounded to four significant figures.                                                                                                                                                                                      |
-| Ungraded cards                         | No control band; a single `Continue`                                                 | A reversible feed-level `Hard` / `Easy`                                                                           | Both. `Continue` stays the primary in the bottom-right corner; the two-point rating sits at the other end of the footer and clears when pressed again. Two points, not four: an ungraded card emits no recall signal, so a four-point scale would claim a precision the data has not got.                                                                                               |
-| `flashcard_set`, multi-question `quiz` | One card per module                                                                  | Prev/Next/go-to-card, wrapping, results with a percentage, four result messages, per-question review, `Try Again` | `SetModule` owns the sequence; each card is rendered by the ordinary frame with the ordinary controls. Set navigation renders **inside the prompt band**, never in the control band.                                                                                                                                                                                                    |
+| Type                             | §6.10/§9.3 said                                                                      | The catalogue says                                                                                                | What shipped                                                                                                                                                                                                                                                                                                                                                                            |
+| -------------------------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `globe_pin`                      | Static SVG locator, no pan/zoom, not a carve-out                                     | Drag to pan, scroll/pinch to zoom, click a pin for its description, OSM attribution                               | Leaflet + OSM tiles. **§9.3B's raster-map carve-out is now live** and its terms are met: `role="application"`, an instruction line read before the map, and a pin list beside it that carries every label and description and selects the same state.                                                                                                                                   |
+| `map_click_quiz`                 | Static SVG with `Reveal`/`Reset`                                                     | Click to place a point, distance error, partial credit                                                            | Leaflet, click-to-place, wheel/pinch zoom, distance grading at 150 km (correct) and 600 km (partial). The label-free map is the sole visible response surface; keyboard users place its centre with `Enter`. Error distance is an in-map toast.                                                                                                                                         |
+| `model_3d`                       | Poster plus "what rotation reveals"; viewer withheld until keyboard rotation existed | Automatic rotation, drag to rotate, scroll/pinch to zoom, thumbnail fallback                                      | `@react-three/fiber` viewer. **§9.3C's carve-out is now live**, and the keyboard rotation it demanded exists rather than being deferred: arrows turn, `+`/`−` zoom, `Home` resets, and orientation is announced as a named face on a 500 ms sample. The poster and `reveals` text remain, so the objective is reachable without the canvas. The viewer boots on request, not on scroll. |
+| `conversion_calculator`          | Removed from the vocabulary; to be deleted from both registries                      | A live tool with an input, immediate results, a clear control and `Enter a valid number`                          | Restored as an ungraded row. The original objection is answered in the composition — results are a table rather than a competing grid of boxes, and output is bounded to four significant figures.                                                                                                                                                                                      |
+| Ungraded cards                   | No control band; a single `Continue`                                                 | A reversible feed-level `Hard` / `Easy`                                                                           | Both. `Continue` stays the primary in the bottom-right corner; the two-point rating sits at the other end of the footer and clears when pressed again. Two points, not four: an ungraded card emits no recall signal, so a four-point scale would claim a precision the data has not got.                                                                                               |
+| Multi-card `flashcard` or `quiz` | One card per module                                                                  | Prev/Next/go-to-card, wrapping, results with a percentage, four result messages, per-question review, `Try Again` | `cards` is presentation data, not another module type. `SetModule` owns the sequence; each card is rendered by the ordinary frame with the ordinary controls. Set navigation renders **inside the prompt band**, never in the control band.                                                                                                                                             |
 
 ### 15.2 The webfont exception
 
@@ -1971,20 +1968,29 @@ No other surface may use it. A second webfont needs its own row here.
 
 ### 15.3 Geometry — what "nothing moves" was measured to mean
 
-§6.10 promised that the primary control occupies identical coordinates before and after an answer. Building it found three ways that promise leaks, all of them now closed and all of them found by measurement rather than by reading the code:
+“Nothing moves” means an individual card does not grow when it is checked; it
+does not mean every module in a mixed session reserves the height of the
+tallest one. Graded cards are content-sized, with lattice-derived padding and
+targets. State changes reuse geometry that already exists:
 
-- **Bands are snapped to `--u`, not ceiled to the pixel.** Fractional row heights make the grid's row boundaries round inconsistently between states; the control band drifted 1px on `particle_cloze`, `transcription` and `grammar_production`.
-- **The frame states its own height** — `max(8 cells + 2px, the bands' sum + 2px)` — rather than taking `min-block-size` and letting the rows total whatever they total. Every term is a multiple of 8, so the total is.
-- **The response row absorbs the slack** (`minmax(--response-block, 1fr)`). With fixed rows and nothing to stretch, a short card left a 70px dead strip _below_ the control band, so the primary action floated mid-card instead of terminating §2.5's diagonal.
-- **The measuring pass measures the revealed state**, control _and_ answer together. Measuring the answer only for `response: none` types let `kanji_writing` grow 48px at the moment of reveal.
+- Choice verdicts recolour the options and fill a reserved mark slot.
+- Ordering verdicts recolour existing rows.
+- Map distance is an overlay inside the map.
+- Checking never adds a topic header, explanation row, “Correct”, “Try again”,
+  or a rating row.
+- Flashcard front and back share one physical flip surface; the overflow menu
+  belongs to that surface and rotates with it.
 
-The check is mechanical and should stay that way: for each graded type, the frame's `offsetWidth`/`offsetHeight`, its computed `grid-template-rows`, and every band slot's `offsetLeft`/`offsetTop`/size must be identical before and after answering. Rendered rects are the wrong instrument — when the page sits on a fractional y, the frame's border-box origin and its children round independently and report a 1px shift that no layout made.
+The mechanical check is therefore per card: its border-box size and the
+control band’s position are identical immediately before and after Check.
+Different prompts may produce different initial card heights; state is not
+allowed to.
 
 ### 15.4 The band on a settled attempt
 
 §6.10's diagram shows four ratings after a reveal. That is right for a self-graded card and wrong for one the machine has already marked: offering `Again / Hard / Good / Easy` with three of them disabled points the learner at a control the card will not accept, and promoting `Again` to primary puts the emphasis in slot 1, where the give-up control sat a second earlier — the exact collision the deliberately-empty third slot exists to prevent.
 
-So a **settled** attempt — objectively wrong, or revealed on an objectively graded type — shows the fixed verdict in slot 1 and a single `Continue` in slot 4, where every primary in the product lives. Self-graded cards and correct answers keep the four ratings with `Good` in slot 3.
+So **every objectively checked attempt**, correct, partial, wrong, or revealed, ends with one `Continue`; the machine has already generated the recall signal. Again / Hard / Good / Easy belongs only to self-graded flashcards, with `Good` in slot 3. A choice verdict is drawn in the existing option geometry: correct is green with `✓`; a wrong pick is red with `×` while the correct option is green with `✓`. There is no appended “Correct” or “Try again” panel.
 
 ### 15.5 Part 1 — the full-page study functions
 
@@ -1992,11 +1998,11 @@ Eight functions, each a route: `/japanese/lesson`, `/japanese/read`, `/japanese/
 
 **They compose the deck's cards; they do not re-implement them.** The lesson runner, the placement runner and the chat's generated cards all serve ordinary modules through `ModuleFrame`. A drill inside a lesson is the same object as a drill in a session.
 
-**Paper, not glass.** These surfaces put controls and prose directly on the shader. Measured on the light gradient, every label on Read, Listen, Karaoke, Concepts and Tutor was pale ink on a pale wash and could not be read. The work region of a full-page function is `--panel` with a hairline; §5's material map has no exception for "it is a page rather than a card". The head's orientation line genuinely sits on the gradient and uses `--shader-ink`; it never gains a local grey fill or text-sized veil. The light Common Sage wave therefore uses a brighter warm-grey range with enough tonal movement to remain visible without becoming cold or decorative.
+**Paper, not glass.** These surfaces put controls and prose directly on the shader. Measured on the light gradient, every label on Read, Listen, Karaoke, Concepts and Tutor was pale ink on a pale wash and could not be read. The work region of a full-page function is `--panel` with a hairline; §5's material map has no exception for "it is a page rather than a card". The head's orientation line genuinely sits on the gradient and uses `--shader-ink`; it never gains a local grey fill or text-sized veil. The light Common Sage wave therefore uses a brighter, more saturated monochrome-blue range with enough tonal movement to remain visible. Its motion is slower than the previous field; vibrancy comes from colour, never speed.
 
 **A denominator only where one exists.** The active lesson may show the position in its frozen card set. The feed and deck show nothing: both are open-ended experiences and any persistent count would become a number to optimise (§11.6).
 
-**Daily learning is mixed, not staged.** Review, new material, context, and recall remain pedagogical inputs to the daily selection, but they are not exposed as a six-step interface. The plan is one lattice-aligned card; quantity controls sit directly beside their numbers in one-cell squares; item exceptions use recognisable one-cell-high buttons.
+**Daily learning is mixed, not staged.** Review, new material, context, and recall remain pedagogical inputs to the daily selection, but they are not exposed as interface copy or a six-step sequence. The plan is a centred, fourteen-cell-wide card; quantity controls sit directly beside their numbers in one-cell squares, and selectable item rows use a one-cell minimum with only an optical vertical gap. The explanation locale is inherited elsewhere, never chosen here. Each row has two durable action slots: `Already know` becomes `Put back` in place, while `Reroll` remains available beside it. Knowledge evidence is emitted independently and is never retracted by Put back or Reroll.
 
 **Text generation is library disclosure.** Reading, Listening, and Read Aloud show the shared text library first. The last library action is `+ New Text`, which opens one dialog containing single-line generation settings and a text-upload path. Generation controls never occupy a permanent tab or compete with the selected text.
 
@@ -2013,3 +2019,22 @@ Named so that absence stays legible (§9.3's form):
 - **Language Tutor uses a scripted Japanese reply** until the Japanese service is wired. It preserves the chat interaction and topic inheritance without presenting fixture output as a live tutor model.
 - **Speech recognition is Chrome and Edge only**, on `vocab_guess` and Karaoke. Acceptable because both are ungraded or have an always-present typed path — never because it is common.
 - **Stroke-order grading does not exist.** `kanji_writing` captures stroke count and direction and shows the model on reveal; the learner self-rates. A scorer that guessed would be worse than one that abstains.
+
+### 15.7 Assessment control details
+
+- A Flashcard Skip target is exactly two lattice cells wide and one cell high.
+- The four self-rating buttons have no separator grid, inset rule, or shadow.
+  `Good` keeps the same ink colour as its siblings; emphasis comes from its
+  fill, never reduced text contrast.
+- Quiz prompts are horizontally centred. Choice cards use one full lattice
+  cell of inline inset, while retaining the shared smaller block inset.
+- An enabled primary action always uses full foreground/background contrast.
+  Selection can enable Check; it can never make Check visually disabled.
+- Timeline move controls retain their slots, but the first row’s up arrow and
+  last row’s down arrow are hidden and removed from keyboard navigation.
+- Map-click cards may widen to sixteen cells and use an eight-cell-tall map.
+  Wheel zoom is active. No label layer, candidate buttons, external verdict
+  row, or post-test difficulty rating is permitted.
+- Kana recognition is a compact canonical Quiz with no topic/furigana header.
+  Discrimination also suppresses furigana. Kanji Meaning exposes the control
+  only when the prompt carries working ruby data.

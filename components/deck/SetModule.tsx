@@ -1,9 +1,9 @@
 'use client'
 
-/* Sets — `flashcard_set`, and `quiz`/`mcq` carrying more than one question.
+/* Sets — canonical `flashcard` or `quiz` items carrying several cards.
  *
- * complete_modules.md dedupes these deliberately: "these are presentation and
- * grading modes of one retrieval card, not four separate module concepts". So
+ * complete_modules.md dedupes these deliberately: a set is presentation data,
+ * not a second module type. So
  * this file owns the SEQUENCE and nothing else — each card in the set is
  * rendered by the ordinary ModuleFrame, with the ordinary controls, judged by
  * the ordinary grader. If a set card ever looked or behaved differently from

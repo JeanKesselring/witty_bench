@@ -931,8 +931,7 @@ textarea.k-input--prose {
   align-items: center;
   gap: var(--space-1);
   min-block-size: var(--target);
-  padding: var(--space-2) calc(var(--target) + var(--card-pad-inline)) 0
-    var(--card-pad-inline);
+  padding: var(--space-2) calc(var(--target) + var(--card-pad-inline)) 0 var(--card-pad-inline);
 }
 .k-frame__topic {
   font-size: var(--size-body-sm);
@@ -1018,6 +1017,14 @@ textarea.k-input--prose {
   font-size: var(--size-prompt);
   padding-block: var(--space-2) var(--space-1);
 }
+.k-frame[data-response='choice'] .k-frame__prompt {
+  justify-items: center;
+  padding-inline: var(--cell);
+  text-align: center;
+}
+.k-frame[data-response='choice'] .k-frame__response {
+  padding-inline: var(--cell);
+}
 .k-frame__response {
   padding-block: var(--space-1) var(--space-2);
 }
@@ -1031,12 +1038,6 @@ textarea.k-input--prose {
 .k-flipscene {
   inline-size: 100%;
   min-block-size: calc(var(--cell) * 4);
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
   perspective: 1200px;
 }
 .k-flipcard {
@@ -1047,6 +1048,29 @@ textarea.k-input--prose {
   min-block-size: calc(var(--cell) * 4);
   transform-style: preserve-3d;
   will-change: transform;
+}
+.k-flipcard__surface {
+  grid-area: 1 / 1;
+  display: grid;
+  inline-size: 100%;
+  min-block-size: calc(var(--cell) * 4);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transform-style: preserve-3d;
+}
+.k-flipcard__menu {
+  position: absolute;
+  inset-block-start: var(--space-1);
+  inset-inline-end: var(--space-1);
+  z-index: var(--layer-content);
+  transform: translateZ(2px);
+}
+.k-flipcard__menu[data-back='true'] {
+  transform: rotateY(180deg) translateZ(2px);
 }
 .k-flipcard__face {
   grid-area: 1 / 1;
@@ -1063,11 +1087,14 @@ textarea.k-input--prose {
 .k-flipcard__back {
   transform: rotateY(180deg);
 }
-.k-flipscene:focus-visible .k-flipcard__face {
+.k-flipcard__surface:focus-visible .k-flipcard__face {
   outline: var(--focus-ring);
   outline-offset: var(--focus-offset);
 }
 @media (prefers-reduced-motion: reduce) {
+  .k-flipcard__menu[data-back='true'] {
+    transform: translateZ(2px);
+  }
   .k-flipcard__back {
     transform: none;
     opacity: 0;
@@ -1116,21 +1143,23 @@ textarea.k-input--prose {
 .k-band {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(calc(var(--cell) * 1.5), 1fr));
-  gap: 1px;
-  padding: var(--space-1);
-  background: var(--line);
+  gap: var(--space-1);
+  padding: var(--space-1) 0 0;
+  background: transparent;
 }
 .k-frame .k-band .k-btn {
   border: 0;
   border-radius: 0;
-  background: var(--panel);
+  background: transparent;
+  box-shadow: none;
+  color: var(--ink);
 }
-.k-band .k-btn--primary {
+.k-frame .k-band .k-btn--primary {
   background: var(--ink);
+  color: var(--on-accent);
 }
 .k-frame--flip .k-band {
   margin-block-start: var(--space-1);
-  border: 1px solid var(--line-strong);
 }
 .k-band--single {
   display: flex;
@@ -1141,6 +1170,18 @@ textarea.k-input--prose {
 }
 .k-frame--flip .k-band--single {
   border: 0;
+}
+.k-frame--flip .k-band--single .k-btn {
+  inline-size: calc(var(--cell) * 2);
+  min-block-size: var(--cell);
+}
+.k-band--ratings .k-btn,
+.k-frame .k-band--ratings .k-btn--primary {
+  background: transparent;
+  color: var(--ink);
+}
+.k-frame .k-band--ratings .k-btn--primary {
+  background: var(--glass-hover);
 }
 
 .k-scrollmodule {
@@ -1188,6 +1229,11 @@ textarea.k-input--prose {
     background-color var(--dur-flat) linear,
     border-color var(--dur-flat) linear;
 }
+.k-option:disabled {
+  color: var(--ink);
+  cursor: default;
+  opacity: 1;
+}
 .k-option:hover:not(:disabled) {
   background: var(--glass-hover);
 }
@@ -1197,9 +1243,26 @@ textarea.k-input--prose {
 }
 .k-option--ok {
   border-color: var(--ok);
+  background: color-mix(in srgb, var(--ok) 20%, var(--panel));
 }
 .k-option--err {
   border-color: var(--err);
+  background: color-mix(in srgb, var(--err) 18%, var(--panel));
+}
+.k-option__mark {
+  inline-size: var(--space-3);
+  margin-inline-start: auto;
+  color: currentColor;
+  font-size: var(--size-prompt);
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+}
+.k-option--ok .k-option__mark {
+  color: var(--ok);
+}
+.k-option--err .k-option__mark {
+  color: var(--err);
 }
 
 .k-order {
@@ -1985,6 +2048,9 @@ textarea.k-input--prose {
   padding-inline: 0;
   justify-content: center;
 }
+.k-order__move--hidden {
+  visibility: hidden;
+}
 .k-order .k-bank {
   display: flex;
   flex-wrap: wrap;
@@ -2039,7 +2105,7 @@ textarea.k-input--prose {
 .k-map-skeleton {
   display: block;
   inline-size: 100%;
-  block-size: calc(var(--cell) * 4);
+  block-size: calc(var(--cell) * 8);
   border: 1px solid var(--line);
   background: var(--glass);
 }
@@ -2068,17 +2134,30 @@ textarea.k-input--prose {
   border-color: var(--line-strong);
 }
 
-.k-maprsp__list fieldset {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-1);
-  border: 0;
-  margin: 0;
-  padding: 0;
+.k-frame[data-response='map'] {
+  inline-size: min(100%, calc(var(--cell) * 16));
 }
-.k-maprsp__list legend {
-  padding: 0;
-  margin-block-end: var(--space-1);
+.k-frame[data-response='map'] .k-maprsp__map {
+  block-size: calc(var(--cell) * 8);
+}
+.k-maprsp__stage {
+  position: relative;
+}
+.k-maprsp__toast {
+  position: absolute;
+  inset-block-start: var(--space-1);
+  inset-inline-end: var(--space-1);
+  z-index: var(--layer-content);
+  max-inline-size: calc(var(--cell) * 4);
+  margin: 0;
+  padding: var(--space-1) var(--space-2);
+  background: var(--panel);
+  color: var(--ink);
+  font-size: var(--size-body-sm);
+  border: 1px solid var(--warn);
+}
+.k-maprsp__toast--err {
+  border-color: var(--err);
 }
 
 /* ── Assets ───────────────────────────────────────────────────────────
@@ -2951,10 +3030,12 @@ textarea.k-input--prose {
 
 /* Daily lesson: one lattice-aligned card and one mixed run. */
 .k-lesson-card {
-  inline-size: min(100%, calc(var(--cell) * 12));
+  inline-size: min(100%, calc(var(--cell) * 14));
   display: grid;
   gap: var(--space-4);
   align-content: start;
+  justify-self: center;
+  margin-inline: auto;
 }
 .k-lesson-card--runner {
   justify-items: stretch;
@@ -2962,14 +3043,11 @@ textarea.k-input--prose {
 .k-lesson-card--runner .k-frame {
   justify-self: center;
 }
-.k-locale,
-.k-planlist__acts {
-  display: flex;
-  gap: var(--space-1);
-}
-.k-locale .k-btn,
 .k-plan-action {
   min-block-size: var(--cell);
+  inline-size: calc(var(--cell) * 2);
+  min-inline-size: calc(var(--cell) * 2);
+  border-color: var(--line-strong);
 }
 .k-lesson-counts {
   display: grid;
@@ -3006,14 +3084,14 @@ textarea.k-input--prose {
   cursor: pointer;
 }
 .k-planlist--lesson {
-  gap: var(--space-1);
+  gap: var(--optical);
   margin: 0;
   background: none;
   border: 0;
 }
 .k-planlist--lesson li {
-  min-block-size: calc(var(--cell) * 2);
-  padding: var(--space-2) 0;
+  min-block-size: var(--cell);
+  padding: 0;
   background: none;
 }
 .k-planlist__word {
@@ -3023,16 +3101,13 @@ textarea.k-input--prose {
 .k-planlist--lesson .k-planlist__acts {
   margin-inline-start: auto;
 }
-.k-plan-action {
-  min-inline-size: calc(var(--cell) * 2);
-  border-color: var(--line-strong);
-}
 .k-planlist--lesson li[data-suppressed] .k-plan-action {
   color: var(--ink);
   text-decoration: none;
 }
 .k-lesson-card__foot {
   align-items: flex-end;
+  justify-content: flex-end;
 }
 .k-lesson-card__foot > p {
   max-inline-size: var(--measure);
@@ -3344,11 +3419,9 @@ textarea.k-input--prose {
     align-items: stretch;
     flex-direction: column;
   }
-  .k-locale,
   .k-language-tutor__tools {
     inline-size: 100%;
   }
-  .k-locale .k-btn,
   .k-language-tutor__tools .k-btn {
     flex: 1;
   }
@@ -3364,6 +3437,7 @@ textarea.k-input--prose {
   }
   .k-plan-action {
     flex: 1;
+    inline-size: auto;
     min-inline-size: 0;
   }
   .k-setting-row {

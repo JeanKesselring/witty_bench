@@ -243,14 +243,15 @@ export const PRESETS: GradientPreset[] = [
 ]
 
 /**
- * Common Sage blue, and deliberately quiet.
+ * Common Sage blue: monochrome, vivid enough to remain visible, and slow.
  *
  * The stops come directly from Common Sage's light and dark surface/primary
  * palette. The narrow cyan-blue range keeps the field reading as one
  * material lit unevenly rather than as a decorative rainbow.
  *
- * Quiet on every axis: uSpeed a third of the default, low strength, low
- * density. The gradient is atmosphere and never information (§1, law 2).
+ * Motion is deliberately much slower than the library default. Saturation
+ * supplies presence; speed does not. The gradient is atmosphere and never
+ * information (§1, law 2).
  *
  * Do NOT reach for contrast here to make the frosted tiles visible. That is
  * the texture layer's job — fine noise gives the blur something to remove.
@@ -260,13 +261,13 @@ export const PRESETS: GradientPreset[] = [
 const MONO: GradientPreset = {
   id: 'mono',
   label: 'Common Sage',
-  swatch: ['#3d8fcc', '#080c10'],
+  swatch: ['#2f8fdb', '#050b12'],
   config: preset({
-    color1: '#0f161e',
-    color2: '#3d8fcc',
-    color3: '#080c10',
-    uSpeed: 0.035,
-    uStrength: 1.4,
+    color1: '#123b65',
+    color2: '#2f8fdb',
+    color3: '#050b12',
+    uSpeed: 0.012,
+    uStrength: 1.55,
     uDensity: 1.3,
     uFrequency: 0,
     brightness: 0.95,
@@ -279,13 +280,13 @@ const MONO: GradientPreset = {
     rotationX: 45,
     rotationZ: -55,
   }),
-  swatchLight: ['#d7e8e5', '#fff9f3'],
+  swatchLight: ['#8ccfff', '#edf7ff'],
   configLight: preset({
-    color1: '#d7e8e5',
-    color2: '#f2e5d8',
-    color3: '#fff9f3',
-    uSpeed: 0.035,
-    uStrength: 1.65,
+    color1: '#8ccfff',
+    color2: '#c5e8ff',
+    color3: '#edf7ff',
+    uSpeed: 0.012,
+    uStrength: 1.8,
     uDensity: 1.3,
     uFrequency: 0,
     brightness: 1.12,

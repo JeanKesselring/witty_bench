@@ -88,8 +88,8 @@ export interface PlanItem {
   name: string
   reading?: string
   meaning: string
-  /** Set by `Already know` / `Not interested` — both suppress, differently. */
-  suppressed?: 'known' | 'uninterested'
+  /** Visual plan state. The knowledge signal itself is recorded separately. */
+  suppressed?: 'known'
   due: boolean
 }
 

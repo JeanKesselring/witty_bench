@@ -161,9 +161,13 @@ function ChoiceResponse({ item, value, onChange, judged, onCommit }: ResponsePro
             <span className={glyphs ? 'k-glyph-option' : undefined} lang={item.lang}>
               {opt}
             </span>
-            {/* §3.3: the verdict is never colour alone. */}
-            {isAnswer ? <span className="k-meta">correct</span> : null}
-            {isWrongPick ? <span className="k-meta">your answer</span> : null}
+            {/* The slot is always present, so judgement cannot reflow a row.
+                The symbol is the non-colour verdict channel. */}
+            <span className="k-option__mark" aria-hidden="true">
+              {isAnswer ? '✓' : isWrongPick ? '×' : ''}
+            </span>
+            {isAnswer ? <span className="k-sr">Correct answer</span> : null}
+            {isWrongPick ? <span className="k-sr">Your incorrect answer</span> : null}
           </button>
         )
       })}
@@ -402,8 +406,12 @@ function OrderingResponse({ item, spec, value, onChange, judged }: ResponseProps
                 <span className="k-order__grip">
                   <button
                     type="button"
-                    className="k-btn k-btn--quiet k-press"
+                    className={`k-btn k-btn--quiet k-press${
+                      i === 0 ? ' k-order__move--hidden' : ''
+                    }`}
                     disabled={i === 0}
+                    aria-hidden={i === 0}
+                    tabIndex={i === 0 ? -1 : 0}
                     onClick={() => move(i, i - 1)}
                   >
                     <span aria-hidden="true">↑</span>
@@ -411,8 +419,12 @@ function OrderingResponse({ item, spec, value, onChange, judged }: ResponseProps
                   </button>
                   <button
                     type="button"
-                    className="k-btn k-btn--quiet k-press"
+                    className={`k-btn k-btn--quiet k-press${
+                      i === placed.length - 1 ? ' k-order__move--hidden' : ''
+                    }`}
                     disabled={i === placed.length - 1}
+                    aria-hidden={i === placed.length - 1}
+                    tabIndex={i === placed.length - 1 ? -1 : 0}
                     onClick={() => move(i, i + 1)}
                   >
                     <span aria-hidden="true">↓</span>

@@ -41,6 +41,24 @@ function isGlyphPrompt(text: string, lang?: string): boolean {
   return text.trim().length <= 3 && /[぀-ヿ一-龯]/.test(text)
 }
 
+/** Only offer furigana when this card contains an actual optional reading.
+ * Recognition of kana and discrimination between glyphs test the form
+ * itself, so a reading aid would either be meaningless or leak the answer. */
+function supportsFurigana(item: ModuleItem): boolean {
+  if (item.lang !== 'ja') return false
+  if (['kana_recognition', 'discrimination', 'kana_production'].includes(item.moduleType))
+    return false
+  if (['kanji_reading', 'transcription'].includes(item.moduleType)) return false
+  const hasReading = (segments?: Array<{ reading?: string }>) =>
+    segments?.some((segment) => Boolean(segment.reading)) ?? false
+  return (
+    hasReading(item.promptRuby) ||
+    hasReading(item.answerRuby) ||
+    hasReading(item.transcript) ||
+    (item.examples?.some((example) => hasReading(example.ja)) ?? false)
+  )
+}
+
 const RATINGS: Array<{ grade: Grade; label: string; key: string }> = [
   { grade: 'again', label: 'Again', key: '1' },
   { grade: 'hard', label: 'Hard', key: '2' },
@@ -58,8 +76,8 @@ export function ModuleFrame({
   item: ModuleItem
   onResolve: (o: Outcome) => void
   onSkip: () => void
-  /* Set navigation, when this card is one of several in a `flashcard_set` or
-   * a multi-question quiz. It renders INSIDE the prompt band rather than in
+  /* Set navigation, when this canonical flashcard or quiz carries several
+   * cards. It renders INSIDE the prompt band rather than in
    * the control band, because the band's four slots are spoken for and
    * because moving between cards is not an answer. The band is measured with
    * it present, so nothing shifts on the cards that have no nav. */
@@ -69,6 +87,7 @@ export function ModuleFrame({
   const spec = moduleTypeOrDefault(item.moduleType)
   const selfGraded = spec.response === 'none' || spec.response === 'handwriting'
   const flashcard = spec.response === 'none'
+  const furiganaAllowed = supportsFurigana(item)
   const reduceMotion = useReducedMotion()
 
   const [value, setValue] = useState<ResponseValue>(
@@ -83,10 +102,7 @@ export function ModuleFrame({
   const [backVisible, setBackVisible] = useState(false)
   const [assisted, setAssisted] = useState(false)
   const [gaveUp, setGaveUp] = useState(false)
-  const [furigana, setFurigana] = useState<FuriganaMode>(
-    // Where the reading IS the answer, furigana cannot be offered at all.
-    spec.id === 'kanji_reading' || spec.id === 'transcription' ? 'never' : 'auto',
-  )
+  const [furigana, setFurigana] = useState<FuriganaMode>(furiganaAllowed ? 'auto' : 'never')
   const frameRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
@@ -102,13 +118,10 @@ export function ModuleFrame({
     setBackVisible(false)
     setAssisted(false)
     setGaveUp(false)
-  }, [item.id, item.tokens, spec.id, spec.response])
+    setFurigana(furiganaAllowed ? 'auto' : 'never')
+  }, [item.id, item.tokens, spec.id, spec.response, furiganaAllowed])
 
   const answered = judged !== null || revealed
-  /* The attempt is SETTLED when the machine has already fixed the grade:
-   * a wrong or partial answer, or a reveal on an objectively graded type.
-   * Settled cards do not ask the learner to rate themselves. */
-  const settled = gaveUp || judged?.outcome === 'incorrect'
   const controlJudgement: Judgement | null =
     judged ?? (gaveUp ? { outcome: 'incorrect', answer: item.answer } : null)
   const ready =
@@ -176,12 +189,10 @@ export function ModuleFrame({
         else if (flashcard) setBackVisible((shown) => !shown)
         return
       }
-      if (answered && /^[1-4]$/.test(e.key) && !inControl) {
+      if (answered && selfGraded && /^[1-4]$/.test(e.key) && !inControl) {
         const rating = RATINGS[Number(e.key) - 1]
-        if (allowed(rating.grade, judged, gaveUp)) {
-          e.preventDefault()
-          rate(rating.grade)
-        }
+        e.preventDefault()
+        rate(rating.grade)
       }
     }
     el.addEventListener('keydown', onKey)
@@ -193,20 +204,22 @@ export function ModuleFrame({
       <section
         ref={frameRef}
         className={`k-frame${flashcard ? ' k-frame--flip' : ''}`}
+        data-response={spec.response}
+        data-module={item.moduleType}
         tabIndex={-1}
         aria-label={`${CONTENT_TYPE_LABEL[spec.contentType]} module`}
         style={{ ['--accent' as string]: `var(--accent-${spec.contentType})` }}
       >
-        <div className="k-frame__menu">
-          <ModuleMenu item={item} />
-        </div>
+        {!flashcard ? (
+          <div className="k-frame__menu">
+            <ModuleMenu item={item} />
+          </div>
+        ) : null}
 
-        {!flashcard && (spec.showTopic || answered || item.lang === 'ja') ? (
+        {!flashcard && (spec.showTopic || furiganaAllowed) ? (
           <header className="k-frame__header">
-            {spec.showTopic || answered ? (
-              <span className="k-frame__topic">{item.topicTitle}</span>
-            ) : null}
-            {item.lang === 'ja' ? (
+            {spec.showTopic ? <span className="k-frame__topic">{item.topicTitle}</span> : null}
+            {furiganaAllowed ? (
               <span className="k-frame__aid">
                 <FuriganaToggle mode={furigana} onChange={setFurigana} />
               </span>
@@ -218,21 +231,7 @@ export function ModuleFrame({
         {flashcard ? (
           <>
             {nav}
-            <button
-              type="button"
-              className="k-flipscene"
-              aria-label={
-                revealed
-                  ? backVisible
-                    ? 'Answer shown. Turn to front.'
-                    : 'Question shown. Turn to answer.'
-                  : 'Question shown. Reveal answer.'
-              }
-              onClick={() => {
-                if (!revealed) reveal()
-                else setBackVisible((shown) => !shown)
-              }}
-            >
+            <div className="k-flipscene">
               <motion.span
                 className="k-flipcard"
                 data-back={backVisible}
@@ -245,21 +244,40 @@ export function ModuleFrame({
                 }
                 transition={{ type: 'spring', visualDuration: 0.55, bounce: 0.06 }}
               >
-                <span className="k-flipcard__face k-flipcard__front" aria-hidden={backVisible}>
-                  <span
-                    className={isGlyphPrompt(item.prompt, item.lang) ? 'k-glyph-prompt' : 'k-h3'}
-                  >
-                    <PromptText item={item} />
+                <button
+                  type="button"
+                  className="k-flipcard__surface"
+                  aria-label={
+                    revealed
+                      ? backVisible
+                        ? 'Answer shown. Turn to front.'
+                        : 'Question shown. Turn to answer.'
+                      : 'Question shown. Reveal answer.'
+                  }
+                  onClick={() => {
+                    if (!revealed) reveal()
+                    else setBackVisible((shown) => !shown)
+                  }}
+                >
+                  <span className="k-flipcard__face k-flipcard__front" aria-hidden={backVisible}>
+                    <span
+                      className={isGlyphPrompt(item.prompt, item.lang) ? 'k-glyph-prompt' : 'k-h3'}
+                    >
+                      <PromptText item={item} />
+                    </span>
                   </span>
-                </span>
-                <span className="k-flipcard__face k-flipcard__back" aria-hidden={!backVisible}>
-                  <span className="k-h3" lang={item.lang}>
-                    {item.answerRuby ? <Ruby segments={item.answerRuby} /> : item.answer}
+                  <span className="k-flipcard__face k-flipcard__back" aria-hidden={!backVisible}>
+                    <span className="k-h3" lang={item.lang}>
+                      {item.answerRuby ? <Ruby segments={item.answerRuby} /> : item.answer}
+                    </span>
+                    {item.examples ? <ExampleSentences examples={item.examples} /> : null}
                   </span>
-                  {item.examples ? <ExampleSentences examples={item.examples} /> : null}
+                </button>
+                <span className="k-flipcard__menu" data-back={backVisible}>
+                  <ModuleMenu item={item} />
                 </span>
               </motion.span>
-            </button>
+            </div>
           </>
         ) : (
           <div className="k-frame__prompt" tabIndex={0} aria-label="Prompt">
@@ -291,16 +309,15 @@ export function ModuleFrame({
               onAssisted={() => setAssisted(true)}
               onCommit={check}
             />
-            {revealed && !judged ? (
+            {revealed && !judged && !['choice', 'ordering', 'map'].includes(spec.response) ? (
               <p className="k-h3" lang={item.lang}>
                 {item.answerRuby ? <Ruby segments={item.answerRuby} /> : item.answer}
               </p>
             ) : null}
-            {judged && item.examples ? <ExampleSentences examples={item.examples} /> : null}
           </div>
         ) : null}
 
-        {!flashcard && answered ? (
+        {!flashcard && answered && !['choice', 'ordering', 'map'].includes(spec.response) ? (
           <motion.div
             className="k-frame__judge"
             aria-live="assertive"
@@ -371,11 +388,11 @@ export function ModuleFrame({
                   {selfGraded ? 'Reveal' : 'Check'}
                 </button>
               </>
-            ) : settled ? (
+            ) : !selfGraded ? (
               <button
                 type="button"
                 className="k-btn k-btn--primary k-press"
-                onClick={() => rate('again')}
+                onClick={() => rate(objectiveGrade(judged, gaveUp, assisted))}
               >
                 Continue
               </button>
@@ -385,11 +402,8 @@ export function ModuleFrame({
                   key={rating.grade}
                   type="button"
                   className={`k-btn ${
-                    rating.grade === defaultGrade(judged, gaveUp)
-                      ? 'k-btn--primary'
-                      : 'k-btn--quiet'
+                    rating.grade === 'good' ? 'k-btn--primary' : 'k-btn--quiet'
                   } k-press`}
-                  disabled={!allowed(rating.grade, judged, gaveUp)}
                   onClick={() => rate(rating.grade)}
                   aria-keyshortcuts={rating.key}
                 >
@@ -404,31 +418,15 @@ export function ModuleFrame({
   )
 }
 
-/* Which ratings a learner may give themselves.
- *
- * Self-graded cards: all four, always — the whole point is that only the
- * learner knows how the recall felt.
- *
- * Objectively graded cards: the machine already knows whether it was right,
- * and letting someone mark a wrong answer `Easy` would poison the schedule.
- * So a wrong answer is `Again`, a partial one is `Again` or `Hard`, and a
- * correct one is anything except… nothing: `Again` stays available on a
- * correct answer on purpose, because "I got it but I guessed" is real and
- * the learner is the only one who can report it. */
-/** Which rating the band points at. Always one that `allowed` permits. */
-function defaultGrade(judged: Judgement | null, gaveUp: boolean): Grade {
+/** Objectively checked cards leave with the grade the check already earned.
+ * Ratings belong only to flashcards, where the learner has information the
+ * machine does not. */
+function objectiveGrade(judged: Judgement | null, gaveUp: boolean, assisted: boolean): Grade {
   if (gaveUp) return 'again'
   if (judged?.outcome === 'incorrect') return 'again'
   if (judged?.outcome === 'partial') return 'hard'
+  if (assisted) return 'hard'
   return 'good'
-}
-
-function allowed(grade: Grade, judged: Judgement | null, gaveUp: boolean): boolean {
-  if (gaveUp) return grade === 'again'
-  if (!judged) return true
-  if (judged.outcome === 'incorrect') return grade === 'again'
-  if (judged.outcome === 'partial') return grade === 'again' || grade === 'hard'
-  return true
 }
 
 /** Distance grading for map_click_quiz, with the partial credit the Module

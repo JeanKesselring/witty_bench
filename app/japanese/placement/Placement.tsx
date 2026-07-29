@@ -209,7 +209,7 @@ function resultFrom(estimates: PlacementEstimate[], answered: number) {
 }
 
 const DIMENSION_OF: Record<string, Dimension> = {
-  kana_recognition: 'kana',
+  quiz: 'kana',
   vocab_recognition: 'vocabulary',
   kanji_meaning: 'kanji',
   grammar_recognition: 'grammar',
@@ -222,7 +222,7 @@ const QUESTIONS: ModuleItem[] = [
     id: 'p-1',
     topicId: 'c-kana-fu',
     topicTitle: 'Hiragana',
-    moduleType: 'kana_recognition',
+    moduleType: 'quiz',
     contentType: 'quiz',
     prompt: 'ふ',
     lang: 'ja',

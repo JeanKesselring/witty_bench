@@ -89,8 +89,8 @@ export default function TryPage() {
         <section>
           <h2 className="k-h2">Full-page functions</h2>
           <p className="k-meta">
-            All eight, on fixtures shaped to the Japanese service’s responses. That service is
-            not wired yet.
+            All eight, on fixtures shaped to the Japanese service’s responses. That service is not
+            wired yet.
           </p>
           <ul className="k-try__list">
             {PART_ONE.map((p) => (
@@ -132,19 +132,19 @@ export default function TryPage() {
             </li>
             <li>
               <strong>map click quiz</strong> — click the map, then Check. It draws your error to
-              the target and grades by distance. The list below the map scores identically.
+              the target and grades by distance in a small map toast.
             </li>
             <li>
               <strong>model 3d</strong> — press “Turn the model”, then drag it. Arrow keys turn it
               too, and the orientation is announced.
             </li>
             <li>
-              <strong>grammar production</strong> — the prose answer gets a real textarea now, not
-              a one-line input.
+              <strong>grammar production</strong> — the prose answer gets a real textarea now, not a
+              one-line input.
             </li>
             <li>
-              <strong>flashcard set</strong> and <strong>mcq</strong> carry several cards: dots in
-              the prompt band, results and Try again at the end.
+              Canonical <strong>flashcard</strong> and <strong>quiz</strong> items can carry several
+              cards: dots in the prompt band, results and Try again at the end.
             </li>
             <li>
               Switch to <strong>light</strong> in the topbar. Legibility on the pale gradient is

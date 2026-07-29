@@ -5,13 +5,11 @@ import type { Grade, ModuleItem } from '@/lib/api/types'
 import { DIMENSIONS, PLAN, type Dimension, type PlanItem } from '@/lib/api/jkg'
 import { ModuleFrame, type Outcome } from '@/components/deck/ModuleFrame'
 
-type Locale = 'en' | 'de'
 type Phase = 'plan' | 'study' | 'summary'
 
 export function DailyLesson() {
   const [phase, setPhase] = useState<Phase>('plan')
   const [items, setItems] = useState<PlanItem[]>(PLAN.items)
-  const [locale, setLocale] = useState<Locale>('en')
   const [run, setRun] = useState<PlanItem[]>([])
   const [cursor, setCursor] = useState(0)
   const [done, setDone] = useState<Array<{ name: string; grade: Grade }>>([])
@@ -115,20 +113,7 @@ export function DailyLesson() {
         <div>
           <p className="k-meta">Today’s topic</p>
           <h2 className="k-h2">{PLAN.theme}</h2>
-          <p>{locale === 'de' ? 'Erklärungen auf Deutsch.' : PLAN.goal}</p>
-        </div>
-        <div className="k-locale" role="group" aria-label="Explanation language">
-          {(['en', 'de'] as const).map((language) => (
-            <button
-              key={language}
-              type="button"
-              className="k-btn k-btn--secondary k-press"
-              aria-pressed={locale === language}
-              onClick={() => setLocale(language)}
-            >
-              {language === 'en' ? 'English' : 'Deutsch'}
-            </button>
-          ))}
+          <p>{PLAN.goal}</p>
         </div>
       </header>
 
@@ -171,50 +156,46 @@ export function DailyLesson() {
                 {item.meaning}
               </small>
             </span>
-            {item.suppressed ? (
-              <button
-                type="button"
-                className="k-btn k-btn--secondary k-press k-plan-action"
-                onClick={() =>
-                  setItems((currentItems) => suppress(currentItems, item.conceptId, undefined))
-                }
-              >
-                Put back
-              </button>
-            ) : (
-              <span className="k-planlist__acts">
+            <span className="k-planlist__acts">
+              {item.suppressed ? (
                 <button
                   type="button"
                   className="k-btn k-btn--secondary k-press k-plan-action"
                   onClick={() =>
-                    setItems((currentItems) => suppress(currentItems, item.conceptId, 'known'))
+                    setItems((currentItems) => suppress(currentItems, item.conceptId, undefined))
                   }
+                >
+                  Put back
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="k-btn k-btn--secondary k-press k-plan-action"
+                  onClick={() => {
+                    // Knowledge evidence is emitted independently from the
+                    // temporary plan composition. Put back does not retract it.
+                    markKnown(item.conceptId)
+                    setItems((currentItems) => suppress(currentItems, item.conceptId, 'known'))
+                  }}
                 >
                   <span aria-hidden="true">✓</span>
                   Already know
                 </button>
-                <button
-                  type="button"
-                  className="k-btn k-btn--secondary k-press k-plan-action"
-                  onClick={() =>
-                    setItems((currentItems) =>
-                      suppress(currentItems, item.conceptId, 'uninterested'),
-                    )
-                  }
-                >
-                  <span aria-hidden="true">×</span>
-                  Not interested
-                </button>
-              </span>
-            )}
+              )}
+              <button
+                type="button"
+                className="k-btn k-btn--secondary k-press k-plan-action"
+                onClick={() => setItems((currentItems) => reroll(currentItems, item.conceptId))}
+              >
+                <span aria-hidden="true">↻</span>
+                Reroll
+              </button>
+            </span>
           </li>
         ))}
       </ul>
 
       <footer className="k-lesson-card__foot">
-        <p className="k-meta">
-          Review, new material, context, and recall are mixed into the lesson automatically.
-        </p>
         <button
           type="button"
           className="k-btn k-btn--primary k-btn--study k-press"
@@ -257,6 +238,88 @@ function suppress(items: PlanItem[], id: string, how: PlanItem['suppressed']): P
   return items.map((item) => (item.conceptId === id ? { ...item, suppressed: how } : item))
 }
 
+/** In production this is the mastery-network mutation. It is deliberately
+ * separate from the row's suppression state: changing the visible plan later
+ * must never retract evidence that the learner already knew the concept. */
+function markKnown(id: string): void {
+  window.dispatchEvent(new CustomEvent('common-sage:concept-known', { detail: { conceptId: id } }))
+}
+
+const REROLL_ALTERNATES: PlanItem[] = [
+  {
+    conceptId: 'c-kaisatsu',
+    dimension: 'vocabulary',
+    name: '改札',
+    reading: 'かいさつ',
+    meaning: 'ticket gate',
+    due: false,
+  },
+  {
+    conceptId: 'c-homu',
+    dimension: 'vocabulary',
+    name: 'ホーム',
+    meaning: 'platform',
+    due: false,
+  },
+  {
+    conceptId: 'c-kanji-kuchi',
+    dimension: 'kanji',
+    name: '口',
+    reading: 'コウ',
+    meaning: 'mouth / opening',
+    due: false,
+  },
+  {
+    conceptId: 'c-kanji-setsu',
+    dimension: 'kanji',
+    name: '切',
+    reading: 'セツ',
+    meaning: 'cut',
+    due: false,
+  },
+  {
+    conceptId: 'c-kana-shi',
+    dimension: 'kana',
+    name: 'し',
+    meaning: 'shi',
+    due: false,
+  },
+  {
+    conceptId: 'c-kana-chi',
+    dimension: 'kana',
+    name: 'ち',
+    meaning: 'chi',
+    due: false,
+  },
+  {
+    conceptId: 'c-te-mo-ii',
+    dimension: 'grammar',
+    name: '〜てもいいですか',
+    meaning: 'may I —?',
+    due: false,
+  },
+  {
+    conceptId: 'c-nakereba',
+    dimension: 'grammar',
+    name: '〜なければなりません',
+    meaning: 'must —',
+    due: false,
+  },
+]
+
+function reroll(items: PlanItem[], id: string): PlanItem[] {
+  const current = items.find((item) => item.conceptId === id)
+  if (!current) return items
+  const occupied = new Set(items.map((item) => item.conceptId))
+  const replacement = [...REROLL_ALTERNATES, ...PLAN.items].find(
+    (candidate) => candidate.dimension === current.dimension && !occupied.has(candidate.conceptId),
+  )
+  if (!replacement) return items
+  return items.map((item) =>
+    item.conceptId === id ? { ...replacement, suppressed: undefined } : item,
+  )
+}
+
 /* The learning modes are mixed invisibly. The learner gets a coherent topic
  * for the day without being marched through a setup/review/context/check
  * wizard. */
@@ -284,7 +347,7 @@ function toModule(item: PlanItem, index: number): ModuleItem {
   if (!item.due || index % 3 === 0) {
     return {
       ...base,
-      moduleType: 'language_flashcard',
+      moduleType: 'flashcard',
       contentType: 'flashcard',
       prompt: item.name,
       promptRuby: item.reading ? [{ text: item.name, reading: item.reading }] : undefined,

@@ -10,12 +10,9 @@
  *
  *   · The map is `role="application"` and says so, with an instruction line
  *     that is read before it.
- *   · There is a NON-MAP path that scores identically. The candidate list
- *     below the map writes the same value, so a keyboard or screen-reader
- *     user answers the same question and gets the same grade — not a
- *     consolation route.
- *   · Attribution is present and clickable, because OSM's licence requires
- *     it and because the catalogue lists it as an interaction.
+ *   · Keyboard users can pan/zoom and press Enter to place the point at the
+ *     map centre. There is no duplicate labelled answer list.
+ *   · Attribution stays present and clickable.
  *
  * Grading is distance-based with partial credit, mirroring the Module
  * Factory default: inside `NEAR_KM` is right, inside `PART_KM` is partial,
@@ -29,7 +26,7 @@ import 'leaflet/dist/leaflet.css'
 import type { ResponseProps } from './Responses'
 import { distanceKm, NEAR_KM, PART_KM, parsePick } from '@/lib/modules/geo'
 
-export function MapResponse({ item, value, onChange, judged, onCommit }: ResponseProps) {
+export function MapResponse({ item, value, onChange, judged }: ResponseProps) {
   const hostRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<L.Map | null>(null)
   const pickRef = useRef<L.CircleMarker | null>(null)
@@ -40,19 +37,14 @@ export function MapResponse({ item, value, onChange, judged, onCommit }: Respons
   // handler, without making the map itself depend on every render.
   const onChangeRef = useRef(onChange)
   onChangeRef.current = onChange
+  const judgedRef = useRef(judged)
+  judgedRef.current = judged
 
   const targets = item.mapTargets ?? []
   const answer = targets.find((t) => t.label === item.answer) ?? targets[0]
   const picked = typeof value === 'string' ? parsePick(value) : null
   const pickedLat = picked?.lat
   const pickedLng = picked?.lng
-  const pickedLabel =
-    typeof value === 'string' && !picked
-      ? value
-      : picked
-        ? targets.find((t) => distanceKm(t, picked) < 1)?.label
-        : undefined
-
   /* Map construction runs once. Everything after that mutates layers, which
    * is what Leaflet wants — tearing the map down on a value change would
    * throw away the learner's pan and zoom mid-answer. */
@@ -65,26 +57,24 @@ export function MapResponse({ item, value, onChange, judged, onCommit }: Respons
       zoom: 1,
       worldCopyJump: true,
       zoomControl: true,
-      // The wheel belongs to the page until the map is deliberately entered:
-      // a card that swallows scroll traps the learner on it (SC 2.1.2 in
-      // spirit — this is a pointer trap rather than a keyboard one).
-      scrollWheelZoom: false,
+      scrollWheelZoom: true,
       attributionControl: true,
     })
 
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
       maxZoom: 12,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      subdomains: 'abcd',
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
     }).addTo(map)
 
     // Click-to-zoom-in is Leaflet's default double-click; the single click
     // is ours and places the answer.
     map.on('click', (e: L.LeafletMouseEvent) => {
+      if (judgedRef.current !== null) return
       map.getContainer().dataset.picked = 'true'
       onChangeRef.current(`${e.latlng.lat.toFixed(4)},${e.latlng.lng.toFixed(4)}`)
     })
-    map.on('focus', () => map.scrollWheelZoom.enable())
-    map.on('blur', () => map.scrollWheelZoom.disable())
 
     mapRef.current = map
     setReady(true)
@@ -113,8 +103,9 @@ export function MapResponse({ item, value, onChange, judged, onCommit }: Respons
     }).addTo(map)
   }, [pickedLat, pickedLng, ready])
 
-  /* After judgement the correct location appears with its label, and the
-   * map fits both points so the error is visible rather than described. */
+  /* After judgement the correct location appears without a label, and the
+   * map fits both points so the error is visible rather than changing the
+   * surrounding card geometry. */
   useEffect(() => {
     const map = mapRef.current
     if (!map || judged === null || !answer) return
@@ -124,23 +115,23 @@ export function MapResponse({ item, value, onChange, judged, onCommit }: Respons
       color: '#5a9e59',
       fillOpacity: 0.15,
       className: 'k-maprsp__target',
-    })
-      .addTo(map)
-      .bindTooltip(answer.label, { permanent: true, direction: 'top' })
+    }).addTo(map)
+    const resultLayers: L.Layer[] = [target]
 
     if (pickedLat !== undefined && pickedLng !== undefined) {
-      L.polyline(
+      const line = L.polyline(
         [
           [pickedLat, pickedLng],
           [answer.lat, answer.lng],
         ],
         { color: '#e66b6b', weight: 1, dashArray: '4 4' },
       ).addTo(map)
+      resultLayers.push(line)
       map.fitBounds(L.latLngBounds([pickedLat, pickedLng], [answer.lat, answer.lng]).pad(0.4))
     } else {
       map.setView([answer.lat, answer.lng], 3)
     }
-    return () => void target.remove()
+    return () => resultLayers.forEach((layer) => layer.remove())
   }, [judged, answer, pickedLat, pickedLng])
 
   const errorKm = judged !== null && picked && answer ? distanceKm(picked, answer) : null
@@ -148,67 +139,43 @@ export function MapResponse({ item, value, onChange, judged, onCommit }: Respons
   return (
     <div className="k-maprsp">
       <p className="k-sr" id={howToId}>
-        Click the map to place your answer, or choose from the list below — both are marked the same
-        way. Press Escape to leave the map.
+        Click the map to place your answer. With the keyboard, pan and zoom the map, then press
+        Enter to place an answer at its centre. Press Escape to leave the map.
       </p>
 
-      <div
-        ref={hostRef}
-        className="k-maprsp__map"
-        role="application"
-        aria-describedby={howToId}
-        aria-label={`Map for ${item.prompt}`}
-        onKeyDown={(event) => {
-          if (event.key === 'Escape') {
-            event.preventDefault()
-            hostRef.current?.blur()
-          }
-        }}
-      />
+      <div className="k-maprsp__stage">
+        <div
+          ref={hostRef}
+          className="k-maprsp__map"
+          role="application"
+          aria-describedby={howToId}
+          aria-label={`Map for ${item.prompt}`}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') {
+              event.preventDefault()
+              hostRef.current?.blur()
+            }
+            if (event.key === 'Enter' && judged === null) {
+              event.preventDefault()
+              const centre = mapRef.current?.getCenter()
+              if (centre) onChange(`${centre.lat.toFixed(4)},${centre.lng.toFixed(4)}`)
+            }
+          }}
+        />
 
-      {/* The equivalent path. Not a fallback: it writes the same value and
-          is graded by the same rule (§9.3B). */}
-      <div className="k-maprsp__list">
-        <fieldset disabled={judged !== null}>
-          <legend className="k-field__label">Places</legend>
-          {targets.map((t) => {
-            const isPick = pickedLabel === t.label
-            const isAnswer = judged !== null && t.label === item.answer
-            return (
-              <button
-                key={t.label}
-                type="button"
-                className={[
-                  'k-option',
-                  'k-press',
-                  isAnswer ? 'k-option--ok' : '',
-                  judged !== null && isPick && !isAnswer ? 'k-option--err' : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-                aria-pressed={isPick}
-                onClick={() => {
-                  if (isPick) onCommit()
-                  else onChange(`${t.lat},${t.lng}`)
-                }}
-              >
-                {t.label}
-              </button>
-            )
-          })}
-        </fieldset>
+        {errorKm !== null && errorKm > NEAR_KM ? (
+          <p
+            className={`k-maprsp__toast${
+              errorKm <= PART_KM ? ' k-maprsp__toast--near' : ' k-maprsp__toast--err'
+            }`}
+            aria-live="polite"
+          >
+            {`${Math.round(errorKm)} km from target${
+              errorKm <= PART_KM ? ' · partial credit' : ''
+            }`}
+          </p>
+        ) : null}
       </div>
-
-      {errorKm !== null ? (
-        <p className="k-meta" aria-live="polite">
-          {`You were ${Math.round(errorKm)} km from ${answer?.label}.`}
-          {errorKm <= NEAR_KM
-            ? ' Close enough — counted right.'
-            : errorKm <= PART_KM
-              ? ' Near enough for partial credit.'
-              : ''}
-        </p>
-      ) : null}
     </div>
   )
 }

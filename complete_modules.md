@@ -19,18 +19,19 @@ The catalog is organized by the best presentation format:
 
 - A module is listed once even when its generator, renderer, storage contract,
   and scheduling behavior live in different repositories.
-- `quiz`, `mcq`, and chat-generated quizzes are one Multiple-Choice Quiz
-  module with several presentation variants.
-- `flashcard`, `flashcard_set`, chat flashcards, and Japanese flashcards are one
-  Flashcard module with several grading variants.
+- `quiz`, legacy `mcq`, kana recognition, and chat-generated quizzes use one
+  canonical Multiple-Choice Quiz module and interaction shell.
+- `flashcard`, legacy `flashcard_set`, chat flashcards, and Japanese flashcards
+  use one canonical Flashcard module. A set is `cards` presentation data.
 - `text`, Description/Overview, and a plain non-visual Summary are one
   Explanation module.
 - `summary` is treated as a storage/presentation envelope for visual modules,
   not as a separate learning module.
 - The standalone Knowledge Graph prototype and the graphs in the main
   frontends are one Knowledge Graph / Concept Explorer function.
-- Japanese drills that use the same response UI share one interaction shell,
-  but their distinct skill targets remain named variants.
+- Japanese drills that use the same response UI share one interaction shell.
+  A skill target remains metadata only where it does not change interaction.
+- Kana Production is removed from the repertoire.
 - Topic Card remains a composite module. Its embedded child modules are not
   counted again inside it.
 - Worker generation steps and backend progress services are attached to the
@@ -55,20 +56,16 @@ Canonical scope:
 - Focus-concept retrieval check
 - Session summary
 
-Lesson stages:
+Lesson composition:
 
-1. `Setup`
-2. `Review`
-3. `Learn`
-4. `Context`
-5. `Check`
-6. `Summary`
+- One mixed daily plan followed by one study run.
+- Review, new material, context, and recall are selection inputs, not visible
+  stages or interface copy.
 
 Primary interactions and buttons:
 
-- Choose explanation language:
-  - `English`
-  - `Deutsch`
+- Explanation language is inherited from the learner/application settings;
+  it is never chosen in Today’s Lesson.
 - `Start today’s lesson`
 - `Continue today’s lesson`
 - `Adjust your learner profile`
@@ -99,7 +96,8 @@ Daily-plan and study-sheet controls:
 - `Add one [type] item`
 - `Remove one [type] item`
 - `Already know`
-- `Not interested`
+- `Put back`
+- `Reroll`
 - `Review accuracy`
 - `Start over`
 - `Generate summary sheet`
@@ -131,6 +129,12 @@ Session-runner controls:
 Learning behavior:
 
 - Combines due reviews, new focus concepts, contextual use, and retrieval.
+- The plan card is centred and fourteen lattice cells wide. Selectable item
+  rows are compact, one-cell-high compositions with only an optical gap.
+- `Already know` immediately records knowledge evidence and becomes `Put back`
+  in the same action slot. `Put back` changes the visible plan but never
+  retracts that evidence. `Reroll` remains in the second slot in both states
+  and replaces the item without changing the dimension count.
 - Validated card answers update mastery and spaced-repetition scheduling.
 - The lesson is persisted and resumable.
 - Profile changes affect future lessons without changing the active run.
@@ -925,11 +929,11 @@ Applicable Japanese cards share:
 - `Check`
 - Press Enter to check when a valid response is ready.
 - Tab and Shift+Tab navigate controls.
-- `Show furigana`
-- `Hide furigana`
+- `Show furigana` / `Hide furigana` only when optional ruby data exists and
+  the reading is not the answer
 - `Continue`
-- Correct/incorrect verdict
-- Correct answer
+- Correct answer marked in the existing option; an incorrect pick is marked
+  in place without adding a verdict row
 - Explanation
 - Accepted variants
 - Important contrast
@@ -943,11 +947,8 @@ answers can also distribute evidence across related concepts.
 
 ## 1. Flashcard
 
-Consolidated IDs and variants:
-
-- `flashcard`
-- `flashcard_set`
-- Chat-generated flashcards
+Canonical ID: `flashcard`. Legacy `flashcard_set` is accepted only as an input
+alias; sets use the same ID with a `cards` sequence.
 
 Shared interaction:
 
@@ -1001,26 +1002,23 @@ Deduplication result:
 
 ## 2. Multiple-Choice Quiz
 
-Consolidated IDs and variants:
-
-- `quiz`
-- `mcq`
-- Chat-generated quiz
+Canonical ID: `quiz`. Legacy `mcq` and `kana_recognition` are accepted only as
+input aliases. Chat-generated quizzes use the same ID.
 
 Core interaction:
 
 - Select one option.
-- The first selection locks the answer.
-- Show correct and incorrect states.
-- Show the correct answer after a mistake.
-- Display an explanation when supplied.
+- Selection remains reversible until `Check`.
+- Correct lights green with a checkmark.
+- After a mistake, the selected option lights red and the correct option
+  lights green with a checkmark.
+- Feedback never appends a row or resizes the card.
 
 Single-question feed controls:
 
 - Automatically score correct = `1`, incorrect = `0`.
-- `Hard`
-- `Easy`
-- Hard/Easy can replace the automatic score before leaving the card.
+- `Continue`; the machine-generated score is not followed by a difficulty
+  self-rating.
 
 Multi-question controls:
 
@@ -1054,13 +1052,9 @@ Shared interaction shell:
 
 Registered skill variants:
 
-### Kana Recognition — `kana_recognition`
+### Kana Recognition — canonical `quiz`
 
 - Kana symbol → rōmaji sound.
-
-### Kana Production — `kana_production`
-
-- Rōmaji sound → kana symbol.
 
 ### Discrimination — `discrimination`
 
@@ -1093,8 +1087,8 @@ Registered skill variants:
 
 Deduplication result:
 
-- Nine pedagogical module IDs use one reusable choice-card interaction instead
-  of nine duplicate UI descriptions.
+- These pedagogical variants reuse the canonical choice-card interaction
+  instead of duplicating UI descriptions.
 
 ## 4. Japanese Typed Production Family
 
@@ -1215,14 +1209,13 @@ Rich renderer interactions:
 
 - Drag to pan.
 - Scroll or pinch to zoom.
-- Hover a country to highlight it.
 - Click to place or change a point.
 - Click to select or change a country.
 - `Check Answer`
 - Review:
   - Correct location
   - Selected location
-  - Distance error
+  - Distance error in a compact map toast
   - Selected and correct country
   - Per-answer grade
 - `Next`
@@ -1230,6 +1223,13 @@ Rich renderer interactions:
 - View final grade, pass status, and per-question results.
 - `Try Again`
 - `Source ↗`
+
+Composition:
+
+- The label-free map is twice the ordinary response-map height.
+- There is no candidate list and no baked-in place-label layer.
+- Keyboard users pan/zoom and press `Enter` to place the map centre.
+- Checking ends with `Continue`, not an Easy/Hard rating.
 
 Grading:
 
