@@ -206,6 +206,7 @@ export function ModuleFrame({
         className={`k-frame${flashcard ? ' k-frame--flip' : ''}`}
         data-response={spec.response}
         data-module={item.moduleType}
+        data-presentation={spec.presentation ?? 'frame'}
         tabIndex={-1}
         aria-label={`${CONTENT_TYPE_LABEL[spec.contentType]} module`}
         style={{ ['--accent' as string]: `var(--accent-${spec.contentType})` }}
@@ -429,7 +430,7 @@ function objectiveGrade(judged: Judgement | null, gaveUp: boolean, assisted: boo
   return 'good'
 }
 
-/** Distance grading for map_click_quiz, with the partial credit the Module
+/** Distance grading for map-click quizzes, with the partial credit the Module
  *  Factory's default configuration gives point questions. */
 function judgeMap(value: string, item: ModuleItem): Judgement {
   const targets = item.mapTargets ?? []

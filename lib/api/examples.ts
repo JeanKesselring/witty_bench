@@ -135,6 +135,21 @@ export const EXAMPLE_MODULES: ModuleItem[] = [
     ],
     answer: 'Matterhorn',
   },
+  {
+    id: 'x-lattice-map-click',
+    topicId: 't-21',
+    topicTitle: 'Alpine orogeny',
+    moduleType: 'lattice_map_click_quiz',
+    contentType: 'quiz',
+    prompt: 'Where is Mont Blanc?',
+    mapTargets: [
+      { label: 'Matterhorn', lat: 45.9763, lng: 7.6586 },
+      { label: 'Mont Blanc', lat: 45.8326, lng: 6.8652 },
+      { label: 'Großglockner', lat: 47.0745, lng: 12.6939 },
+      { label: 'Triglav', lat: 46.3786, lng: 13.8367 },
+    ],
+    answer: 'Mont Blanc',
+  },
 
   /* ── Graded, language ─────────────────────────────────────────── */
   {

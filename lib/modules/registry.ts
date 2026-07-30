@@ -50,6 +50,11 @@ export interface ModuleTypeSpec {
   response: ResponseControl
   contentType: ContentType
   /**
+   * `lattice` removes the study-card material and lets the response blend
+   * directly into the page field. Interaction and grading remain unchanged.
+   */
+  presentation?: 'frame' | 'lattice'
+  /**
    * Ungraded only. The catalogue's "shared learning-card behaviour" gives
    * every learning card a reversible Hard/Easy; a few types (the interactive
    * ones) also carry their own controls, but the feed rating is universal.
@@ -61,7 +66,7 @@ export interface ModuleTypeSpec {
 
 const t = (s: ModuleTypeSpec) => s
 
-/* ── Graded — academic (4) ─────────────────────────────────────────
+/* ── Graded — academic (5) ─────────────────────────────────────────
  *
  * Sets are presentation data (`cards`), not a second flashcard type, and
  * MCQ is simply the long name of the ordinary choice quiz. Legacy IDs are
@@ -103,6 +108,16 @@ const GRADED_ACADEMIC: ModuleTypeSpec[] = [
     tolerance: 'na',
     response: 'map',
     contentType: 'quiz',
+  }),
+  t({
+    id: 'lattice_map_click_quiz',
+    mode: 'production',
+    graded: true,
+    showTopic: true,
+    tolerance: 'na',
+    response: 'map',
+    contentType: 'quiz',
+    presentation: 'lattice',
   }),
 ]
 

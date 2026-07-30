@@ -1040,7 +1040,7 @@ textarea.k-input--prose {
 }
 .k-flipscene {
   inline-size: 100%;
-  min-block-size: calc(var(--cell) * 4);
+  min-block-size: calc(var(--cell) * 5);
   perspective: 1200px;
 }
 .k-flipcard {
@@ -1048,7 +1048,7 @@ textarea.k-input--prose {
   display: grid;
   inline-size: 100%;
   block-size: 100%;
-  min-block-size: calc(var(--cell) * 4);
+  min-block-size: calc(var(--cell) * 5);
   transform-style: preserve-3d;
   will-change: transform;
 }
@@ -1056,7 +1056,7 @@ textarea.k-input--prose {
   grid-area: 1 / 1;
   display: grid;
   inline-size: 100%;
-  min-block-size: calc(var(--cell) * 4);
+  min-block-size: calc(var(--cell) * 5);
   padding: 0;
   border: 0;
   background: transparent;
@@ -2165,6 +2165,36 @@ textarea.k-input--prose {
 }
 .k-frame[data-response='map'] .k-maprsp__map {
   block-size: calc(var(--cell) * 8);
+}
+
+/* Frameless map quiz: the assessment logic still runs through ModuleFrame,
+   but its material boundary disappears. */
+.k-frame[data-presentation='lattice'] {
+  background: transparent;
+  backdrop-filter: none;
+  border: 0;
+}
+.k-frame[data-presentation='lattice'] .k-frame__header,
+.k-frame[data-presentation='lattice'] .k-frame__prompt,
+.k-frame[data-presentation='lattice'] .k-frame__judge {
+  padding-inline: var(--cell);
+}
+.k-frame[data-presentation='lattice'] .k-maprsp__map,
+.k-frame[data-presentation='lattice'] .k-map-skeleton {
+  background: transparent;
+  border: 0;
+}
+.k-frame[data-presentation='lattice'] .leaflet-top {
+  inset-block-start: calc(var(--cell) * 0.5);
+}
+.k-frame[data-presentation='lattice'] .leaflet-bottom {
+  inset-block-end: calc(var(--cell) * 0.5);
+}
+.k-frame[data-presentation='lattice'] .leaflet-left {
+  inset-inline-start: calc(var(--cell) * 0.5);
+}
+.k-frame[data-presentation='lattice'] .leaflet-right {
+  inset-inline-end: calc(var(--cell) * 0.5);
 }
 .k-maprsp__stage {
   position: relative;

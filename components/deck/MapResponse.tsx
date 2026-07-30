@@ -1,6 +1,6 @@
 'use client'
 
-/* map_click_quiz — the response control, complete_modules.md Part 3 §8.
+/* Map-click quizzes — the shared response control, complete_modules.md Part 3 §8.
  *
  * This is a real slippy map: drag to pan, scroll or pinch to zoom, hover to
  * highlight, click to place or change a point. Kite's earlier ruling made it
@@ -25,6 +25,11 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import type { ResponseProps } from './Responses'
 import { distanceKm, NEAR_KM, PART_KM, parsePick } from '@/lib/modules/geo'
+
+const WORLD_BOUNDS = L.latLngBounds(
+  [-85.05112878, -180],
+  [85.05112878, 180],
+)
 
 export function MapResponse({ item, value, onChange, judged }: ResponseProps) {
   const hostRef = useRef<HTMLDivElement | null>(null)
@@ -56,7 +61,9 @@ export function MapResponse({ item, value, onChange, judged }: ResponseProps) {
       center: [20, 10],
       zoom: host.clientWidth >= 768 ? 2 : 1,
       minZoom: 1,
-      worldCopyJump: true,
+      maxBounds: WORLD_BOUNDS,
+      maxBoundsViscosity: 1,
+      worldCopyJump: false,
       zoomControl: true,
       scrollWheelZoom: true,
       attributionControl: true,
@@ -70,8 +77,24 @@ export function MapResponse({ item, value, onChange, judged }: ResponseProps) {
         crossOrigin: true,
         maxNativeZoom: 10,
         maxZoom: 12,
+        noWrap: true,
+        bounds: WORLD_BOUNDS,
       },
     ).addTo(map)
+
+    // The minimum zoom follows the actual response box. `inside: true`
+    // chooses the first zoom where the world covers the viewport rather
+    // than merely fitting inside it, so neither a resize nor zooming out can
+    // expose empty tile space around the map.
+    const keepMapFilled = () => {
+      const fillZoom = map.getBoundsZoom(WORLD_BOUNDS, true)
+      if (!Number.isFinite(fillZoom)) return
+      map.setMinZoom(fillZoom)
+      if (map.getZoom() < fillZoom) map.setZoom(fillZoom, { animate: false })
+      map.panInsideBounds(WORLD_BOUNDS, { animate: false })
+    }
+    keepMapFilled()
+    map.on('resize', keepMapFilled)
 
     // Click-to-zoom-in is Leaflet's default double-click; the single click
     // is ours and places the answer.
@@ -85,6 +108,7 @@ export function MapResponse({ item, value, onChange, judged }: ResponseProps) {
     setReady(true)
 
     return () => {
+      map.off('resize', keepMapFilled)
       map.remove()
       mapRef.current = null
     }
