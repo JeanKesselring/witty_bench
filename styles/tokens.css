@@ -113,7 +113,7 @@
      ONE token, not three: --radius-sm/-lg implied a scale, and a scale
      implies some surface somewhere is rounded. None is. */
   --radius: 0;
-  --radius-lattice: 5px;
+  --radius-lattice: 0px;
 
   /* §2.1 The lattice. The cell is the structural module of the product —
      the frosted background grid, the notes workspace and quantised

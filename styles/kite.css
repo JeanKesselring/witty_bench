@@ -3564,7 +3564,7 @@ textarea.k-input--prose {
   inline-size: fit-content;
   max-inline-size: min(78%, var(--measure));
   gap: var(--space-1);
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--space-4);
   border: 1px solid var(--line-strong);
   text-align: start;
 }
@@ -3753,5 +3753,174 @@ textarea.k-input--prose {
   }
   .k-language-tutor .k-bubble {
     max-inline-size: 92%;
+  }
+}
+
+/* Language tutor, open lattice layout. Unlike the standard tutor, this
+   version has no enclosing surface or independently scrolling transcript:
+   rail, messages and review all advance on the document's lattice together.
+   The composer is the sole element allowed to float. */
+.k-main--chat-lattice {
+  inline-size: min(100%, calc(var(--cell) * 20));
+  padding-block-start: var(--cell);
+}
+.k-lattice-chat {
+  display: grid;
+  grid-template-columns: calc(var(--cell) * 4) minmax(0, calc(var(--cell) * 11));
+  gap: var(--cell);
+  align-items: start;
+  min-inline-size: 0;
+}
+.k-lattice-chat__rail {
+  display: grid;
+  align-content: start;
+  gap: var(--cell);
+  min-inline-size: 0;
+}
+.k-lattice-chat__identity {
+  min-block-size: calc(var(--cell) * 3);
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+}
+.k-lattice-chat__identity > p:last-child {
+  color: var(--ink-dim);
+}
+.k-lattice-chat__group {
+  display: grid;
+  grid-auto-rows: minmax(var(--cell), auto);
+  align-items: stretch;
+}
+.k-lattice-chat__group > .k-meta {
+  display: flex;
+  align-items: center;
+  min-block-size: var(--cell);
+}
+.k-lattice-chat__rail :is(.k-btn, .k-lattice-chat__rail-button) {
+  inline-size: 100%;
+  min-block-size: var(--cell);
+  justify-content: flex-start;
+  padding-inline: var(--space-2);
+  text-align: start;
+}
+.k-lattice-chat__rail .k-btn--primary {
+  justify-content: center;
+}
+.k-lattice-chat__history {
+  display: grid;
+  grid-auto-rows: minmax(var(--cell), auto);
+  list-style: none;
+}
+.k-lattice-chat__history li {
+  min-inline-size: 0;
+}
+.k-lattice-chat__history .k-btn {
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: var(--optical);
+}
+.k-lattice-chat__history small {
+  color: var(--ink-faint);
+}
+.k-lattice-chat__history .k-btn[data-current='true'] {
+  background: var(--selected-fill);
+  color: var(--selected-ink);
+}
+.k-lattice-chat__history .k-btn[data-current='true'] small {
+  color: var(--selected-ink);
+}
+.k-lattice-chat__conversation {
+  display: grid;
+  gap: var(--cell);
+  min-inline-size: 0;
+  padding-block-end: calc(var(--cell) * 2);
+}
+.k-lattice-chat__head {
+  min-block-size: calc(var(--cell) * 3);
+  display: grid;
+  align-content: end;
+  gap: var(--space-2);
+  padding-block-end: var(--space-4);
+}
+.k-lattice-chat__log {
+  display: grid;
+  align-content: start;
+  gap: var(--cell);
+  min-block-size: calc(var(--cell) * 7);
+  min-inline-size: 0;
+}
+.k-lattice-chat__log .k-bubble {
+  position: relative;
+  inline-size: fit-content;
+  max-inline-size: min(calc(var(--cell) * 9), 88%);
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--line-strong);
+  text-align: start;
+}
+.k-lattice-chat__log .k-bubble[data-role='sage'] {
+  justify-self: start;
+  background: var(--panel);
+  border-inline-start: var(--optical) solid var(--primary-hover);
+}
+.k-lattice-chat__log .k-bubble[data-role='learner'] {
+  justify-self: end;
+  background: var(--primary);
+  border-color: var(--primary-hover);
+  border-inline-end: var(--optical) solid var(--primary-hover);
+  color: var(--on-accent);
+}
+.k-lattice-chat__log .k-bubble > p {
+  margin: 0;
+}
+.k-lattice-chat__log .k-bubble[data-role='learner'] :is(.k-bubble__name, .k-bubble__translation) {
+  color: var(--on-accent);
+}
+.k-lattice-chat__analysis {
+  display: grid;
+  gap: var(--space-3);
+  padding-block: var(--cell);
+  border-block: 1px solid var(--line);
+}
+.k-lattice-chat__compose {
+  position: sticky;
+  inset-block-end: var(--space-4);
+  z-index: var(--layer-chrome);
+  min-block-size: var(--cell);
+  background: rgb(var(--bg-rgb) / 0.88);
+  backdrop-filter: blur(20px) saturate(1.1);
+  /* Elevation only; the composer's border remains its forced-colours boundary. */
+  /* stylelint-disable-next-line kite/boundary-is-border */
+  box-shadow: 0 var(--space-2) var(--space-4) rgb(0 0 0 / 0.28);
+}
+.k-lattice-chat__speech {
+  min-block-size: var(--cell);
+  margin-block-start: calc(var(--cell) * -1);
+}
+
+@media (max-width: 1023px) {
+  .k-lattice-chat {
+    grid-template-columns: 1fr;
+  }
+  .k-lattice-chat__rail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .k-lattice-chat__identity,
+  .k-lattice-chat__rail > .k-lattice-chat__rail-button {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .k-lattice-chat__rail {
+    grid-template-columns: 1fr;
+  }
+  .k-lattice-chat__identity,
+  .k-lattice-chat__rail > .k-lattice-chat__rail-button {
+    grid-column: auto;
+  }
+  .k-lattice-chat__log .k-bubble {
+    max-inline-size: 96%;
   }
 }

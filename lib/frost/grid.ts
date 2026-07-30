@@ -21,7 +21,7 @@ export const EDGE = {
 } as const
 
 /** The frosted lattice is the one rounded primitive in the background field. */
-export const FROST_TILE_RADIUS_PX = 5
+export const FROST_TILE_RADIUS_PX = 0
 
 const svgUrl = (body: string, cols: number, rows: number) =>
   `url("data:image/svg+xml,${encodeURIComponent(

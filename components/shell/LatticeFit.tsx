@@ -32,6 +32,7 @@ const TARGETS = [
   '.k-state',
   '.k-scrollmodule',
   '.k-inspector',
+  '.k-lattice-chat__log .k-bubble',
 ].join(', ')
 
 export function LatticeFit() {
