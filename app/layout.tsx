@@ -11,8 +11,8 @@ import { ToastRegion } from '@/components/ui/Toast'
 import { getCurrentUser } from '@/lib/auth/session'
 
 export const metadata: Metadata = {
-  title: 'Common Sage',
-  description: 'Educator-authored, knowledge-graph-backed learning.',
+  title: 'Kanji Map — Explore by Radical',
+  description: 'A draggable map of kanji clustered by their shared radicals.',
 }
 
 /* §3.1: theme resolves before paint, so there is no flash to design around.
@@ -59,7 +59,7 @@ export default async function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         <Providers>
           {/* §3.5 + §5: the wave, its texture, the frosted grid and the
               notes workspace (§11.15), all inside one isolated stage so the
