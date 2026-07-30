@@ -17,8 +17,8 @@ import type { ModuleTypeSpec } from '@/lib/modules/registry'
  * graded types, ScrollModule for ungraded — with the real response controls,
  * the real Check/Reveal loop and the real judgement.
  *
- * One module is live at a time rather than all 36 at once: each frame
- * carries a backdrop-filter, and thirty-six of them on one page is a
+ * One module is live at a time rather than every registered type at once: each frame
+ * carries a backdrop-filter, and every one of them on one page is a
  * different performance question than the deck ever asks.
  */
 
@@ -53,7 +53,7 @@ export function ModuleCatalogue({ entries }: { entries: Entry[] }) {
   }, [entries, query])
 
   /* The harness reviews ONE type at a time, so its "session" is that single
-   * card — bands fit the type on screen. Measuring across all 36 would size
+   * card — bands fit the type on screen. Measuring across every type would size
    * every card to the tallest in the catalogue, which is the right answer
    * for a real mixed session and the wrong one for judging a type's own
    * proportions, which is what this page is for. */

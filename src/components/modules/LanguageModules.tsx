@@ -332,7 +332,6 @@ export function VocabGuessModule() {
     >
       <div className="language-drill">
         <div className="language-drill__prompt">
-          <span className="language-kicker">Say in Japanese</span>
           <strong>cat</strong>
         </div>
         <button
@@ -348,7 +347,7 @@ export function VocabGuessModule() {
           aria-label="Speech transcript fallback"
           disabled={checked}
           onChange={(event) => setText(event.target.value)}
-          placeholder="or type transcript…"
+          placeholder="Type in rōmaji or kana…"
           value={text}
         />
         <button
@@ -371,7 +370,7 @@ export function ConjugationModule() {
       code="CJ"
       instruction="Produce the polite past form"
       kind="Morphology"
-      placeholder="ひらがな or rōmaji…"
+      placeholder="Conjugate in rōmaji or kana…"
       prompt={<><strong lang="ja">食べる</strong><small lang="ja">たべる · to eat</small></>}
       title="Conjugation drill"
     />
@@ -379,16 +378,49 @@ export function ConjugationModule() {
 }
 
 export function ParticleClozeModule() {
+  const [text, setText] = useState('')
+  const [checked, setChecked] = useState(false)
+  const correct = text.trim() === 'を'
+
   return (
-    <ChoiceDrill
-      answer="を"
-      choices={['は', 'が', 'を', 'に']}
+    <ModuleFrame
       code="PC"
-      instruction="Choose the missing particle"
       kind="Grammar"
-      prompt={<><strong lang="ja">本 ___ 読みます。</strong><small>I read a book.</small></>}
       title="Particle play"
-    />
+      footer={
+        checked ? (
+          <ModuleStatus tone={correct ? 'right' : 'wrong'}>
+            {correct ? 'Correct' : 'Answer · を'}
+          </ModuleStatus>
+        ) : (
+          <span>Complete the sentence</span>
+        )
+      }
+    >
+      <div className="language-cloze" lang="ja">
+        <span>本</span>
+        <label>
+          <input
+            aria-label="Missing particle"
+            disabled={checked}
+            onChange={(event) => setText(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && text.trim()) setChecked(true)
+            }}
+            value={text}
+          />
+        </label>
+        <span>読みます。</span>
+      </div>
+      <button
+        className="language-drill__check"
+        disabled={!text.trim()}
+        onClick={() => setChecked((value) => !value)}
+        type="button"
+      >
+        {checked ? 'Try again' : 'Check'}
+      </button>
+    </ModuleFrame>
   )
 }
 
@@ -470,20 +502,6 @@ export function GrammarRecognitionModule() {
   )
 }
 
-export function GrammarProductionModule() {
-  return (
-    <ChoiceDrill
-      answer="〜なければならない"
-      choices={['〜てもいい', '〜たことがある', '〜なければならない', '〜かもしれない']}
-      code="GP"
-      instruction="Meaning → grammar"
-      kind="Grammar"
-      prompt={<><span className="language-kicker">Express</span><strong>must / have to</strong></>}
-      title="Grammar production"
-    />
-  )
-}
-
 export function TranscriptionModule() {
   const [played, setPlayed] = useState(false)
 
@@ -494,7 +512,7 @@ export function TranscriptionModule() {
         code="TR"
         instruction="Audio → text"
         kind="Listening"
-        placeholder="聞こえた文を書く…"
+        placeholder="Write what you hear in rōmaji or kana…"
         prompt={
           <button
             className="audio-prompt"
@@ -513,4 +531,3 @@ export function TranscriptionModule() {
     </div>
   )
 }
-

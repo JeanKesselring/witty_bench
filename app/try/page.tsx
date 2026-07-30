@@ -63,7 +63,7 @@ const OTHER: Array<{ href: Route; title: string; note: string }> = [
   {
     href: '/modules',
     title: 'Module type harness',
-    note: 'All 39 types, live, one at a time. Answer them — this is where the geometry promise is visible.',
+    note: 'Every registered type, live, one at a time. Answer them — this is where the geometry promise is visible.',
   },
   {
     href: '/courses',
@@ -137,10 +137,6 @@ export default function TryPage() {
             <li>
               <strong>model 3d</strong> — press “Turn the model”, then drag it. Arrow keys turn it
               too, and the orientation is announced.
-            </li>
-            <li>
-              <strong>grammar production</strong> — the prose answer gets a real textarea now, not a
-              one-line input.
             </li>
             <li>
               Canonical <strong>flashcard</strong> and <strong>quiz</strong> items can carry several

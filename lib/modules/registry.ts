@@ -121,7 +121,7 @@ const GRADED_ACADEMIC: ModuleTypeSpec[] = [
   }),
 ]
 
-/* ── Graded — language (13) ──────────────────────────────────────────
+/* ── Graded — language (12) ──────────────────────────────────────────
  * None of these exists in either registry yet (§12.1); mode and graded
  * here are this document's proposal until the rows land. */
 
@@ -168,7 +168,7 @@ const GRADED_LANGUAGE: ModuleTypeSpec[] = [
     id: 'vocab_production',
     mode: 'production',
     graded: true,
-    showTopic: true,
+    showTopic: false,
     tolerance: 'exact',
     response: 'text',
     contentType: 'quiz',
@@ -219,15 +219,6 @@ const GRADED_LANGUAGE: ModuleTypeSpec[] = [
     showTopic: false,
     tolerance: 'na',
     response: 'choice',
-    contentType: 'quiz',
-  }),
-  t({
-    id: 'grammar_production',
-    mode: 'production',
-    graded: true,
-    showTopic: false,
-    tolerance: 'tolerant',
-    response: 'text',
     contentType: 'quiz',
   }),
   t({

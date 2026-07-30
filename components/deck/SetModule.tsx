@@ -62,6 +62,7 @@ export function SetModule({
     ...item,
     prompt: card.prompt,
     answer: card.answer,
+    acceptedAnswers: card.acceptedAnswers ?? item.acceptedAnswers,
     promptRuby: card.promptRuby,
     answerRuby: card.answerRuby,
     options: card.options ?? item.options,

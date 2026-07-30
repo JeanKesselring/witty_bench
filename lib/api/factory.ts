@@ -141,10 +141,16 @@ export function makeApi(request: Requester) {
         )
         if (!match) return item
         const str = (k: string) => (typeof match[k] === 'string' ? (match[k] as string) : undefined)
+        const strings = (k: string) =>
+          Array.isArray(match[k]) && match[k].every((value) => typeof value === 'string')
+            ? (match[k] as string[])
+            : undefined
         return {
           ...item,
           prompt: str('question') ?? str('front') ?? str('prompt') ?? str('title') ?? item.prompt,
           answer: str('answer') ?? str('back') ?? str('solution') ?? item.answer,
+          acceptedAnswers:
+            strings('acceptedAnswers') ?? strings('accepted_answers') ?? item.acceptedAnswers,
           options: Array.isArray(match.options) ? (match.options as string[]) : item.options,
         }
       })

@@ -176,21 +176,26 @@ function ChoiceResponse({ item, value, onChange, judged, onCommit }: ResponsePro
 }
 
 /* ── Text ────────────────────────────────────────────────────────────
- * One field, sized to what is being asked for. A prose answer in a
- * single-line input is the mistake the last pass made: `grammar_production`
- * asks for a sentence and got a box one line tall with the start of the
- * answer scrolled out of sight. Tolerance decides the shape — `tolerant`
- * means the answer is meaning in prose, which is multiline. */
+ * One field, sized to what is being asked for. Tolerant prose answers are
+ * multiline; exact Japanese production stays compact. */
 
 function TextResponse({ item, spec, value, onChange, judged, onCommit }: ResponseProps) {
   const id = useId()
   const text = typeof value === 'string' ? value : ''
   const japanese = item.lang === 'ja' && spec.tolerance === 'exact'
   const prose = spec.tolerance === 'tolerant'
+  const placeholders: Partial<Record<string, string>> = {
+    kanji_reading: 'Enter a reading in rōmaji or kana…',
+    vocab_production: 'Translate in rōmaji or kana…',
+    conjugation: 'Conjugate in rōmaji or kana…',
+    transcription: 'Write what you hear in rōmaji or kana…',
+  }
+  const placeholder = placeholders[spec.id]
+  const streamlined = placeholder !== undefined
 
   return (
     <div className="k-field">
-      <label className="k-field__label" htmlFor={id}>
+      <label className={streamlined ? 'k-sr' : 'k-field__label'} htmlFor={id}>
         Your answer
       </label>
 
@@ -202,7 +207,8 @@ function TextResponse({ item, spec, value, onChange, judged, onCommit }: Respons
           onCommit={onCommit}
           disabled={judged !== null}
           multiline={prose}
-          describedBy={`${id}-hint`}
+          describedBy={streamlined ? undefined : `${id}-hint`}
+          placeholder={placeholder}
         />
       ) : prose ? (
         <textarea
@@ -236,9 +242,11 @@ function TextResponse({ item, spec, value, onChange, judged, onCommit }: Respons
 
       {/* §6.12: tolerance is declared, and declared BEFORE the attempt.
           A learner who knows spelling counts here types differently. */}
-      <p className="k-field__hint" id={`${id}-hint`}>
-        {spec.tolerance === 'exact' ? 'Exact spelling' : 'Near matches accepted'}
-      </p>
+      {!streamlined ? (
+        <p className="k-field__hint" id={`${id}-hint`}>
+          {spec.tolerance === 'exact' ? 'Exact spelling' : 'Near matches accepted'}
+        </p>
+      ) : null}
     </div>
   )
 }
@@ -257,10 +265,7 @@ function ClozeResponse({ item, value, onChange, judged, onAssisted, onCommit }: 
 
   return (
     <div className="k-cloze">
-      {/* A div, not a p: RomajiInput renders its "reads as" line as a
-          paragraph, and a <p> inside a <p> is invalid — the browser closes
-          the outer one and the sentence breaks in half mid-gap. */}
-      <div className={item.lang === 'ja' ? 'k-ja' : undefined} lang={item.lang}>
+      <div className={`k-cloze__sentence${item.lang === 'ja' ? ' k-ja' : ''}`} lang={item.lang}>
         <span>{item.clozeBefore}</span>
         <label className="k-cloze__gap">
           <span className="k-sr">Missing word</span>
@@ -271,6 +276,8 @@ function ClozeResponse({ item, value, onChange, judged, onAssisted, onCommit }: 
               onChange={onChange}
               onCommit={onCommit}
               disabled={judged !== null}
+              placeholder=""
+              showResolved={false}
             />
           ) : (
             <input

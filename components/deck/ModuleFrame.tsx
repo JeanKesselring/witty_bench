@@ -140,7 +140,7 @@ export function ModuleFrame({
     } else if (spec.response === 'map') {
       setJudged(judgeMap(String(value), item))
     } else {
-      setJudged(judgeText(String(value), item.answer, spec.tolerance))
+      setJudged(judgeText(String(value), item.answer, spec.tolerance, item.acceptedAnswers))
     }
   }, [answered, ready, spec.response, spec.tolerance, value, item])
 
@@ -280,7 +280,7 @@ export function ModuleFrame({
               </motion.span>
             </div>
           </>
-        ) : (
+        ) : spec.response !== 'cloze' ? (
           <div className="k-frame__prompt" tabIndex={0} aria-label="Prompt">
             {nav}
             <p className={isGlyphPrompt(item.prompt, item.lang) ? 'k-glyph-prompt' : undefined}>
@@ -295,7 +295,7 @@ export function ModuleFrame({
               />
             ) : null}
           </div>
-        )}
+        ) : null}
 
         {/* ── Response ──────────────────────────────────────────────── */}
         {!flashcard ? (

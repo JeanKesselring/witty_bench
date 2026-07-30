@@ -193,9 +193,10 @@ export const EXAMPLE_MODULES: ModuleItem[] = [
     topicTitle: 'Kanji: nature',
     moduleType: 'kanji_reading',
     contentType: 'quiz',
-    prompt: '山 — give the kun’yomi reading.',
+    prompt: '山',
     lang: 'ja',
     answer: 'やま',
+    acceptedAnswers: ['さん'],
   },
   {
     id: 'x-vocab-recognition',
@@ -216,9 +217,10 @@ export const EXAMPLE_MODULES: ModuleItem[] = [
     topicTitle: 'N5 vocabulary',
     moduleType: 'vocab_guess',
     contentType: 'audio',
-    prompt: 'Say the Japanese for “library”.',
+    prompt: 'library',
     lang: 'ja',
     answer: 'としょかん',
+    acceptedAnswers: ['図書館'],
     examples: jaExamples.slice(0, 1),
   },
   {
@@ -231,6 +233,7 @@ export const EXAMPLE_MODULES: ModuleItem[] = [
     promptRuby: [{ text: '行', reading: 'い' }, { text: 'く → て-form' }],
     lang: 'ja',
     answer: 'いって',
+    acceptedAnswers: ['行って'],
   },
   {
     id: 'x-grammar-recognition',
@@ -247,19 +250,6 @@ export const EXAMPLE_MODULES: ModuleItem[] = [
       'A polite request',
     ],
     answer: 'Experience of having done something',
-  },
-  {
-    id: 'x-grammar-production',
-    topicId: 't-16',
-    topicTitle: '〜たことがある',
-    moduleType: 'grammar_production',
-    contentType: 'quiz',
-    // Deliberately a prose answer: this is the type that got a one-line
-    // input last time and had the start of the answer scrolled out of view.
-    prompt:
-      'Explain, in your own words, when you would use 〜たことがある rather than the plain past た, and give the difference in meaning.',
-    answer:
-      'Use 〜たことがある for an experience you have had at some point, not for a specific past event. 日本に行ったことがある means “I have been to Japan”; 日本に行った means “I went to Japan”.',
   },
   {
     id: 'x-transcription',
@@ -279,6 +269,7 @@ export const EXAMPLE_MODULES: ModuleItem[] = [
       { text: 'きます。' },
     ],
     answer: 'まいにちがっこうにいきます',
+    acceptedAnswers: ['毎日学校に行きます', '毎日、学校に行きます。'],
   },
   {
     id: 'x-kanji-writing',

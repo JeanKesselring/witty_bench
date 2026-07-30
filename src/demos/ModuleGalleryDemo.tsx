@@ -20,7 +20,6 @@ import {
 import {
   ConjugationModule,
   DiscriminationModule,
-  GrammarProductionModule,
   GrammarRecognitionModule,
   KanaProductionModule,
   KanaRecognitionModule,
@@ -79,7 +78,6 @@ const MODULES: CatalogEntry[] = [
   { id: 'particle-cloze', name: 'Particle play', description: 'Grammar in context', group: 'language', Component: ParticleClozeModule },
   { id: 'sentence-scramble', name: 'Sentence scramble', description: 'Word-order construction', group: 'language', Component: SentenceScrambleModule },
   { id: 'grammar-recognition', name: 'Grammar recognition', description: 'Grammar to meaning', group: 'language', Component: GrammarRecognitionModule },
-  { id: 'grammar-production', name: 'Grammar production', description: 'Meaning to grammar', group: 'language', Component: GrammarProductionModule },
   { id: 'transcription', name: 'Transcription test', description: 'Listening to typed text', group: 'language', Component: TranscriptionModule },
 ]
 
@@ -122,7 +120,7 @@ export function ModuleGalleryDemo() {
         <a className="module-catalog__brand" href="#/">
           <i aria-hidden="true" />
           <strong>kite</strong>
-          <span>module library / 30</span>
+          <span>module library / {MODULES.length}</span>
         </a>
         <nav aria-label="Pages">
           <a href="#/">Learning field</a>
@@ -137,7 +135,7 @@ export function ModuleGalleryDemo() {
           <span>CommonSage × Nihongo</span>
           <h1>One component<br />for every module.</h1>
           <p>
-            Thirty working interface studies across visual explanation, tools,
+            {MODULES.length} working interface studies across visual explanation, tools,
             geography, recall, reading, writing, listening, and speech.
           </p>
           <strong>{String(filtered.length).padStart(2, '0')} visible</strong>
@@ -199,4 +197,3 @@ export function ModuleGalleryDemo() {
     </div>
   )
 }
-

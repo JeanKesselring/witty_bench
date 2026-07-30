@@ -997,6 +997,33 @@
   text-align: center;
 }
 
+.language-cloze {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25em;
+  font-size: 2rem;
+}
+
+.language-cloze label {
+  display: inline-block;
+  width: 3em;
+}
+
+.language-cloze input {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-bottom: 2px solid var(--catalog-line);
+  outline: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: center;
+}
+
 .language-drill__check {
   align-self: flex-end;
   min-width: 112px;

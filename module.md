@@ -223,7 +223,8 @@ Study interaction:
 
 - View a Japanese sentence with one particle replaced by a blank.
 - View the sentence translation.
-- Select the particle that correctly fills the blank.
+- Type the particle directly into the sentence.
+- Optionally reveal the particle bank as a hint.
 - `I don’t know—teach me`
 - `Check`
 - Review the correct particle in context.
@@ -266,22 +267,7 @@ Skill tested:
 
 - Grammar point → meaning.
 
-## 14. Grammar production
-
-Study interaction:
-
-- View a grammatical meaning or function.
-- Select the Japanese grammar point that expresses it.
-- `I don’t know—teach me`
-- `Check`
-- Review the correct grammar point.
-- `Continue`
-
-Skill tested:
-
-- Meaning → grammar point.
-
-## 15. Transcription test
+## 14. Transcription test
 
 Study interaction:
 
@@ -301,7 +287,7 @@ Skill tested:
 
 - Spoken sentence → written Japanese.
 
-## 16. Read
+## 15. Read
 
 Text-generation controls:
 
@@ -357,7 +343,7 @@ Skill practiced:
 - Reading comprehension, vocabulary in context, grammar in context, and
   adaptive furigana use.
 
-## 17. Listen
+## 16. Listen
 
 Text-generation controls:
 
@@ -393,7 +379,7 @@ Learning effect:
 - The comprehension quiz is graded locally.
 - Listening-quiz answers do not update spaced-repetition mastery.
 
-## 18. Karaoke
+## 17. Karaoke
 
 Text-generation controls:
 
@@ -427,7 +413,7 @@ Technical behavior:
 - Speech recognition requires Chrome or Edge.
 - Local matching is supplemented by server-side phonetic matching.
 
-## 19. Chat
+## 18. Chat
 
 Scenario controls:
 

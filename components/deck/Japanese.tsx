@@ -293,6 +293,7 @@ export function RomajiInput({
   describedBy,
   placeholder = 'Rōmaji or kana',
   multiline = false,
+  showResolved = true,
 }: {
   value: string
   onChange: (kana: string) => void
@@ -303,6 +304,7 @@ export function RomajiInput({
   describedBy?: string
   placeholder?: string
   multiline?: boolean
+  showResolved?: boolean
 }) {
   const [raw, setRaw] = useState(value)
 
@@ -350,7 +352,7 @@ export function RomajiInput({
       )}
       {/* What will actually be graded. Visible, because a converter that
           silently disagrees with the learner is the worst kind. */}
-      {value ? (
+      {showResolved && value ? (
         <p className="k-meta" aria-live="polite">
           Reads as <span lang="ja">{value}</span>
         </p>

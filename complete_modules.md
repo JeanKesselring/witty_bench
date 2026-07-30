@@ -1121,17 +1121,9 @@ Registered skill variants:
 - Japanese word → English meaning.
 - Reveals a Japanese example sentence and translation.
 
-### Particle Play — `particle_cloze`
-
-- Choose the missing particle in a translated Japanese sentence.
-
 ### Grammar Recognition — `grammar_recognition`
 
 - Japanese grammar point → meaning or function.
-
-### Grammar Production — `grammar_production`
-
-- Meaning or function → Japanese grammar point.
 
 Deduplication result:
 
@@ -1151,6 +1143,12 @@ Shared interaction shell:
 - `Continue`
 
 Registered variants:
+
+### Particle Play — `particle_cloze`
+
+- The sentence and input form one continuous horizontal line.
+- Type the missing particle directly into the sentence.
+- The candidate bank remains available as an optional hint.
 
 ### Vocabulary Production — `vocab_production`
 

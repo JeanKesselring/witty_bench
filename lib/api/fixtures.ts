@@ -459,6 +459,7 @@ export const QUEUE: ModuleItem[] = [
     prompt: 'library',
     lang: 'ja',
     answer: 'としょかん',
+    acceptedAnswers: ['図書館'],
   },
   {
     id: 'm-5',

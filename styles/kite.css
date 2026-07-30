@@ -1019,6 +1019,14 @@ textarea.k-input--prose {
   font-size: var(--size-prompt);
   padding-block: var(--space-2) var(--space-1);
 }
+.k-frame[data-module='kanji_reading'] .k-frame__prompt,
+.k-frame[data-module='vocab_production'] .k-frame__prompt,
+.k-frame[data-module='vocab_guess'] .k-frame__prompt,
+.k-frame[data-module='conjugation'] .k-frame__prompt,
+.k-frame[data-module='transcription'] .k-frame__prompt {
+  justify-items: center;
+  text-align: center;
+}
 .k-frame[data-response='choice'] .k-frame__prompt {
   justify-items: center;
   padding-inline: var(--cell);
@@ -1296,26 +1304,48 @@ textarea.k-input--prose {
 
 .k-cloze {
   font-size: var(--size-prompt);
+  display: grid;
+  gap: var(--space-2);
+}
+.k-cloze__sentence {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: var(--optical);
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.25em;
 }
 .k-cloze__gap {
-  font-family: inherit;
-  font-size: inherit;
-  inline-size: 6rem;
-  min-block-size: var(--target);
+  display: inline-block;
+  inline-size: 5rem;
+}
+.k-cloze__gap .k-romaji {
+  display: block;
+}
+.k-cloze__gap .k-input {
+  min-block-size: 1.75em;
+  padding: 0 var(--optical);
+  border: 0;
+  border-block-end: 2px solid var(--line-strong);
+  border-radius: 0;
+  background: transparent;
+  font: inherit;
   text-align: center;
-  background: rgb(var(--bg-rgb) / 0.5);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius);
-  color: var(--ink);
 }
 .k-bank {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: var(--space-1);
+}
+.k-bank ul {
+  display: flex;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .k-compose {
@@ -3143,9 +3173,6 @@ textarea.k-input--prose {
    page reads as one coherent pane and pays for one blur rather than many. */
 .k-explorer,
 .k-language-tutor,
-.k-listen,
-.k-karaoke,
-.k-reader,
 .k-estimates,
 .k-lesson-card {
   background: var(--panel);
@@ -3153,14 +3180,16 @@ textarea.k-input--prose {
   border: 1px solid var(--line);
   padding: var(--card-pad-block) var(--card-pad-inline);
 }
-/* Nested regions inside a glass parent do not add another pane. */
-.k-lab .k-reader,
-.k-lab .k-listen,
-.k-lab .k-karaoke {
-  background: none;
+/* Reading, listening and read-aloud are working fields, not cards. Their
+   content starts and ends on lattice lines while the field remains visible
+   behind it. */
+.k-reader,
+.k-listen,
+.k-karaoke {
+  background: transparent;
   backdrop-filter: none;
   border: 0;
-  padding: 0;
+  padding: 0 var(--cell) var(--cell);
 }
 
 /* The review index at /try. Dev-facing, so it borrows the list treatment
@@ -3355,9 +3384,9 @@ textarea.k-input--prose {
 }
 .k-lab__library,
 .k-lab__stage {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  padding: var(--card-pad-block) var(--card-pad-inline);
+  background: transparent;
+  border: 0;
+  padding: 0;
 }
 .k-lab__library ul {
   gap: var(--space-1);

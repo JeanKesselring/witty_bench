@@ -50,13 +50,14 @@ export function judgeText(
   given: string,
   expected: string,
   tolerance: Tolerance,
+  acceptedAnswers: string[] = [],
 ): Judgement {
   const g = normalise(given)
-  const e = normalise(expected)
+  const accepted = [expected, ...acceptedAnswers].map(normalise)
 
-  if (g === e) return { outcome: 'correct', answer: expected }
+  if (accepted.includes(g)) return { outcome: 'correct', answer: expected }
 
-  if (tolerance === 'tolerant' && within1(g, e)) {
+  if (tolerance === 'tolerant' && accepted.some((answer) => within1(g, answer))) {
     // §3.3's partial state: accepted for scheduling, difference shown, so
     // the spelling still registers without the learner being marked wrong.
     return {

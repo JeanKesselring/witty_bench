@@ -138,6 +138,7 @@ export function SpeechResponse({ value, onChange, judged, onCommit }: ResponsePr
         onChange={onChange}
         onCommit={onCommit}
         disabled={judged !== null}
+        placeholder="Type in rōmaji or kana…"
       />
     </div>
   )

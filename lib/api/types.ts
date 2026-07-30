@@ -67,6 +67,8 @@ export interface ModuleItem {
   lang?: 'ja' | 'en' | 'de'
   options?: string[]
   answer: string
+  /** Alternate exact answers, such as the on- and kun-readings of a kanji. */
+  acceptedAnswers?: string[]
   /** Ordering types. */
   tokens?: string[]
   /**
@@ -135,6 +137,7 @@ export interface ModuleItem {
 export interface SetCard {
   prompt: string
   answer: string
+  acceptedAnswers?: string[]
   promptRuby?: RubySegment[]
   answerRuby?: RubySegment[]
   /** Present on quiz sets; absent on flashcard sets. */
