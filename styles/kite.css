@@ -3513,7 +3513,7 @@ textarea.k-input--prose {
   inset-block-start: calc(var(--cell) + var(--space-1));
   inset-inline-end: 0;
   z-index: var(--layer-popover);
-  inline-size: min(calc(var(--cell) * 7), calc(100vw - var(--space-6)));
+  inline-size: min(calc(var(--cell) * 7), calc(100vw - var(--gutter) - var(--gutter)));
   display: grid;
   gap: var(--space-2);
   padding: var(--space-4);
@@ -3768,7 +3768,7 @@ textarea.k-input--prose {
   display: grid;
   grid-template-columns: calc(var(--cell) * 4) minmax(0, calc(var(--cell) * 11));
   column-gap: var(--cell);
-  row-gap: var(--space-4);
+  row-gap: var(--cell);
   align-items: start;
   min-inline-size: 0;
 }
@@ -3788,38 +3788,49 @@ textarea.k-input--prose {
 }
 .k-lattice-chat__tools {
   position: sticky;
-  inset-block-start: calc(var(--cell) + var(--space-2));
+  inset-block-start: var(--cell);
   z-index: var(--layer-chrome);
   grid-column: 2;
   grid-row: 1;
   align-self: start;
   justify-self: end;
-  display: flex;
+  inline-size: calc(var(--cell) * 4);
+  block-size: var(--cell);
+  display: grid;
+  grid-template-columns: repeat(2, calc(var(--cell) * 2));
   align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-1);
-  padding: var(--space-1);
-  background: rgb(var(--bg-rgb) / 0.46);
+  gap: 0;
+  padding: 0;
+  background: transparent;
 }
 .k-lattice-chat__tools > .k-btn {
-  min-inline-size: auto;
+  inline-size: calc(var(--cell) * 2);
+  block-size: var(--cell);
+  min-inline-size: 0;
   padding-inline: var(--space-2);
+  background: rgb(var(--bg-rgb) / 0.28);
+  backdrop-filter: blur(32px) saturate(1.18);
 }
 .k-lattice-chat__settings {
+  --panel-enter-x: var(--space-2);
+
   position: absolute;
-  inset-block-start: calc(100% + var(--space-1));
+  inset-block-start: 100%;
   inset-inline-end: 0;
   z-index: var(--layer-popover);
-  inline-size: min(calc(var(--cell) * 6), calc(100vw - var(--space-6)));
+  inline-size: min(calc(var(--cell) * 7), calc(100vw - var(--space-6)));
   display: grid;
   gap: 0;
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-4);
   background: rgb(var(--bg-rgb) / 0.3);
   backdrop-filter: blur(56px) saturate(1.35);
   border: 1px solid var(--line);
+  transform-origin: top right;
+  animation: k-lattice-chat-panel-in 480ms var(--ease) both;
 }
 .k-lattice-chat__settings .k-dialog__head {
   min-block-size: var(--cell);
+  margin-block-end: var(--space-2);
 }
 .k-lattice-chat__settings .k-setting-row {
   grid-template-columns: minmax(0, 1fr) auto;
@@ -3830,20 +3841,42 @@ textarea.k-input--prose {
   min-inline-size: calc(var(--cell) * 2);
 }
 .k-lattice-chat__rail {
+  position: relative;
   grid-column: 1;
   grid-row: 2;
   display: grid;
   align-content: start;
-  gap: var(--space-3);
+  gap: 0;
   min-inline-size: 0;
 }
 .k-lattice-chat__new {
+  --panel-enter-x: calc(var(--space-2) * -1);
+
+  position: absolute;
+  inset-block-start: var(--cell);
+  inset-inline-start: 0;
+  z-index: var(--layer-popover);
+  inline-size: min(calc(var(--cell) * 6), calc(100vw - var(--gutter) - var(--gutter)));
   display: grid;
-  gap: var(--space-2);
-  padding: var(--space-2);
-  background: var(--panel);
-  backdrop-filter: blur(20px) saturate(1.1);
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: rgb(var(--bg-rgb) / 0.3);
+  backdrop-filter: blur(56px) saturate(1.35);
   border: 1px solid var(--line);
+  transform-origin: top left;
+  animation: k-lattice-chat-panel-in 480ms var(--ease) both;
+}
+.k-lattice-chat__new .k-dialog__head,
+.k-lattice-chat__new .k-input {
+  min-block-size: var(--cell);
+}
+.k-lattice-chat__new-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-1);
+}
+.k-lattice-chat__new-actions .k-btn {
+  min-block-size: var(--cell);
 }
 .k-lattice-chat__group {
   display: grid;
@@ -3852,7 +3885,7 @@ textarea.k-input--prose {
 .k-lattice-chat__group > .k-meta {
   display: flex;
   align-items: center;
-  min-block-size: var(--space-4);
+  min-block-size: var(--cell);
 }
 .k-lattice-chat__rail :is(.k-btn, .k-lattice-chat__rail-button) {
   inline-size: 100%;
@@ -3910,16 +3943,22 @@ textarea.k-input--prose {
   min-inline-size: 0;
 }
 .k-lattice-chat__turn {
+  --turn-enter-x: calc(var(--space-2) * -1);
+
   display: grid;
   gap: var(--optical);
-  inline-size: min(calc(var(--cell) * 8), 92%);
+  inline-size: min(calc(var(--cell) * 8), 100%);
   max-inline-size: 100%;
+  animation: k-lattice-chat-turn-in 520ms var(--ease) both;
 }
 .k-lattice-chat__turn[data-role='sage'] {
   justify-self: start;
   justify-items: start;
+  animation-delay: 180ms;
 }
 .k-lattice-chat__turn[data-role='learner'] {
+  --turn-enter-x: var(--space-2);
+
   justify-self: end;
   justify-items: end;
 }
@@ -3932,22 +3971,26 @@ textarea.k-input--prose {
   padding: var(--optical) var(--space-4);
   border: 0;
   box-shadow: none;
+  filter: none;
   backdrop-filter: blur(24px) saturate(1.12);
   text-align: start;
 }
 .k-lattice-chat__turn[data-role='sage'] .k-bubble {
   padding-inline-end: calc(var(--target) + var(--space-2));
-  background: color-mix(in srgb, var(--panel) 76%, transparent);
+  background: transparent;
+  backdrop-filter: none;
 }
 .k-lattice-chat__turn[data-role='learner'] .k-bubble {
-  background: color-mix(in srgb, var(--primary) 54%, transparent);
+  background: var(--learner-bubble);
   color: var(--ink);
+  backdrop-filter: blur(32px) saturate(1.2);
 }
 .k-lattice-chat__turn .k-bubble > p {
   margin: 0;
 }
 .k-lattice-chat__turn[data-role='learner'] .k-bubble__translation {
   color: var(--ink-dim);
+  opacity: 0.78;
 }
 .k-lattice-chat__turn .k-bubble__audio {
   position: absolute;
@@ -3962,19 +4005,23 @@ textarea.k-input--prose {
   block-size: calc(var(--cell) * 2);
 }
 .k-lattice-chat__review-panel {
+  --panel-enter-x: var(--space-2);
+
   position: fixed;
-  inset-block: calc(var(--cell) + var(--space-4)) var(--space-4);
+  inset-block: calc(var(--cell) * 2) var(--cell);
   inset-inline-end: var(--gutter);
   z-index: var(--layer-popover);
-  inline-size: min(calc(var(--cell) * 7), calc(100vw - var(--space-6)));
+  inline-size: min(calc(var(--cell) * 8), calc(100vw - var(--space-6)));
   display: grid;
   align-content: start;
   gap: var(--space-4);
   overflow-y: auto;
-  padding: var(--space-4);
+  padding: var(--space-6);
   background: rgb(var(--bg-rgb) / 0.42);
   backdrop-filter: blur(56px) saturate(1.35);
   border: 1px solid var(--line);
+  transform-origin: top right;
+  animation: k-lattice-chat-panel-in 480ms var(--ease) both;
 }
 .k-lattice-chat__review-status,
 .k-lattice-chat__review-content,
@@ -3982,14 +4029,41 @@ textarea.k-input--prose {
   display: grid;
   gap: var(--space-2);
 }
+.k-lattice-chat__review-content {
+  gap: var(--space-4);
+}
 .k-lattice-chat__review-list {
   display: grid;
   gap: var(--space-1);
   padding-inline-start: var(--space-3);
 }
+
+@keyframes k-lattice-chat-turn-in {
+  from {
+    opacity: 0;
+    transform: translate3d(var(--turn-enter-x), var(--space-1), 0) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes k-lattice-chat-panel-in {
+  from {
+    opacity: 0;
+    clip-path: inset(0 0 92% 0);
+    transform: translate3d(var(--panel-enter-x), calc(var(--space-1) * -1), 0) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0);
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
 .k-lattice-chat__compose {
   position: fixed;
-  inset-block-end: var(--space-4);
+  inset-block-end: var(--cell);
   inset-inline-end: max(
     var(--gutter),
     calc((100vw - calc(var(--cell) * 20)) / 2 + calc(var(--cell) * 3))
@@ -4019,9 +4093,7 @@ textarea.k-input--prose {
   .k-lattice-chat__tools {
     grid-column: 1;
     grid-row: 2;
-    inline-size: 100%;
-    justify-self: stretch;
-    overflow-x: auto;
+    justify-self: end;
   }
   .k-lattice-chat__rail {
     grid-column: 1;
@@ -4039,24 +4111,30 @@ textarea.k-input--prose {
 
 @media (max-width: 640px) {
   .k-lattice-chat__tools {
-    justify-content: flex-start;
-  }
-  .k-lattice-chat__tools > .k-btn {
-    flex: none;
-  }
-  .k-lattice-chat__turn {
-    inline-size: 96%;
+    max-inline-size: 100%;
   }
   .k-lattice-chat__review-panel {
-    inset-inline: var(--space-2);
+    inset-inline: var(--gutter);
     inline-size: auto;
+    padding: var(--space-4);
   }
 }
 
 @media (prefers-reduced-transparency: reduce) {
+  .k-lattice-chat__tools > .k-btn,
   .k-lattice-chat__settings,
+  .k-lattice-chat__new,
   .k-lattice-chat__review-panel {
     background: var(--bg-raised);
     backdrop-filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .k-lattice-chat__turn,
+  .k-lattice-chat__settings,
+  .k-lattice-chat__new,
+  .k-lattice-chat__review-panel {
+    animation: none;
   }
 }

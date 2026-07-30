@@ -74,6 +74,7 @@
   --primary: #3d8fcc;
   --primary-hover: #5ba7ff;
   --primary-dark: #6b83e6;
+  --learner-bubble: rgb(246 242 239 / 0.2);
   /* Selected controls must remain unmistakable against translucent panels.
      This resolves per theme because --primary-hover is overridden below. */
   --selected-fill: var(--primary-hover);

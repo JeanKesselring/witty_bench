@@ -40,6 +40,7 @@ export function LatticeTutorChat() {
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
   const endRef = useRef<HTMLDivElement | null>(null)
   const reviewCloseRef = useRef<HTMLButtonElement | null>(null)
+  const newConversationCloseRef = useRef<HTMLButtonElement | null>(null)
   const reviewCacheRef = useRef(new Map<string, ConversationAnalysis>())
   const currentRef = useRef(current)
   const previousTurnsRef = useRef({
@@ -79,6 +80,19 @@ export function LatticeTutorChat() {
       document.removeEventListener('keydown', closeOnEscape)
     }
   }, [reviewOpen])
+
+  useEffect(() => {
+    if (!newConversationOpen) return
+    const frame = window.requestAnimationFrame(() => newConversationCloseRef.current?.focus())
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setNewConversationOpen(false)
+    }
+    document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      document.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [newConversationOpen])
 
   const createConversation = () => {
     const inheritsTodayTopic = newConversationTopic === 'today_topic'
@@ -188,6 +202,7 @@ export function LatticeTutorChat() {
 
     const conversationId = conversation.conversationId
     setSettingsOpen(false)
+    setNewConversationOpen(false)
     setReviewOpen(true)
 
     if (reviewResult?.conversationId === conversationId) return
@@ -255,6 +270,7 @@ export function LatticeTutorChat() {
             aria-expanded={settingsOpen}
             onClick={() => {
               setReviewOpen(false)
+              setNewConversationOpen(false)
               setSettingsOpen((currentValue) => !currentValue)
             }}
           >
@@ -319,16 +335,44 @@ export function LatticeTutorChat() {
           <button
             type="button"
             className="k-btn k-btn--primary k-press k-lattice-chat__rail-button"
+            aria-controls="new-conversation-panel"
             aria-expanded={newConversationOpen}
-            onClick={() => setNewConversationOpen((currentValue) => !currentValue)}
+            onClick={() => {
+              setSettingsOpen(false)
+              setReviewOpen(false)
+              setNewConversationOpen((currentValue) => !currentValue)
+            }}
           >
-            + New conversation
+            <span aria-hidden="true">＋</span>
+            New conversation
           </button>
 
           {newConversationOpen ? (
-            <div className="k-lattice-chat__new" role="group" aria-label="New conversation">
+            <div
+              id="new-conversation-panel"
+              className="k-lattice-chat__new"
+              role="dialog"
+              aria-labelledby="new-conversation-title"
+            >
+              <header className="k-dialog__head">
+                <div>
+                  <p className="k-meta">Choose a starting point</p>
+                  <h2 className="k-h3" id="new-conversation-title">
+                    New conversation
+                  </h2>
+                </div>
+                <button
+                  ref={newConversationCloseRef}
+                  type="button"
+                  className="k-icon-close k-press"
+                  onClick={() => setNewConversationOpen(false)}
+                >
+                  <span aria-hidden="true">×</span>
+                  <span className="k-sr">Close new conversation</span>
+                </button>
+              </header>
               <label className="k-field">
-                <span className="k-field__label">Conversation topic</span>
+                <span className="k-field__label">Starting point</span>
                 <select
                   className="k-input"
                   value={newConversationTopic}
@@ -344,13 +388,22 @@ export function LatticeTutorChat() {
                   ))}
                 </select>
               </label>
-              <button
-                type="button"
-                className="k-btn k-btn--secondary k-press"
-                onClick={createConversation}
-              >
-                Create
-              </button>
+              <div className="k-lattice-chat__new-actions">
+                <button
+                  type="button"
+                  className="k-btn k-btn--quiet k-press"
+                  onClick={() => setNewConversationOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="k-btn k-btn--primary k-press"
+                  onClick={createConversation}
+                >
+                  Start
+                </button>
+              </div>
             </div>
           ) : null}
 
@@ -367,6 +420,7 @@ export function LatticeTutorChat() {
                     onClick={() => {
                       setCurrent(candidate.conversationId)
                       currentRef.current = candidate.conversationId
+                      setNewConversationOpen(false)
                       setReviewOpen(false)
                       setReviewStatus('idle')
                     }}
