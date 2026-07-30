@@ -395,7 +395,7 @@ function AnimatedStrokeOrder({
             className={styles.animatedStroke}
             d={path}
             pathLength={1}
-            style={{ animationDelay: `${index * 360}ms` }}
+            style={{ animationDelay: `${index * 500}ms` }}
           />
         ))}
         {!loading && !paths.length ? (

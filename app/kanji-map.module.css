@@ -1521,7 +1521,7 @@
   stroke-width: 4;
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
-  animation: drawStroke 820ms var(--ease) forwards;
+  animation: drawStroke 1000ms var(--ease) forwards;
 }
 
 .strokeFallback {
