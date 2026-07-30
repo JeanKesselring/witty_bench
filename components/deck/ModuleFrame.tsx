@@ -26,6 +26,7 @@ import {
 import { distanceKm, NEAR_KM, PART_KM, parsePick } from '@/lib/modules/geo'
 import { ModuleMenu } from './ModuleMenu'
 import { spring } from '@/lib/motion'
+import { signalCorrectAnswer, signalWrongAnswer } from '@/components/gradient/reactions'
 
 export interface Outcome {
   grade: Grade
@@ -131,28 +132,37 @@ export function ModuleFrame({
       ? Array.isArray(value) && value.length === (item.tokens?.length ?? 0) && value.length > 0
       : String(value).trim().length > 0
 
+  /* Every judgement lands here, so this is where the substrate hears about it.
+   * `partial` and a revealed answer are deliberately quiet: a field that reacts
+   * to "nearly" as well spends the distinction it exists to draw. */
+  const mark = useCallback((judgement: Judgement) => {
+    setJudged(judgement)
+    if (judgement.outcome === 'incorrect') signalWrongAnswer()
+    else if (judgement.outcome === 'correct') signalCorrectAnswer()
+  }, [])
+
   /* Marking. The control reports a value; this decides what it was worth,
    * and it is the only place that decides. */
   const check = useCallback(() => {
     if (answered || !ready) return
     if (spec.response === 'choice') {
-      setJudged(judgeChoice(String(value), item.answer))
+      mark(judgeChoice(String(value), item.answer))
     } else if (spec.response === 'ordering') {
-      setJudged(judgeOrder(Array.isArray(value) ? value : [], item.answer.split('|')))
+      mark(judgeOrder(Array.isArray(value) ? value : [], item.answer.split('|')))
     } else if (spec.response === 'map') {
-      setJudged(judgeMap(String(value), item))
+      mark(judgeMap(String(value), item))
     } else {
-      setJudged(judgeText(String(value), item.answer, spec.tolerance, item.acceptedAnswers))
+      mark(judgeText(String(value), item.answer, spec.tolerance, item.acceptedAnswers))
     }
-  }, [answered, ready, spec.response, spec.tolerance, value, item])
+  }, [answered, ready, spec.response, spec.tolerance, value, item, mark])
 
   const recognizeHandwriting = useCallback(
     (glyph: string) => {
       if (answered || !handwriting) return
       setValue(glyph)
-      setJudged(judgeText(glyph, item.answer, 'exact', item.acceptedAnswers))
+      mark(judgeText(glyph, item.answer, 'exact', item.acceptedAnswers))
     },
-    [answered, handwriting, item.answer, item.acceptedAnswers],
+    [answered, handwriting, item.answer, item.acceptedAnswers, mark],
   )
 
   const reveal = useCallback(() => {

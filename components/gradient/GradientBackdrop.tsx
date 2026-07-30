@@ -1,7 +1,8 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { subscribeReactions } from './reactions'
 import { configFor, fallbackCss } from './presets'
 import type { GradientConfig } from './types'
 
@@ -17,16 +18,15 @@ import type { GradientConfig } from './types'
  *      rather than blanking the box (§9.3A).
  *   4. Nothing paints before WebGL is up, and nothing at all without it — the
  *      CSS gradient underlay covers both (§11.13).
+ *
+ * The one exception to "atmosphere, never information": the field reacts to a
+ * judgement — a wrong answer reddens it and quickens the wave, a right one
+ * greens it and settles the wave flat. Both are *second* channels — the
+ * judgement text carries the same news at the same moment, and the canvas stays
+ * aria-hidden — so nothing is said here alone (§9.3's carve-out discipline).
  */
 
-const ShaderGradientCanvas = dynamic(
-  () => import('@shadergradient/react').then((m) => m.ShaderGradientCanvas),
-  { ssr: false },
-)
-const ShaderGradient = dynamic(
-  () => import('@shadergradient/react').then((m) => m.ShaderGradient),
-  { ssr: false },
-)
+const WaveCanvas = dynamic(() => import('./WaveCanvas'), { ssr: false })
 
 function useTheme(): 'light' | 'dark' {
   const [theme, setTheme] = useState<'light' | 'dark'>('dark')
@@ -34,9 +34,7 @@ function useTheme(): 'light' | 'dark' {
     const read = () => {
       const attr = document.documentElement.getAttribute('data-theme')
       if (attr === 'light' || attr === 'dark') return setTheme(attr)
-      setTheme(
-        window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark',
-      )
+      setTheme(window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
     }
     read()
     const observer = new MutationObserver(read)
@@ -83,34 +81,50 @@ export function GradientBackdrop({
   const reduced = useReducedMotion()
   const pixelDensity = useRenderScale()
   const [mounted, setMounted] = useState(false)
+  const root = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => setMounted(true), [])
+
+  /* Reaction levels are written straight onto the element as custom properties.
+   * State would re-render the tree 60×/second and, worse, rebuild the shader
+   * material with it (see WaveCanvas). The washes themselves are pseudo-elements
+   * in kite.css; the `data-` gates keep them out of the paint entirely between
+   * judgements, so there is no blend group to composite while the field is
+   * simply drifting. */
+  useEffect(
+    () =>
+      subscribeReactions(({ wrong, right }) => {
+        const el = root.current
+        if (!el) return
+        el.style.setProperty('--wave-wrong', String(wrong))
+        el.style.setProperty('--wave-right', String(right))
+        if (wrong > 0) el.dataset.wrong = 'on'
+        else delete el.dataset.wrong
+        if (right > 0) el.dataset.right = 'on'
+        else delete el.dataset.right
+      }),
+    [],
+  )
 
   const config: GradientConfig = configFor(presetId, theme)
 
   return (
     <div
+      ref={root}
       className={className}
       aria-hidden="true"
       // Paints before WebGL is up, and instead of it when WebGL is absent.
       style={{ background: fallbackCss(config) }}
     >
-      {mounted ? (
-        <ShaderGradientCanvas
-          style={{ width: '100%', height: '100%' }}
-          pixelDensity={pixelDensity}
-          pointerEvents="none"
-          lazyLoad={false}
-          powerPreference="high-performance"
-          fov={45}
-        >
-          <ShaderGradient
-            control="props"
-            {...config}
-            animate={reduced ? 'off' : 'on'}
-          />
-        </ShaderGradientCanvas>
-      ) : null}
+      {mounted ? <WaveCanvas config={config} pixelDensity={pixelDensity} frozen={reduced} /> : null}
+
+      {/* The judgement washes. Siblings *after* the canvas rather than
+          pseudo-elements, because among positioned boxes with `z-index: auto`
+          paint order is DOM order — so this puts them above the canvas without
+          a literal z-index, which §2.6 does not allow. kite.css keeps them out
+          of the paint entirely until the matching gate above turns on. */}
+      <div className="frost__wash frost__wash--wrong" />
+      <div className="frost__wash frost__wash--right" />
     </div>
   )
 }

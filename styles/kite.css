@@ -40,6 +40,76 @@
 .frost__canvas {
   position: fixed;
   inset: 0;
+  /* The reaction washes below blend, so the group they blend within has to be
+     this element and not the stage — otherwise they reach past the canvas and
+     recolour the page behind it. The stage's own isolation still holds, so
+     the glass keeps sampling this layer as backdrop. */
+  isolation: isolate;
+
+  /* Peak strength of the judgement washes. Tuned to leave the field reading as
+     the product's blue, tinted — not as a red or green field.
+
+     One value per outcome, identical in both themes: the reaction is the same
+     event whichever palette it lands on, and a per-theme number made it a
+     slightly different event in each. The cost is known and accepted — the pale
+     light palette shifts less at a given strength, because blending toward a hue
+     desaturates near-white pixels before it recolours them — so these sit above
+     what dark alone would need and below what light alone would want.
+
+     Still per *outcome*, though, because that asymmetry is in the hue circle
+     rather than in the theme: the field is blue, red is most of a circle away
+     while green is reached through cyan, so equal strengths are not equal
+     shifts. Green at the red's number goes full teal. */
+  --wave-wrong-peak: 0.35;
+  --wave-right-peak: 0.22;
+}
+
+/* The judgement reactions — GradientBackdrop drives `--wave-wrong` and
+   `--wave-right` 0→1→0, each gated by its own attribute so neither costs a
+   blend group between judgements.
+
+   `mix-blend-mode: color` takes the wash's hue and saturation and keeps the
+   wave's own luminance, so the wave *turns* red or green: crests, troughs and
+   drift all survive. An opaque veil at the same strength would erase them, and
+   a hue-rotate() is a matrix approximation that mostly finds mud. The pale
+   light palette needs the luminance channel too — a `hue` blend does nothing
+   to near-white pixels.
+
+   Opacity is a plain multiple of the level, with no transition and no keyframes
+   anywhere in this file. That is deliberate: reactions.ts owns the envelope, and
+   a CSS transition on top would be a second, independent animation racing the
+   wave's — which is exactly how the colour and the wave would fall out of step.
+
+   Two layers rather than one shared one, because the outcomes are mutually
+   exclusive in time but their releases can overlap by a frame or two when one
+   interrupts the other; letting both fade independently is honest and costs
+   nothing.
+
+   `display: none` until the gate opens, so an idle field composites no blend
+   group at all. That is also what makes these safe as always-mounted elements
+   rather than pseudo-elements — which is the point: both washes have to paint
+   ABOVE the canvas, and R3F's container is `position: relative`, so a
+   `::before` loses to it on paint order and the green vanished entirely.
+   Siblings after the canvas win on DOM order with no z-index, which §2.6 does
+   not permit anyway. */
+.frost__wash {
+  display: none;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: color;
+}
+
+.frost__canvas[data-wrong] .frost__wash--wrong {
+  display: block;
+  background: var(--err-hover);
+  opacity: calc(var(--wave-wrong, 0) * var(--wave-wrong-peak));
+}
+
+.frost__canvas[data-right] .frost__wash--right {
+  display: block;
+  background: var(--ok-hover);
+  opacity: calc(var(--wave-right, 0) * var(--wave-right-peak));
 }
 
 /* Texture is what makes the frost legible. A pure blur over a smooth
