@@ -164,15 +164,6 @@ export function LatticeTutorChat() {
         </header>
 
         <div className="k-lattice-chat__tools" aria-label="Conversation tools">
-          <FuriganaToggle mode={furigana} onChange={setFurigana} />
-          <button
-            type="button"
-            className="k-btn k-btn--quiet k-press"
-            aria-pressed={translations}
-            onClick={() => setTranslations((currentValue) => !currentValue)}
-          >
-            Translation
-          </button>
           <button
             type="button"
             className="k-btn k-btn--quiet k-press"
@@ -201,6 +192,21 @@ export function LatticeTutorChat() {
                 >
                   <span aria-hidden="true">×</span>
                   <span className="k-sr">Close settings</span>
+                </button>
+              </div>
+              <div className="k-setting-row">
+                <span className="k-field__label">Reading aids</span>
+                <FuriganaToggle mode={furigana} onChange={setFurigana} />
+              </div>
+              <div className="k-setting-row">
+                <span className="k-field__label">Translations</span>
+                <button
+                  type="button"
+                  className="k-btn k-btn--quiet k-press"
+                  aria-pressed={translations}
+                  onClick={() => setTranslations((currentValue) => !currentValue)}
+                >
+                  {translations ? 'Shown' : 'Hidden'}
                 </button>
               </div>
               <div className="k-setting-row">
