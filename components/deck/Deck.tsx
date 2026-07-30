@@ -124,14 +124,8 @@ export function Deck({
   return (
     <div style={{ display: 'grid', gap: 'var(--space-4)' }}>
       <div className="k-stack">
-        {/* §10.4D card stack. The movement is deliberately transform-only:
-            fading this wrapper made the card TRANSPARENT rather than faded,
-            because an ancestor below opacity 1 — and the `will-change` motion
-            sets while animating — becomes a backdrop root, so .k-frame's
-            backdrop-filter had nothing left to sample. Measured: the card's
-            lift over the background fell from 36 to 11 under `will-change`,
-            and roughly halved at opacity 0.99. The card now also carries a
-            real fill (--panel), so even a momentary dropout is invisible. */}
+        {/* The module enters and leaves along the lattice. Movement remains
+            transform-only so text and controls stay crisp during the change. */}
         <AnimatePresence mode="popLayout" initial={false}>
           <motion.div
             key={item.id}

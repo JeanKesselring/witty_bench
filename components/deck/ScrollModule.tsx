@@ -1,6 +1,6 @@
 'use client'
 
-/* The ungraded shell — §6.10's second card behaviour.
+/* The ungraded shell — §6.10's direct-on-lattice learning behaviour.
  *
  * No fixed frame and no control band. A dense diagram, a long timeline or a
  * rotatable model is crushed by a frame sized for a flashcard, and the two
@@ -10,9 +10,9 @@
  *
  * What it keeps from the frame is the promise that matters: the primary
  * action is bottom-right in both, so Continue and Check occupy the same
- * corner of the screen.
+ * corner of the composition.
  *
- * The catalogue's shared learning-card behaviour adds three things §6.10 did
+ * The catalogue's shared learning-module behaviour adds three things §6.10 did
  * not have, and all three are here:
  *   · `Source ↗` when supplied, opening in a new tab.
  *   · A provenance line — "Sourced from your material" or "Includes external

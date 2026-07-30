@@ -1,12 +1,12 @@
 'use client'
 
-/* The shared assessment card.
+/* The shared assessment module.
  *
  * It is intentionally content-sized. The former session-wide fixed bands
  * aligned every button by reserving the tallest prompt, answer and verdict
- * on every card; mixed sessions consequently contained more blank space than
+ * on every module; mixed sessions consequently contained more blank space than
  * content. The lattice now comes from padding, target sizes and the outer
- * boundary rather than from empty placeholder rows.
+ * composition rather than from an enclosing card or empty placeholder rows.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'

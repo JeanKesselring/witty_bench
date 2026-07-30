@@ -920,10 +920,9 @@ textarea.k-input--prose {
 .k-frame {
   position: relative;
   inline-size: min(100%, calc(var(--cell) * 10));
-  background: var(--panel);
-  backdrop-filter: blur(var(--panel-blur)) saturate(1.1) brightness(var(--panel-gain));
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius);
+  background: transparent;
+  backdrop-filter: none;
+  border: 0;
   display: grid;
   grid-template-rows: auto;
   gap: 0;
@@ -934,7 +933,7 @@ textarea.k-input--prose {
   align-items: center;
   gap: var(--space-1);
   min-block-size: var(--target);
-  padding: var(--space-2) calc(var(--target) + var(--card-pad-inline)) 0 var(--card-pad-inline);
+  padding: var(--space-2) calc(var(--cell) + var(--target)) 0 var(--cell);
 }
 .k-frame__topic {
   font-size: var(--size-body-sm);
@@ -1014,7 +1013,7 @@ textarea.k-input--prose {
   display: grid;
   align-content: start;
   gap: var(--space-2);
-  padding-inline: var(--card-pad-inline);
+  padding-inline: var(--cell);
 }
 .k-frame__prompt {
   font-size: var(--size-prompt);
@@ -1085,6 +1084,7 @@ textarea.k-input--prose {
   backface-visibility: hidden;
   border: 1px solid var(--line-strong);
   background: var(--panel);
+  backdrop-filter: blur(var(--panel-blur)) saturate(1.1) brightness(var(--panel-gain));
   text-align: center;
 }
 .k-flipcard__back {
@@ -1140,7 +1140,7 @@ textarea.k-input--prose {
 
 .k-frame__judge {
   display: grid;
-  padding: 0 var(--card-pad-inline) var(--card-pad-block);
+  padding: 0 var(--cell) var(--cell);
 }
 
 .k-band {
@@ -1188,17 +1188,15 @@ textarea.k-input--prose {
 }
 
 .k-scrollmodule {
-  /* §6.10: ungraded types have no fixed frame and scroll to a single
-     Continue, so only the width is quantised — 10 cells, matching .k-frame
-     so the column does not jump between graded and ungraded modules. */
+  /* Ungraded types share the graded module's lattice-aligned content width,
+     but paint no enclosing surface. */
   inline-size: min(100%, calc(var(--cell) * 10));
-  background: var(--panel);
-  backdrop-filter: blur(var(--panel-blur)) saturate(1.1) brightness(var(--panel-gain));
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
+  background: transparent;
+  backdrop-filter: none;
+  border: 0;
   display: grid;
   gap: var(--space-2);
-  padding: 0 var(--card-pad-inline) var(--card-pad-block);
+  padding: 0 var(--cell) var(--cell);
 }
 .k-scrollmodule .k-frame__header {
   padding-inline-start: 0;
@@ -2167,18 +2165,8 @@ textarea.k-input--prose {
   block-size: calc(var(--cell) * 8);
 }
 
-/* Frameless map quiz: the assessment logic still runs through ModuleFrame,
-   but its material boundary disappears. */
-.k-frame[data-presentation='lattice'] {
-  background: transparent;
-  backdrop-filter: none;
-  border: 0;
-}
-.k-frame[data-presentation='lattice'] .k-frame__header,
-.k-frame[data-presentation='lattice'] .k-frame__prompt,
-.k-frame[data-presentation='lattice'] .k-frame__judge {
-  padding-inline: var(--cell);
-}
+/* The lattice map uses the same direct-on-field shell as every module, with
+   its map chrome inset from the interactive edges. */
 .k-frame[data-presentation='lattice'] .k-maprsp__map,
 .k-frame[data-presentation='lattice'] .k-map-skeleton {
   background: transparent;
@@ -3277,6 +3265,10 @@ textarea.k-input--prose {
 }
 .k-lesson-card--runner {
   justify-items: stretch;
+  padding: 0;
+  background: transparent;
+  backdrop-filter: none;
+  border: 0;
 }
 .k-lesson-card--runner .k-frame {
   justify-self: center;
