@@ -3961,11 +3961,31 @@ textarea.k-input--prose {
 .k-lattice-chat__end {
   block-size: calc(var(--cell) * 2);
 }
-.k-lattice-chat__analysis {
+.k-lattice-chat__review-panel {
+  position: fixed;
+  inset-block: calc(var(--cell) + var(--space-4)) var(--space-4);
+  inset-inline-end: var(--gutter);
+  z-index: var(--layer-popover);
+  inline-size: min(calc(var(--cell) * 7), calc(100vw - var(--space-6)));
   display: grid;
-  gap: var(--space-3);
-  padding-block: var(--cell);
-  border-block: 1px solid var(--line);
+  align-content: start;
+  gap: var(--space-4);
+  overflow-y: auto;
+  padding: var(--space-4);
+  background: rgb(var(--bg-rgb) / 0.42);
+  backdrop-filter: blur(56px) saturate(1.35);
+  border: 1px solid var(--line);
+}
+.k-lattice-chat__review-status,
+.k-lattice-chat__review-content,
+.k-lattice-chat__review-content > section {
+  display: grid;
+  gap: var(--space-2);
+}
+.k-lattice-chat__review-list {
+  display: grid;
+  gap: var(--space-1);
+  padding-inline-start: var(--space-3);
 }
 .k-lattice-chat__compose {
   position: fixed;
@@ -4026,5 +4046,17 @@ textarea.k-input--prose {
   }
   .k-lattice-chat__turn {
     inline-size: 96%;
+  }
+  .k-lattice-chat__review-panel {
+    inset-inline: var(--space-2);
+    inline-size: auto;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .k-lattice-chat__settings,
+  .k-lattice-chat__review-panel {
+    background: var(--bg-raised);
+    backdrop-filter: none;
   }
 }

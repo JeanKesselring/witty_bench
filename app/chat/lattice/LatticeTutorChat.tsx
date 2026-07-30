@@ -2,11 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react'
 import {
-  ANALYSIS,
   CONVERSATIONS,
   PLAN,
   SCENARIOS,
   type Conversation,
+  type ConversationAnalysis,
   type Scenario,
 } from '@/lib/api/jkg'
 import {
@@ -27,19 +27,28 @@ export function LatticeTutorChat() {
   const [translations, setTranslations] = useState(true)
   const [furigana, setFurigana] = useState<FuriganaMode>('all')
   const [useTodayTopic, setUseTodayTopic] = useState(true)
-  const [analysis, setAnalysis] = useState(false)
+  const [reviewOpen, setReviewOpen] = useState(false)
+  const [reviewStatus, setReviewStatus] = useState<'idle' | 'loading' | 'error'>('idle')
+  const [reviewResult, setReviewResult] = useState<{
+    conversationId: string
+    analysis: ConversationAnalysis
+  } | null>(null)
   const [newConversationOpen, setNewConversationOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [recording, setRecording] = useState(false)
   const [speechStatus, setSpeechStatus] = useState<string | null>(null)
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
   const endRef = useRef<HTMLDivElement | null>(null)
+  const reviewCloseRef = useRef<HTMLButtonElement | null>(null)
+  const reviewCacheRef = useRef(new Map<string, ConversationAnalysis>())
+  const currentRef = useRef(current)
   const previousTurnsRef = useRef({
     conversationId: current,
     count: CONVERSATIONS[0]?.turns.length ?? 0,
   })
 
   const conversation = conversations.find((candidate) => candidate.conversationId === current)
+  const currentReview = reviewResult?.conversationId === current ? reviewResult.analysis : undefined
 
   useEffect(() => {
     const count = conversation?.turns.length ?? 0
@@ -53,6 +62,23 @@ export function LatticeTutorChat() {
     })
     return () => window.cancelAnimationFrame(frame)
   }, [conversation?.turns.length, current])
+
+  useEffect(() => {
+    currentRef.current = current
+  }, [current])
+
+  useEffect(() => {
+    if (!reviewOpen) return
+    const frame = window.requestAnimationFrame(() => reviewCloseRef.current?.focus())
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setReviewOpen(false)
+    }
+    document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      document.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [reviewOpen])
 
   const createConversation = () => {
     const inheritsTodayTopic = newConversationTopic === 'today_topic'
@@ -78,8 +104,10 @@ export function LatticeTutorChat() {
     }
     setConversations((currentConversations) => [fresh, ...currentConversations])
     setCurrent(fresh.conversationId)
+    currentRef.current = fresh.conversationId
     setUseTodayTopic(inheritsTodayTopic)
-    setAnalysis(false)
+    setReviewOpen(false)
+    setReviewStatus('idle')
     setNewConversationOpen(false)
   }
 
@@ -155,6 +183,53 @@ export function LatticeTutorChat() {
     recognition.start()
   }
 
+  const reviewConversation = async () => {
+    if (!conversation?.turns.length) return
+
+    const conversationId = conversation.conversationId
+    setSettingsOpen(false)
+    setReviewOpen(true)
+
+    if (reviewResult?.conversationId === conversationId) return
+
+    const memoryReview = reviewCacheRef.current.get(conversationId)
+    const storedReview = memoryReview ?? readStoredReview(conversationId)
+    if (storedReview) {
+      reviewCacheRef.current.set(conversationId, storedReview)
+      setReviewResult({ conversationId, analysis: storedReview })
+      setReviewStatus('idle')
+      return
+    }
+
+    setReviewResult(null)
+    setReviewStatus('loading')
+
+    try {
+      const response = await fetch('/api/chat/review', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          conversationId,
+          title: conversation.title,
+          turns: conversation.turns,
+        }),
+      })
+      const payload = (await response.json()) as unknown
+      if (!response.ok || !isConversationAnalysis(payload)) {
+        throw new Error('Invalid conversation review')
+      }
+
+      reviewCacheRef.current.set(conversationId, payload)
+      storeReview(conversationId, payload)
+      if (currentRef.current === conversationId) {
+        setReviewResult({ conversationId, analysis: payload })
+        setReviewStatus('idle')
+      }
+    } catch {
+      if (currentRef.current === conversationId) setReviewStatus('error')
+    }
+  }
+
   return (
     <FuriganaProvider mode={furigana}>
       <section className="k-lattice-chat" aria-label="Language tutor, lattice layout">
@@ -167,16 +242,21 @@ export function LatticeTutorChat() {
           <button
             type="button"
             className="k-btn k-btn--quiet k-press"
-            aria-pressed={analysis}
-            onClick={() => setAnalysis((currentValue) => !currentValue)}
+            aria-controls="conversation-review-panel"
+            aria-expanded={reviewOpen}
+            disabled={!conversation?.turns.length || reviewStatus === 'loading'}
+            onClick={reviewConversation}
           >
-            Review
+            {reviewStatus === 'loading' ? 'Reviewing…' : currentReview ? 'View review' : 'Review'}
           </button>
           <button
             type="button"
             className="k-btn k-btn--quiet k-press"
             aria-expanded={settingsOpen}
-            onClick={() => setSettingsOpen((currentValue) => !currentValue)}
+            onClick={() => {
+              setReviewOpen(false)
+              setSettingsOpen((currentValue) => !currentValue)
+            }}
           >
             Settings
           </button>
@@ -286,7 +366,9 @@ export function LatticeTutorChat() {
                     data-current={current === candidate.conversationId ? 'true' : undefined}
                     onClick={() => {
                       setCurrent(candidate.conversationId)
-                      setAnalysis(false)
+                      currentRef.current = candidate.conversationId
+                      setReviewOpen(false)
+                      setReviewStatus('idle')
                     }}
                   >
                     <span>{candidate.title}</span>
@@ -337,28 +419,6 @@ export function LatticeTutorChat() {
             )}
             <div className="k-lattice-chat__end" ref={endRef} aria-hidden="true" />
           </div>
-
-          {analysis ? (
-            <section className="k-lattice-chat__analysis" aria-label="Conversation review">
-              <h3 className="k-h3">Conversation review</h3>
-              <p>{ANALYSIS.summary}</p>
-              <ul className="k-fig k-fig--mistakes">
-                {ANALYSIS.patterns.map((pattern) => (
-                  <li key={pattern.pattern} className="k-mistake">
-                    <p className="k-mistake__row">
-                      <span className="k-mistake__label">You wrote</span>
-                      <span lang="ja">{pattern.original}</span>
-                    </p>
-                    <p className="k-mistake__row">
-                      <span className="k-mistake__label">Better</span>
-                      <span lang="ja">{pattern.corrected}</span>
-                    </p>
-                    <p className="k-mistake__why">{pattern.note}</p>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
 
           <form
             className="k-compose k-tutor-compose k-lattice-chat__compose"
@@ -416,6 +476,102 @@ export function LatticeTutorChat() {
             </p>
           ) : null}
         </div>
+
+        {reviewOpen ? (
+          <aside
+            id="conversation-review-panel"
+            className="k-lattice-chat__review-panel"
+            role="dialog"
+            aria-labelledby="conversation-review-title"
+          >
+            <header className="k-dialog__head">
+              <div>
+                <p className="k-meta">Cached conversation analysis</p>
+                <h2 className="k-h2" id="conversation-review-title">
+                  Conversation review
+                </h2>
+              </div>
+              <button
+                ref={reviewCloseRef}
+                type="button"
+                className="k-icon-close k-press"
+                onClick={() => setReviewOpen(false)}
+              >
+                <span aria-hidden="true">×</span>
+                <span className="k-sr">Close conversation review</span>
+              </button>
+            </header>
+
+            {reviewStatus === 'loading' ? (
+              <div className="k-lattice-chat__review-status" aria-live="polite">
+                <p className="k-h3">Reviewing your conversation…</p>
+                <p className="k-body-sm">This review is generated once and saved for later.</p>
+              </div>
+            ) : null}
+
+            {reviewStatus === 'error' ? (
+              <div className="k-lattice-chat__review-status" role="alert">
+                <p>The review could not be completed.</p>
+                <button
+                  type="button"
+                  className="k-btn k-btn--secondary k-press"
+                  onClick={reviewConversation}
+                >
+                  Try again
+                </button>
+              </div>
+            ) : null}
+
+            {currentReview ? (
+              <div className="k-lattice-chat__review-content">
+                <p>{currentReview.summary}</p>
+
+                {currentReview.patterns.length ? (
+                  <section>
+                    <h3 className="k-h3">Patterns to improve</h3>
+                    <ul className="k-fig k-fig--mistakes">
+                      {currentReview.patterns.map((pattern) => (
+                        <li key={pattern.pattern} className="k-mistake">
+                          <p className="k-mistake__row">
+                            <span className="k-mistake__label">You wrote</span>
+                            <span lang="ja">{pattern.original}</span>
+                          </p>
+                          <p className="k-mistake__row">
+                            <span className="k-mistake__label">Better</span>
+                            <span lang="ja">{pattern.corrected}</span>
+                          </p>
+                          <p className="k-mistake__why">{pattern.note}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                ) : null}
+
+                {currentReview.targets.length ? (
+                  <section>
+                    <h3 className="k-h3">Focus next</h3>
+                    <ul className="k-lattice-chat__review-list">
+                      {currentReview.targets.map((target) => (
+                        <li key={target}>{target}</li>
+                      ))}
+                    </ul>
+                  </section>
+                ) : null}
+
+                {currentReview.nextPrompts.length ? (
+                  <section>
+                    <h3 className="k-h3">Try next</h3>
+                    <ul className="k-lattice-chat__review-list">
+                      {currentReview.nextPrompts.map((prompt) => (
+                        <li key={prompt}>{prompt}</li>
+                      ))}
+                    </ul>
+                  </section>
+                ) : null}
+              </div>
+            ) : null}
+          </aside>
+        ) : null}
       </section>
     </FuriganaProvider>
   )
@@ -447,6 +603,54 @@ interface SpeechRecognitionLike {
 
 interface SpeechRecognitionConstructor {
   new (): SpeechRecognitionLike
+}
+
+const REVIEW_STORAGE_PREFIX = 'common-sage:conversation-review:'
+
+function readStoredReview(conversationId: string): ConversationAnalysis | undefined {
+  try {
+    const value = window.localStorage.getItem(`${REVIEW_STORAGE_PREFIX}${conversationId}`)
+    if (!value) return undefined
+    const analysis = JSON.parse(value) as unknown
+    return isConversationAnalysis(analysis) ? analysis : undefined
+  } catch {
+    return undefined
+  }
+}
+
+function storeReview(conversationId: string, analysis: ConversationAnalysis) {
+  try {
+    window.localStorage.setItem(
+      `${REVIEW_STORAGE_PREFIX}${conversationId}`,
+      JSON.stringify(analysis),
+    )
+  } catch {
+    // Server caching still prevents repeat analysis when browser storage is unavailable.
+  }
+}
+
+function isConversationAnalysis(value: unknown): value is ConversationAnalysis {
+  if (!value || typeof value !== 'object') return false
+  const analysis = value as Partial<ConversationAnalysis>
+  return (
+    typeof analysis.summary === 'string' &&
+    Array.isArray(analysis.patterns) &&
+    analysis.patterns.every(
+      (pattern) =>
+        typeof pattern.pattern === 'string' &&
+        typeof pattern.original === 'string' &&
+        typeof pattern.corrected === 'string' &&
+        typeof pattern.note === 'string',
+    ) &&
+    Array.isArray(analysis.targets) &&
+    analysis.targets.every((target) => typeof target === 'string') &&
+    Array.isArray(analysis.drills) &&
+    analysis.drills.every(
+      (drill) => typeof drill.label === 'string' && typeof drill.moduleType === 'string',
+    ) &&
+    Array.isArray(analysis.nextPrompts) &&
+    analysis.nextPrompts.every((prompt) => typeof prompt === 'string')
+  )
 }
 
 function speakJapanese(text: string) {
