@@ -1027,6 +1027,21 @@ textarea.k-input--prose {
   justify-items: center;
   text-align: center;
 }
+.k-frame[data-response='handwriting'] .k-frame__prompt,
+.k-frame[data-response='handwriting'] .k-frame__response {
+  justify-items: center;
+  text-align: center;
+}
+.k-frame[data-response='handwriting'] .k-frame__judge {
+  justify-items: center;
+}
+.k-frame[data-response='handwriting'] .k-band {
+  display: flex;
+  justify-content: center;
+}
+.k-frame[data-response='handwriting'] .k-band .k-btn {
+  min-inline-size: calc(var(--cell) * 2);
+}
 .k-frame[data-response='choice'] .k-frame__prompt {
   justify-items: center;
   padding-inline: var(--cell);
@@ -2323,15 +2338,24 @@ textarea.k-input--prose {
 .k-write {
   display: grid;
   gap: var(--space-2);
-  justify-items: start;
+  inline-size: 100%;
+  justify-items: center;
 }
 .k-write__pad {
-  inline-size: calc(var(--cell) * 4);
-  block-size: calc(var(--cell) * 4);
+  inline-size: min(calc(var(--cell) * 4), calc(100vw - var(--cell) * 2));
+  block-size: min(calc(var(--cell) * 4), calc(100vw - var(--cell) * 2));
   border: 1px solid var(--line-strong);
-  background: var(--bg-raised);
+  border-radius: var(--radius);
+  background: var(--writing-paper);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 55%);
   touch-action: none;
-  cursor: crosshair;
+  cursor: default;
+}
+.k-write__pad[data-recognized='true'] {
+  border-color: var(--ok);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 55%),
+    0 0 0 2px color-mix(in srgb, var(--ok) 18%, transparent);
 }
 .k-write__controls,
 .k-speech__controls {
@@ -2339,6 +2363,17 @@ textarea.k-input--prose {
   gap: var(--space-2);
   align-items: center;
   flex-wrap: wrap;
+}
+.k-write__controls {
+  justify-content: center;
+}
+.k-write__status {
+  min-block-size: 1.5em;
+  color: var(--ink-dim);
+  font-size: var(--size-body-sm);
+}
+.k-write__status:not([data-visible='true']) {
+  visibility: hidden;
 }
 .k-speech {
   display: grid;

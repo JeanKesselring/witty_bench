@@ -18,6 +18,9 @@
   --bg: #080c10;
   --bg-rgb: 8 12 16;
   --bg-raised: #0f161e;
+  /* Handwriting uses physical practice paper in both themes, so its canvas
+     can keep literal black ink instead of following the inverse dark ink. */
+  --writing-paper: #fbfaf6;
   --map-ocean: #2f8fdb;
 
   --line: rgb(61 77 98 / 0.72);

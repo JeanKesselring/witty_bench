@@ -55,6 +55,8 @@ export interface ResponseProps {
   onAssisted: () => void
   /** The double-tap / Enter accelerator: commit without leaving the control. */
   onCommit: () => void
+  /** Handwriting reports the glyph it recognized so the frame can grade it. */
+  onRecognize?: (glyph: string) => void
 }
 
 export function Response(props: ResponseProps) {

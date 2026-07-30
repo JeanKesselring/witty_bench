@@ -85,7 +85,8 @@ export function ModuleFrame({
   giveUpLabel?: string
 }) {
   const spec = moduleTypeOrDefault(item.moduleType)
-  const selfGraded = spec.response === 'none' || spec.response === 'handwriting'
+  const handwriting = spec.response === 'handwriting'
+  const selfGraded = spec.response === 'none'
   const flashcard = spec.response === 'none'
   const furiganaAllowed = supportsFurigana(item)
   const reduceMotion = useReducedMotion()
@@ -124,8 +125,9 @@ export function ModuleFrame({
   const answered = judged !== null || revealed
   const controlJudgement: Judgement | null =
     judged ?? (gaveUp ? { outcome: 'incorrect', answer: item.answer } : null)
-  const ready =
-    spec.response === 'ordering'
+  const ready = handwriting
+    ? false
+    : spec.response === 'ordering'
       ? Array.isArray(value) && value.length === (item.tokens?.length ?? 0) && value.length > 0
       : String(value).trim().length > 0
 
@@ -143,6 +145,15 @@ export function ModuleFrame({
       setJudged(judgeText(String(value), item.answer, spec.tolerance, item.acceptedAnswers))
     }
   }, [answered, ready, spec.response, spec.tolerance, value, item])
+
+  const recognizeHandwriting = useCallback(
+    (glyph: string) => {
+      if (answered || !handwriting) return
+      setValue(glyph)
+      setJudged(judgeText(glyph, item.answer, 'exact', item.acceptedAnswers))
+    },
+    [answered, handwriting, item.answer, item.acceptedAnswers],
+  )
 
   const reveal = useCallback(() => {
     if (answered) return
@@ -309,6 +320,7 @@ export function ModuleFrame({
               revealed={revealed}
               onAssisted={() => setAssisted(true)}
               onCommit={check}
+              onRecognize={recognizeHandwriting}
             />
             {revealed && !judged && !['choice', 'ordering', 'map'].includes(spec.response) ? (
               <p className="k-h3" lang={item.lang}>
@@ -371,24 +383,30 @@ export function ModuleFrame({
             aria-label="Card controls"
           >
             {!answered ? (
-              <>
-                {!selfGraded ? (
-                  <button type="button" className="k-btn k-btn--quiet k-press" onClick={reveal}>
-                    {giveUpLabel}
-                  </button>
-                ) : null}
+              handwriting ? (
                 <button type="button" className="k-btn k-btn--quiet k-press" onClick={onSkip}>
                   Skip
                 </button>
-                <button
-                  type="button"
-                  className="k-btn k-btn--primary k-press"
-                  disabled={!selfGraded && !ready}
-                  onClick={selfGraded ? reveal : check}
-                >
-                  {selfGraded ? 'Reveal' : 'Check'}
-                </button>
-              </>
+              ) : (
+                <>
+                  {!selfGraded ? (
+                    <button type="button" className="k-btn k-btn--quiet k-press" onClick={reveal}>
+                      {giveUpLabel}
+                    </button>
+                  ) : null}
+                  <button type="button" className="k-btn k-btn--quiet k-press" onClick={onSkip}>
+                    Skip
+                  </button>
+                  <button
+                    type="button"
+                    className="k-btn k-btn--primary k-press"
+                    disabled={!selfGraded && !ready}
+                    onClick={selfGraded ? reveal : check}
+                  >
+                    {selfGraded ? 'Reveal' : 'Check'}
+                  </button>
+                </>
+              )
             ) : !selfGraded ? (
               <button
                 type="button"
