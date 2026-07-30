@@ -1,7 +1,6 @@
 'use client'
 
-import Link from 'next/link'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   ANALYSIS,
   CONVERSATIONS,
@@ -20,29 +19,53 @@ import {
 export function LatticeTutorChat() {
   const [conversations, setConversations] = useState<Conversation[]>(CONVERSATIONS)
   const [current, setCurrent] = useState<string>(CONVERSATIONS[0]?.conversationId ?? '')
-  const [scenario, setScenario] = useState<Scenario>('daily_life')
+  const [newConversationTopic, setNewConversationTopic] = useState<'today_topic' | Scenario>(
+    'today_topic',
+  )
   const [draft, setDraft] = useState('')
   const [voice, setVoice] = useState(false)
   const [translations, setTranslations] = useState(true)
   const [furigana, setFurigana] = useState<FuriganaMode>('all')
   const [useTodayTopic, setUseTodayTopic] = useState(true)
   const [analysis, setAnalysis] = useState(false)
+  const [newConversationOpen, setNewConversationOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [recording, setRecording] = useState(false)
   const [speechStatus, setSpeechStatus] = useState<string | null>(null)
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
   const endRef = useRef<HTMLDivElement | null>(null)
+  const previousTurnsRef = useRef({
+    conversationId: current,
+    count: CONVERSATIONS[0]?.turns.length ?? 0,
+  })
 
   const conversation = conversations.find((candidate) => candidate.conversationId === current)
 
+  useEffect(() => {
+    const count = conversation?.turns.length ?? 0
+    const previous = previousTurnsRef.current
+    previousTurnsRef.current = { conversationId: current, count }
+
+    if (previous.conversationId !== current || count <= previous.count) return
+
+    const frame = window.requestAnimationFrame(() => {
+      endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [conversation?.turns.length, current])
+
   const createConversation = () => {
-    const title = useTodayTopic
+    const inheritsTodayTopic = newConversationTopic === 'today_topic'
+    const selectedScenario = inheritsTodayTopic ? 'daily_life' : newConversationTopic
+    const title = inheritsTodayTopic
       ? PLAN.theme
-      : (SCENARIOS.find((candidate) => candidate.id === scenario)?.label ?? 'New conversation')
+      : (SCENARIOS.find((candidate) => candidate.id === selectedScenario)?.label ??
+        'New conversation')
     const fresh: Conversation = {
       conversationId: `conv-${Date.now()}`,
-      scenario,
+      scenario: selectedScenario,
       title,
-      turns: useTodayTopic
+      turns: inheritsTodayTopic
         ? [
             {
               role: 'tutor',
@@ -55,7 +78,9 @@ export function LatticeTutorChat() {
     }
     setConversations((currentConversations) => [fresh, ...currentConversations])
     setCurrent(fresh.conversationId)
+    setUseTodayTopic(inheritsTodayTopic)
     setAnalysis(false)
+    setNewConversationOpen(false)
   }
 
   const send = () => {
@@ -81,9 +106,6 @@ export function LatticeTutorChat() {
       ),
     )
     setDraft('')
-    window.requestAnimationFrame(() =>
-      endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }),
-    )
     if (voice) speakJapanese(reply.text)
   }
 
@@ -136,20 +158,115 @@ export function LatticeTutorChat() {
   return (
     <FuriganaProvider mode={furigana}>
       <section className="k-lattice-chat" aria-label="Language tutor, lattice layout">
-        <aside className="k-lattice-chat__rail" aria-label="Conversation controls">
-          <div className="k-lattice-chat__identity">
-            <p className="k-meta">Conversation practice</p>
-            <h1 className="k-h1">Language tutor</h1>
-            <p>Open layout</p>
-          </div>
+        <header className="k-lattice-chat__page-head">
+          <p className="k-meta">Conversation practice</p>
+          <h1 className="k-h1">Language tutor</h1>
+        </header>
 
+        <div className="k-lattice-chat__tools" aria-label="Conversation tools">
+          <FuriganaToggle mode={furigana} onChange={setFurigana} />
+          <button
+            type="button"
+            className="k-btn k-btn--quiet k-press"
+            aria-pressed={translations}
+            onClick={() => setTranslations((currentValue) => !currentValue)}
+          >
+            Translation
+          </button>
+          <button
+            type="button"
+            className="k-btn k-btn--quiet k-press"
+            aria-pressed={analysis}
+            onClick={() => setAnalysis((currentValue) => !currentValue)}
+          >
+            Review
+          </button>
+          <button
+            type="button"
+            className="k-btn k-btn--quiet k-press"
+            aria-expanded={settingsOpen}
+            onClick={() => setSettingsOpen((currentValue) => !currentValue)}
+          >
+            Settings
+          </button>
+
+          {settingsOpen ? (
+            <div className="k-lattice-chat__settings" role="dialog" aria-label="Tutor settings">
+              <div className="k-dialog__head">
+                <h2 className="k-h3">Conversation settings</h2>
+                <button
+                  type="button"
+                  className="k-icon-close k-press"
+                  onClick={() => setSettingsOpen(false)}
+                >
+                  <span aria-hidden="true">×</span>
+                  <span className="k-sr">Close settings</span>
+                </button>
+              </div>
+              <div className="k-setting-row">
+                <span className="k-field__label">Today’s topic</span>
+                <button
+                  type="button"
+                  className="k-btn k-btn--secondary k-press"
+                  aria-pressed={useTodayTopic}
+                  onClick={() => setUseTodayTopic((currentValue) => !currentValue)}
+                >
+                  {useTodayTopic ? 'On' : 'Off'}
+                </button>
+              </div>
+              <div className="k-setting-row">
+                <span className="k-field__label">Tutor voice</span>
+                <button
+                  type="button"
+                  className="k-btn k-btn--secondary k-press"
+                  aria-pressed={voice}
+                  onClick={() => setVoice((currentValue) => !currentValue)}
+                >
+                  {voice ? 'Replies spoken' : 'Replies silent'}
+                </button>
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        <aside className="k-lattice-chat__rail" aria-label="Conversation controls">
           <button
             type="button"
             className="k-btn k-btn--primary k-press k-lattice-chat__rail-button"
-            onClick={createConversation}
+            aria-expanded={newConversationOpen}
+            onClick={() => setNewConversationOpen((currentValue) => !currentValue)}
           >
             + New conversation
           </button>
+
+          {newConversationOpen ? (
+            <div className="k-lattice-chat__new" role="group" aria-label="New conversation">
+              <label className="k-field">
+                <span className="k-field__label">Conversation topic</span>
+                <select
+                  className="k-input"
+                  value={newConversationTopic}
+                  onChange={(event) =>
+                    setNewConversationTopic(event.target.value as 'today_topic' | Scenario)
+                  }
+                >
+                  <option value="today_topic">Today’s lesson · {PLAN.theme}</option>
+                  {SCENARIOS.map((candidate) => (
+                    <option key={candidate.id} value={candidate.id}>
+                      {candidate.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button
+                type="button"
+                className="k-btn k-btn--secondary k-press"
+                onClick={createConversation}
+              >
+                Create
+              </button>
+            </div>
+          ) : null}
 
           <div className="k-lattice-chat__group">
             <p className="k-meta">Past conversations</p>
@@ -173,104 +290,35 @@ export function LatticeTutorChat() {
               ))}
             </ul>
           </div>
-
-          <div className="k-lattice-chat__group">
-            <p className="k-meta">Display</p>
-            <FuriganaToggle mode={furigana} onChange={setFurigana} />
-            <button
-              type="button"
-              className="k-btn k-btn--quiet k-press"
-              aria-pressed={translations}
-              onClick={() => setTranslations((currentValue) => !currentValue)}
-            >
-              Translations
-            </button>
-          </div>
-
-          <div className="k-lattice-chat__group">
-            <p className="k-meta">Conversation</p>
-            <button
-              type="button"
-              className="k-btn k-btn--quiet k-press"
-              aria-pressed={useTodayTopic}
-              onClick={() => setUseTodayTopic((currentValue) => !currentValue)}
-            >
-              Today’s topic
-            </button>
-            <button
-              type="button"
-              className="k-btn k-btn--quiet k-press"
-              aria-pressed={voice}
-              onClick={() => setVoice((currentValue) => !currentValue)}
-            >
-              Tutor voice
-            </button>
-            <button
-              type="button"
-              className="k-btn k-btn--quiet k-press"
-              aria-pressed={analysis}
-              onClick={() => setAnalysis((currentValue) => !currentValue)}
-            >
-              Conversation review
-            </button>
-          </div>
-
-          <div className="k-lattice-chat__group">
-            <p className="k-meta">Scenario</p>
-            {SCENARIOS.map((candidate) => (
-              <button
-                key={candidate.id}
-                type="button"
-                className="k-btn k-btn--quiet k-press"
-                aria-pressed={scenario === candidate.id}
-                onClick={() => {
-                  setScenario(candidate.id)
-                  setUseTodayTopic(false)
-                }}
-              >
-                {candidate.label}
-              </button>
-            ))}
-          </div>
-
-          <Link href="/chat" className="k-btn k-btn--quiet k-press k-lattice-chat__rail-button">
-            Card layout
-          </Link>
         </aside>
 
         <div className="k-lattice-chat__conversation">
-          <header className="k-lattice-chat__head">
-            <p className="k-meta">
-              {useTodayTopic ? `Today’s lesson · ${PLAN.theme}` : 'Open conversation'}
-            </p>
-            <h2 className="k-h2">{conversation?.title ?? 'New conversation'}</h2>
-          </header>
-
           <div className="k-lattice-chat__log" aria-live="polite" aria-label="Conversation">
             {conversation?.turns.length ? (
               conversation.turns.map((turn, index) => (
                 <div
                   key={index}
-                  className="k-bubble"
+                  className="k-lattice-chat__turn"
                   data-role={turn.role === 'learner' ? 'learner' : 'sage'}
                 >
-                  <p className="k-bubble__name">{turn.role === 'learner' ? 'You' : 'Tutor'}</p>
-                  <p className="k-ja" lang="ja">
-                    {turn.ruby ? <Ruby segments={turn.ruby} /> : turn.text}
-                  </p>
-                  {translations && turn.translation ? (
-                    <p className="k-body-sm k-bubble__translation">{turn.translation}</p>
-                  ) : null}
-                  {turn.role === 'tutor' ? (
-                    <button
-                      type="button"
-                      className="k-bubble__audio k-press"
-                      onClick={() => speakJapanese(turn.text)}
-                    >
-                      <span aria-hidden="true">▶</span>
-                      <span className="k-sr">Play this sentence</span>
-                    </button>
-                  ) : null}
+                  <div className="k-bubble">
+                    <p className="k-ja" lang="ja">
+                      {turn.ruby ? <Ruby segments={turn.ruby} /> : turn.text}
+                    </p>
+                    {translations && turn.translation ? (
+                      <p className="k-body-sm k-bubble__translation">{turn.translation}</p>
+                    ) : null}
+                    {turn.role === 'tutor' ? (
+                      <button
+                        type="button"
+                        className="k-bubble__audio k-press"
+                        onClick={() => speakJapanese(turn.text)}
+                      >
+                        <span aria-hidden="true">▶</span>
+                        <span className="k-sr">Play this sentence</span>
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
               ))
             ) : (
@@ -281,7 +329,7 @@ export function LatticeTutorChat() {
                 <p>What would you like to talk about?</p>
               </div>
             )}
-            <div ref={endRef} aria-hidden="true" />
+            <div className="k-lattice-chat__end" ref={endRef} aria-hidden="true" />
           </div>
 
           {analysis ? (

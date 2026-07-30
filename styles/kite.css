@@ -3767,34 +3767,94 @@ textarea.k-input--prose {
 .k-lattice-chat {
   display: grid;
   grid-template-columns: calc(var(--cell) * 4) minmax(0, calc(var(--cell) * 11));
-  gap: var(--cell);
+  column-gap: var(--cell);
+  row-gap: var(--space-4);
   align-items: start;
   min-inline-size: 0;
 }
-.k-lattice-chat__rail {
+.k-lattice-chat__page-head {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  min-block-size: calc(var(--cell) * 2);
   display: grid;
-  align-content: start;
-  gap: var(--cell);
+  align-content: center;
+  gap: var(--space-1);
   min-inline-size: 0;
 }
-.k-lattice-chat__identity {
-  min-block-size: calc(var(--cell) * 3);
+.k-lattice-chat__page-head .k-h1 {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.k-lattice-chat__tools {
+  position: sticky;
+  inset-block-start: calc(var(--cell) + var(--space-2));
+  z-index: var(--layer-chrome);
+  grid-column: 2;
+  grid-row: 1;
+  align-self: start;
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  background: rgb(var(--bg-rgb) / 0.78);
+  backdrop-filter: blur(20px) saturate(1.1);
+}
+.k-lattice-chat__tools > .k-btn {
+  min-inline-size: auto;
+  padding-inline: var(--space-2);
+}
+.k-lattice-chat__settings {
+  position: absolute;
+  inset-block-start: calc(100% + var(--space-1));
+  inset-inline-end: 0;
+  z-index: var(--layer-popover);
+  inline-size: min(calc(var(--cell) * 6), calc(100vw - var(--space-6)));
+  display: grid;
+  gap: 0;
+  padding: var(--space-2) var(--space-3);
+  background: rgb(var(--bg-rgb) / 0.82);
+  backdrop-filter: blur(var(--panel-blur)) saturate(1.12);
+  border: 1px solid var(--line);
+}
+.k-lattice-chat__settings .k-dialog__head {
+  min-block-size: var(--cell);
+}
+.k-lattice-chat__settings .k-setting-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-block-size: var(--cell);
+  padding-block: var(--space-1);
+  border-block-start: 1px solid var(--line);
+}
+.k-lattice-chat__settings .k-btn {
+  min-inline-size: calc(var(--cell) * 2);
+}
+.k-lattice-chat__rail {
+  grid-column: 1;
+  grid-row: 2;
   display: grid;
   align-content: start;
-  gap: var(--space-2);
+  gap: var(--space-3);
+  min-inline-size: 0;
 }
-.k-lattice-chat__identity > p:last-child {
-  color: var(--ink-dim);
+.k-lattice-chat__new {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background: var(--panel);
+  backdrop-filter: blur(20px) saturate(1.1);
+  border: 1px solid var(--line);
 }
 .k-lattice-chat__group {
   display: grid;
-  grid-auto-rows: minmax(var(--cell), auto);
   align-items: stretch;
 }
 .k-lattice-chat__group > .k-meta {
   display: flex;
   align-items: center;
-  min-block-size: var(--cell);
+  min-block-size: var(--space-4);
 }
 .k-lattice-chat__rail :is(.k-btn, .k-lattice-chat__rail-button) {
   inline-size: 100%;
@@ -3808,19 +3868,25 @@ textarea.k-input--prose {
 }
 .k-lattice-chat__history {
   display: grid;
-  grid-auto-rows: minmax(var(--cell), auto);
   list-style: none;
 }
 .k-lattice-chat__history li {
   min-inline-size: 0;
 }
 .k-lattice-chat__history .k-btn {
-  display: grid;
-  align-content: center;
-  justify-items: start;
-  gap: var(--optical);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.k-lattice-chat__history .k-btn span {
+  min-inline-size: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .k-lattice-chat__history small {
+  flex: none;
   color: var(--ink-faint);
 }
 .k-lattice-chat__history .k-btn[data-current='true'] {
@@ -3831,51 +3897,71 @@ textarea.k-input--prose {
   color: var(--selected-ink);
 }
 .k-lattice-chat__conversation {
+  grid-column: 2;
+  grid-row: 2;
   display: grid;
   gap: var(--cell);
   min-inline-size: 0;
   padding-block-end: calc(var(--cell) * 2);
 }
-.k-lattice-chat__head {
-  min-block-size: calc(var(--cell) * 3);
-  display: grid;
-  align-content: end;
-  gap: var(--space-2);
-  padding-block-end: var(--space-4);
-}
 .k-lattice-chat__log {
   display: grid;
   align-content: start;
-  gap: var(--cell);
+  gap: var(--space-1);
   min-block-size: calc(var(--cell) * 7);
   min-inline-size: 0;
 }
-.k-lattice-chat__log .k-bubble {
+.k-lattice-chat__turn {
+  display: grid;
+  gap: var(--optical);
+  inline-size: min(calc(var(--cell) * 8), 92%);
+  max-inline-size: 100%;
+}
+.k-lattice-chat__turn[data-role='sage'] {
+  justify-self: start;
+  justify-items: start;
+}
+.k-lattice-chat__turn[data-role='learner'] {
+  justify-self: end;
+  justify-items: end;
+}
+.k-lattice-chat__turn .k-bubble {
   position: relative;
-  inline-size: fit-content;
-  max-inline-size: min(calc(var(--cell) * 9), 88%);
-  gap: var(--space-1);
-  padding: var(--space-2) var(--space-4);
-  border: 1px solid var(--line-strong);
+  inline-size: 100%;
+  max-inline-size: 100%;
+  align-content: center;
+  gap: var(--optical);
+  padding: var(--optical) var(--space-4);
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: blur(24px) saturate(1.12);
   text-align: start;
 }
-.k-lattice-chat__log .k-bubble[data-role='sage'] {
-  justify-self: start;
-  background: var(--panel);
-  border-inline-start: var(--optical) solid var(--primary-hover);
+.k-lattice-chat__turn[data-role='sage'] .k-bubble {
+  padding-inline-end: calc(var(--target) + var(--space-2));
+  background: color-mix(in srgb, var(--panel) 76%, transparent);
 }
-.k-lattice-chat__log .k-bubble[data-role='learner'] {
-  justify-self: end;
-  background: var(--primary);
-  border-color: var(--primary-hover);
-  border-inline-end: var(--optical) solid var(--primary-hover);
-  color: var(--on-accent);
+.k-lattice-chat__turn[data-role='learner'] .k-bubble {
+  background: color-mix(in srgb, var(--primary) 54%, transparent);
+  color: var(--ink);
 }
-.k-lattice-chat__log .k-bubble > p {
+.k-lattice-chat__turn .k-bubble > p {
   margin: 0;
 }
-.k-lattice-chat__log .k-bubble[data-role='learner'] :is(.k-bubble__name, .k-bubble__translation) {
-  color: var(--on-accent);
+.k-lattice-chat__turn[data-role='learner'] .k-bubble__translation {
+  color: var(--ink-dim);
+}
+.k-lattice-chat__turn .k-bubble__audio {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-end: var(--space-1);
+  transform: translateY(-50%);
+  inline-size: var(--target);
+  block-size: var(--target);
+  color: var(--ink-dim);
+}
+.k-lattice-chat__end {
+  block-size: calc(var(--cell) * 2);
 }
 .k-lattice-chat__analysis {
   display: grid;
@@ -3884,9 +3970,14 @@ textarea.k-input--prose {
   border-block: 1px solid var(--line);
 }
 .k-lattice-chat__compose {
-  position: sticky;
+  position: fixed;
   inset-block-end: var(--space-4);
+  inset-inline-end: max(
+    var(--gutter),
+    calc((100vw - calc(var(--cell) * 20)) / 2 + calc(var(--cell) * 3))
+  );
   z-index: var(--layer-chrome);
+  inline-size: calc(var(--cell) * 11);
   min-block-size: var(--cell);
   background: rgb(var(--bg-rgb) / 0.88);
   backdrop-filter: blur(20px) saturate(1.1);
@@ -3903,24 +3994,39 @@ textarea.k-input--prose {
   .k-lattice-chat {
     grid-template-columns: 1fr;
   }
-  .k-lattice-chat__rail {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .k-lattice-chat__page-head {
+    grid-column: 1;
+    grid-row: 1;
   }
-  .k-lattice-chat__identity,
-  .k-lattice-chat__rail > .k-lattice-chat__rail-button {
-    grid-column: 1 / -1;
+  .k-lattice-chat__tools {
+    grid-column: 1;
+    grid-row: 2;
+    inline-size: 100%;
+    justify-self: stretch;
+    overflow-x: auto;
+  }
+  .k-lattice-chat__rail {
+    grid-column: 1;
+    grid-row: 3;
+  }
+  .k-lattice-chat__conversation {
+    grid-column: 1;
+    grid-row: 4;
+  }
+  .k-lattice-chat__compose {
+    inset-inline: var(--gutter);
+    inline-size: auto;
   }
 }
 
 @media (max-width: 640px) {
-  .k-lattice-chat__rail {
-    grid-template-columns: 1fr;
+  .k-lattice-chat__tools {
+    justify-content: flex-start;
   }
-  .k-lattice-chat__identity,
-  .k-lattice-chat__rail > .k-lattice-chat__rail-button {
-    grid-column: auto;
+  .k-lattice-chat__tools > .k-btn {
+    flex: none;
   }
-  .k-lattice-chat__log .k-bubble {
-    max-inline-size: 96%;
+  .k-lattice-chat__turn {
+    inline-size: 96%;
   }
 }

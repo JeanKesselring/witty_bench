@@ -1,6 +1,6 @@
 import { LatticeTutorChat } from './LatticeTutorChat'
 
-export const metadata = { title: 'Language tutor, open layout — Common Sage' }
+export const metadata = { title: 'Language tutor — Common Sage' }
 
 export default function LatticeChatPage() {
   return (
